@@ -1,0 +1,110 @@
+@import url(https://fonts.googleapis.com/css?family=Lato:700);
+:root {
+	--color1: #9a0606;
+	--color2: #5dd95d;
+	--color3: #54a9de;
+	--color4: #9ad4d2aa;
+
+	font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+	line-height: 1.5;
+	font-weight: 400;
+
+	color-scheme: light dark;
+	color: rgba(255, 255, 255, 0.87);
+
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar {
+	background-color: transparent;
+	width: 10px;
+}
+::-webkit-scrollbar-thumb {
+	background-color: var(--color1);
+	border-radius: 5px;
+}
+::-webkit-scrollbar-track {
+	background-color: var(--color2);
+  border-radius: 2px;
+}
+
+/* DEFINE VARIABLES */
+.primaryColor {
+	color: #9a0606;
+}
+.secondaryColor {
+	color: #5dd95d;
+}
+.tertiaryColor {
+	color: #54a9de;
+}
+
+.text-button {
+	background: none !important;
+	border: none !important;
+	/*input has OS specific font-family*/
+	cursor: pointer;
+}
+.glassy {
+	background-color: rgba(255, 255, 255, 0.1);
+	-webkit-backdrop-filter: blur(1px);
+	backdrop-filter: blur(1px);
+}
+
+/* Components */
+body:before {
+	content: '';
+	position: fixed;
+	top: 0;
+	left: 0;
+	display: block;
+	background: radial-gradient(circle, var(--color1), var(--color2), var(--color3), var(--color2), var(--color1));
+	height: 100%;
+	width: 100%;
+	opacity: 55%;
+	z-index: -1;
+
+	animation: gradient 6000s ease infinite;
+	background-size: 500% 500%;
+}
+@keyframes gradient {
+	0% {
+		background-position: 500% 500%;
+	}
+	50% {
+		background-position: 2500% 2500%;
+	}
+	100% {
+		background-position: 500% 500%;
+	}
+}
+body {
+	height: 100%;
+	width: 100%;
+	background-color: black;
+	font-family: 'Merriweather', sans-serif;
+}
+
+header {
+	min-height: fit-content;
+	height: 15vh;
+	max-height: 20%;
+  margin-top: 20px;
+  margin-bottom: 50px;
+	justify-content: space-around;
+	align-items: center;
+	text-align: center;
+}
+
+footer{
+  color: grey;
+  margin-bottom: 10px;
+}
+footer>div{
+  align-items: center;
+  justify-content: space-evenly;
+}
