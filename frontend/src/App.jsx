@@ -1,7 +1,7 @@
 import { Route, Switch } from 'wouter';
 import './app.css'
 import Header from './components/Header';
-import Homepage from './components/Homepage';
+import Homepage from './components/navvv';
 import Login from './components/Login';
 import Footer from './components/Footer';
 
@@ -13,6 +13,8 @@ export default function App() {
 				<Route path='/' component={Homepage} />
 
 				<Route path='/login/' component={Login} />
+				{/* <Route path='/watch/' component={Watch} />
+				<Route path='/molePage/' component={MolePage} /> */}
 
 				{/* <Route path='/about/' component={About} /> */}
 

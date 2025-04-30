@@ -29,7 +29,7 @@
 }
 ::-webkit-scrollbar-track {
 	background-color: var(--color2);
-  border-radius: 2px;
+	border-radius: 2px;
 }
 
 /* DEFINE VARIABLES */
@@ -48,11 +48,6 @@
 	border: none !important;
 	/*input has OS specific font-family*/
 	cursor: pointer;
-}
-.glassy {
-	background-color: rgba(255, 255, 255, 0.1);
-	-webkit-backdrop-filter: blur(1px);
-	backdrop-filter: blur(1px);
 }
 
 /* Components */
@@ -90,21 +85,22 @@ body {
 }
 
 header {
+	background-color: transparent !important;
 	min-height: fit-content;
 	height: 15vh;
 	max-height: 20%;
-  margin-top: 20px;
-  margin-bottom: 50px;
+	margin-top: 20px;
+	margin-bottom: 50px;
 	justify-content: space-around;
 	align-items: center;
 	text-align: center;
 }
 
-footer{
-  color: grey;
-  margin-bottom: 10px;
+footer {
+	color: grey;
+	margin-bottom: 10px;
 }
-footer>div{
-  align-items: center;
-  justify-content: space-evenly;
+footer > div {
+	align-items: center;
+	justify-content: space-evenly;
 }
