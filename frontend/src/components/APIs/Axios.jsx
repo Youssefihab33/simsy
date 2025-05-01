@@ -1,3 +1,4 @@
+import { red } from '@mui/material/colors';
 import axios from 'axios';
 
 const baseURL = 'http://127.0.0.1:8000';
@@ -8,7 +9,34 @@ const axiosInstance = axios.create({
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        // 'Authorization': `Bearer ${local Storage.getItem('access_token')}`, // Add your token here
     }
 })
+
+axiosInstance.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token')
+        if(token){
+            config.headers.Authorization = `Token ${token}`
+        }
+        else{
+            config.headers.Authorization = ''
+        }
+        return config;
+    }
+)
+
+axiosInstance.interceptors.response.use(
+    (response) => {
+        return response;
+    },
+    (error) => {
+        if (error.response.status === 401) {
+            localStorage.removeItem('token')
+            console.error('Unauthorized access - redirecting to login');
+            window.location.href = '/login/';
+        }
+        return Promise.reject(error);
+    }
+)
+
 export default axiosInstance;

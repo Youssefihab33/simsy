@@ -1,5 +1,6 @@
 Django
 djangorestframework
 django-cors-headers
-Pillow
 django-rest-knox
+python-dotenv
+Pillow

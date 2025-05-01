@@ -1,6 +1,8 @@
-// import { useState } from 'react';
+import { Axios } from 'axios';
+import { useState, useEffect, useMemo } from 'react';
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
+import axiosInstance from './APIs/Axios';
 
 export default function Homepage() {
 	// const [currentTab, setCurrentTab] = useState(0);
@@ -43,9 +45,21 @@ export default function Homepage() {
 	//     }
 	// }, false);
 
+	const [users, setUsers] = useState();
+	
+	const getData = () => {
+		axiosInstance.get('users')
+		.then((res) => {
+			setUsers(res.data);
+		})
+	}
+	useEffect(() => {
+		getData();
+	}, []);
 
 	return (
 		<section class='container'>
+			
 			<Tabs defaultActiveKey='new' id='homepageTabs' className='mb-3' justify>
 				<Tab eventKey='favorites' title={<span class='homeNav text-warning bi-star-fill'> Favorites (0)</span>}>
                     Favorites
@@ -67,6 +81,14 @@ export default function Homepage() {
 					<div id='randomShowsDiv'>RANDOM</div>
 				</Tab>
 			</Tabs>
+			Current users:
+			<ul class='list-group'>
+				{users && users.map((user, index) => (
+					<li class='list-group-item' key={user.id}>
+						{index}.{user.username}
+					</li>
+				))}
+			</ul>
 
 			<div class='text-end mt-3 me-5'>
 				<a class='text-info text-decoration-none' href="{% url 'explore' %}">
@@ -78,6 +100,7 @@ export default function Homepage() {
 					</strong>
 				</a>
 			</div>
+			
 		</section>
 	);
 }

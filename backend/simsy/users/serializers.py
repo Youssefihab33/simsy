@@ -6,6 +6,7 @@ User = get_user_model()
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     password = serializers.CharField(required=True, write_only=True)
+
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         ret.pop('password', None)

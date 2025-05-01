@@ -1,28 +1,28 @@
-import { Route, Switch } from 'wouter';
-import './app.css'
+import { Routes, Route, useLocation } from 'react-router-dom';
+import './app.css';
+import ProtectedRoutes from './components/ProtectedRoutes';
 import Header from './components/Header';
-import Homepage from './components/navvv';
+import Homepage from './components/Homepage';
 import Register from './components/Register';
-// import Login from './components/Login';
+import Login from './components/Login';
 import Footer from './components/Footer';
 
 export default function App() {
+	const location = useLocation();
+	// const noNavbar = ['/register/', '/login/'];
+
 	return (
 		<>
 			<Header />
-			<Switch>
-				<Route path='/' component={Homepage} />
-				<Route path='/register/' component={Register} />
-				{/* <Route path='/login/' component={Login} /> */}
-				{/* <Route path='/watch/' component={Watch} />
-				<Route path='/molePage/' component={MolePage} /> */}
-
-				{/* <Route path='/about/' component={About} /> */}
-
-				{/* <Route path='/detail/:id'>{(props) => <Detail product={products.find((product) => product.id == props.id)} />}</Route> */}
-
-				<Route>404: No such page!</Route>
-			</Switch>
+			<Routes>
+				<Route path='/login/' element={<Login />} />
+				<Route path='/register/' element={<Register />} />
+				<Route element={<ProtectedRoutes />}>
+					<Route path='/' element={<Homepage />} />
+					{/* <Route path='/about' element={<About />} /> */}
+					
+				</Route>
+			</Routes>
 			<Footer />
 		</>
 	);
