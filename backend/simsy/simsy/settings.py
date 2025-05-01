@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'knox',
     'corsheaders',
     'users',
 ]
@@ -58,6 +59,10 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
+AUTHENTICATION_BACKENDS = [
+    # 'django.contrib.auth.backends.ModelBackend', # Default authentication backend
+    'users.auth.Auth',  # Custom authentication backend
+]
 
 ROOT_URLCONF = 'simsy.urls'
 
@@ -77,6 +82,9 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'simsy.wsgi.application'
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': ('knox.auth.TokenAuthentication',),
+}
 
 
 # Database
