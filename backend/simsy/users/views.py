@@ -57,7 +57,7 @@ class LoginViewSet(viewsets.ViewSet):
 class RegisterViewSet(viewsets.ViewSet):
     queryset = User.objects.all()
     serializer_class = RegisterSerializer
-    permission_classes = [permissions.AllowAny] # Only admin can register new users
+    permission_classes = [permissions.AllowAny]
 
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
@@ -66,13 +66,3 @@ class RegisterViewSet(viewsets.ViewSet):
             return Response(serializer.data)
         else:
             return Response(serializer.errors, status=400)
-
-class UserViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-    queryset = User.objects.all()
-    serializer_class = RegisterSerializer
-
-    def list(self, request):
-        queryset = User.objects.all()
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(serializer.data)
