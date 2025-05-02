@@ -27,11 +27,7 @@ export default function LoginPanel() {
 			<div className='d-flex flex-column align-items-center text-center'>
 				<h3 style={{ fontSize: '2.5rem', color: '#5DD95D' }}>
 					<i className='bi-person-lock'></i>
-					{localStorage.getItem('token') ? (
-						<AlreadyLoggedIn/>
-					) : (
-						<span>&nbsp;Login</span>
-					)}
+					{localStorage.getItem('token') ? <AlreadyLoggedIn /> : <span>&nbsp;Login</span>}
 				</h3>
 				{!localStorage.getItem('token') && (
 					<form onSubmit={handleSubmit(submission)}>

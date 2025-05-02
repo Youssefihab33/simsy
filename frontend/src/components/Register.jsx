@@ -186,37 +186,5 @@ export default function RegisterPanel() {
 				)}
 			</div>
 		</main>
-		// 	<ThemeProvider theme={defaultTheme}>
-		// 		<Container component='main' maxWidth='sm' className='container container-login glassy'>
-		// 			<Box
-		// 				sx={{
-		// 					// marginTop: 8,
-		// 					display: 'flex',
-		// 					flexDirection: 'column',
-		// 					alignItems: 'center',
-		// 				}}
-		// 			>
-		// 				<LockOutlined sx={{ fontSize: 40, color: 'primary.main' }} />
-		// 				<Typography component='h3' variant='h3'>
-		// 					Register
-		// 				</Typography>
-		// 				<span className='text-muted'>**Some fields are required, but fill in all the fields to get the best experience!</span>
-		// 				<form onSubmit={handleSubmit(submission)} noValidate sx={{ mt: 1 }}>
-
-		// 					{/* <FormControlLabel control={<Checkbox value='remember' onChange={onchange} color='primary' />} label='Remember me' /> */}
-		// 					<Button type='submit' fullWidth variant='contained' sx={{ mt: 3, mb: 2 }}>
-		// 						Register
-		// 					</Button>
-
-		// 					<Grid container>
-		// 						<Grid item>
-
-		// 						</Grid>
-		// 					</Grid>
-		// 				</form>
-		// 			</Box>
-		// 		</Container>
-		// 	</ThemeProvider>
-		// );
 	);
 }

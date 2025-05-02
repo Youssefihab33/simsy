@@ -1,20 +1,18 @@
-from django.shortcuts import render
-from rest_framework import viewsets, permissions
-from .serializers import *
-from .models import *
-from rest_framework.response import Response
-from django.contrib.auth import get_user_model, authenticate
-from knox.models import AuthToken
-
-import os
-from datetime import datetime
-from django.core.mail import send_mail, EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-
+from django.contrib.auth import get_user_model, authenticate
+from rest_framework import viewsets, permissions
+from rest_framework.response import Response
+from datetime import datetime
+from knox.models import AuthToken
+from .serializers import *
+from .models import *
+import os
 User = get_user_model()
 
 # Create your views here.
+
 
 class LoginViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
@@ -38,9 +36,9 @@ class LoginViewSet(viewsets.ViewSet):
                 html_content = render_to_string('email/login.html', context)
                 plain_message = strip_tags(html_content)
                 message = EmailMultiAlternatives(
-                    subject = "Login Notification - SIMSY",
-                    body = plain_message,
-                    from_email = None,
+                    subject="Login Notification - SIMSY",
+                    body=plain_message,
+                    from_email=None,
                     to=[user.email],
                 )
                 message.attach_alternative(html_content, "text/html")
@@ -48,11 +46,12 @@ class LoginViewSet(viewsets.ViewSet):
 
                 # Create token for the user
                 token = AuthToken.objects.create(user)[1]
-                return Response({'user':self.serializer_class(user).data, 'token': token})
+                return Response({'user': self.serializer_class(user).data, 'token': token})
             else:
                 return Response({'error': 'Invalid credentials'}, status=401)
         else:
             return Response(serializer.errors, status=400)
+
 
 class RegisterViewSet(viewsets.ViewSet):
     queryset = User.objects.all()
