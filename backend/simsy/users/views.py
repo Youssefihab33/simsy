@@ -7,7 +7,11 @@ from django.contrib.auth import get_user_model, authenticate
 from knox.models import AuthToken
 
 import os
-from django.core.mail import send_mail
+from datetime import datetime
+from django.core.mail import send_mail, EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+
 User = get_user_model()
 
 # Create your views here.
@@ -23,14 +27,27 @@ class LoginViewSet(viewsets.ViewSet):
             password = serializer.validated_data['password']
             user = authenticate(request, username=username, password=password)
             if user:
-                token = AuthToken.objects.create(user)[1]
-                send_mail(
-                    "Login Notification",
-                    f"Hello {user.username},\n\nYou have successfully logged in to your account.\n\nBest regards,\nSIMSY Team",
-                    os.getenv('EMAIL_HOST'),
-                    [user.email],
-                    fail_silently=False,
+                # Send email notification
+                context = {
+                    'username': user.username,
+                    'email': user.email,
+                    'year': datetime.now().year,
+                    'link_to_website': 'https://simsy.redirectme.net',
+                    'admin_email': os.getenv('EMAIL_HOST'),
+                }
+                html_content = render_to_string('email/login.html', context)
+                plain_message = strip_tags(html_content)
+                message = EmailMultiAlternatives(
+                    subject = "Login Notification - SIMSY",
+                    body = plain_message,
+                    from_email = None,
+                    to=[user.email],
                 )
+                message.attach_alternative(html_content, "text/html")
+                message.send()
+
+                # Create token for the user
+                token = AuthToken.objects.create(user)[1]
                 return Response({'user':self.serializer_class(user).data, 'token': token})
             else:
                 return Response({'error': 'Invalid credentials'}, status=401)
@@ -43,7 +60,7 @@ class RegisterViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny] # Only admin can register new users
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
