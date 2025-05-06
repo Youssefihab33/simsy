@@ -2,14 +2,38 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.contrib.auth import get_user_model, authenticate
+from django.dispatch import receiver
+from django.urls import reverse
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
-from datetime import datetime
+from django_rest_passwordreset.signals import reset_password_token_created, post_password_reset
 from knox.models import AuthToken
+from datetime import datetime
 from .serializers import *
 from .models import *
 import os
 User = get_user_model()
+
+
+def send_email(subject, template, user, btnLink=""):
+    context = {
+        'name': user.username,
+        'email': user.email,
+        'year': datetime.now().year,
+        'button_link': btnLink,
+        'link_to_simsy': os.getenv('FRONTEND_DOMAIN'),
+        'admin_email': os.getenv('EMAIL_HOST'),
+    }
+    html_content = render_to_string(template, context)
+    plain_message = strip_tags(html_content)
+    message = EmailMultiAlternatives(
+        subject=subject,
+        body=plain_message,
+        from_email=None,
+        to=[user.email],
+    )
+    message.attach_alternative(html_content, "text/html")
+    message.send()
 
 # Create your views here.
 
@@ -25,25 +49,8 @@ class LoginViewSet(viewsets.ViewSet):
             password = serializer.validated_data['password']
             user = authenticate(request, username=username, password=password)
             if user:
-                # Send email notification
-                context = {
-                    'username': user.username,
-                    'email': user.email,
-                    'year': datetime.now().year,
-                    'link_to_website': 'https://simsy.redirectme.net',
-                    'admin_email': os.getenv('EMAIL_HOST'),
-                }
-                html_content = render_to_string('email/login.html', context)
-                plain_message = strip_tags(html_content)
-                message = EmailMultiAlternatives(
-                    subject="Login Notification - SIMSY",
-                    body=plain_message,
-                    from_email=None,
-                    to=[user.email],
-                )
-                message.attach_alternative(html_content, "text/html")
-                message.send()
-
+                send_email('Login Notification - SIMSY',
+                           'email/login.html', user, 'DO LATER')
                 # Create token for the user
                 token = AuthToken.objects.create(user)[1]
                 return Response({'user': self.serializer_class(user).data, 'token': token})
@@ -65,3 +72,16 @@ class RegisterViewSet(viewsets.ViewSet):
             return Response(serializer.data)
         else:
             return Response(serializer.errors, status=400)
+
+
+@receiver(reset_password_token_created)
+def password_reset_token_created(reset_password_token, *args, **kwargs):
+    token_url = f'{os.getenv('FRONTEND_DOMAIN')}reset-password/{reset_password_token.key}'
+    send_email("Forgot your Password? - SIMSY",
+               'email/forgot_password.html', reset_password_token.user, token_url)
+
+
+@receiver(post_password_reset)
+def password_reset(sender, **kwargs):
+    send_email("Password Changed Successfully - SIMSY",
+               'email/password_changed.html', kwargs['user'], 'DO LATER')

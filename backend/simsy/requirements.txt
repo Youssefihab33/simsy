@@ -2,5 +2,6 @@ Django
 djangorestframework
 django-cors-headers
 django-rest-knox
+django-rest-passwordreset
 python-dotenv
 Pillow

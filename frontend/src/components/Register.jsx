@@ -1,47 +1,47 @@
 import { TextField, Button, Link } from '@mui/material';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { Controller } from 'react-hook-form';
-import { useForm } from 'react-hook-form';
-import axiosInstance from './APIs/Axios.jsx';
 import { useNavigate } from 'react-router-dom';
+import { Controller, useForm } from 'react-hook-form';
+import axiosInstance from './APIs/Axios.jsx';
 import AlreadyLoggedIn from './AlreadyLoggedIn.jsx';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 
-const defaultTheme = createTheme();
-
-export default function RegisterPanel() {
+export default function Register() {
 	const navigate = useNavigate();
-	const { handleSubmit, control } = useForm();
-
+	const formSchema = yup.object({
+		email: yup.string().email('Invalid email format').required('Email is required!'),
+		username: yup.string().required('Username is required!'),
+		password: yup.string().required('Password is required!').min(8, 'Password must be at least 8 characters long'),
+		password2: yup
+			.string()
+			.required('Password confirmation is required!')
+			.oneOf([yup.ref('password'), null], 'Passwords do not match!'),
+	});
+	const { handleSubmit, control } = useForm({resolver: yupResolver(formSchema)});
 	const submission = (data) => {
-		// Basic password confirmation check (you might want more robust validation)
-		if (data.password !== data.password2) {
-			alert('Passwords do not match!'); // Simple error handling
-			return; // Stop submission
-		} else {
-			// When Submitted
-			axiosInstance
-				.post('/register/', {
-					username: data.username,
-					email: data.email,
-					password: data.password,
-					first_name: data.first_name,
-					last_name: data.last_name,
-					nickname: data.nickname,
-					birthday: data.birthday,
-					bio: data.bio,
-				})
-				.then((response) => {
-					axiosInstance
-						.post('/login/', { username: data.username, password: data.password })
-						.then((response) => {
-							localStorage.setItem('token', response.data.token);
-							navigate('/');
-						})
-						.catch((error) => {
-							console.error('Login error:', error);
-						});
-				});
-		}
+		// When Submitted
+		axiosInstance
+			.post('/register/', {
+				username: data.username,
+				email: data.email,
+				password: data.password,
+				first_name: data.first_name,
+				last_name: data.last_name,
+				nickname: data.nickname,
+				birthday: data.birthday,
+				bio: data.bio,
+			})
+			.then((response) => {
+				axiosInstance
+					.post('/login/', { username: data.username, password: data.password })
+					.then((response) => {
+						localStorage.setItem('token', response.data.token);
+						navigate('/');
+					})
+					.catch((error) => {
+						console.error('Login error:', error);
+					});
+			});
 	};
 
 	return (
@@ -66,7 +66,6 @@ export default function RegisterPanel() {
 									helperText={error ? error.message : ''}
 									margin='normal'
 									type='email'
-									required
 									fullWidth
 									autoComplete='email'
 									autoFocus
@@ -85,7 +84,6 @@ export default function RegisterPanel() {
 									error={!!error}
 									helperText={error ? error.message : ''}
 									margin='normal'
-									required
 									fullWidth
 									autoComplete='username'
 								/>
@@ -105,7 +103,6 @@ export default function RegisterPanel() {
 									helperText={error ? error.message : ''}
 									margin='normal'
 									type='password'
-									required
 									fullWidth
 									autoComplete='password'
 								/>
@@ -124,7 +121,6 @@ export default function RegisterPanel() {
 									helperText={error ? error.message : ''}
 									margin='normal'
 									type='password'
-									required
 									fullWidth
 									autoComplete='password'
 								/>
@@ -181,7 +177,9 @@ export default function RegisterPanel() {
 							Register
 						</Button>
 
-						<Link href='/login/'>{'Already have an account? Sign in'}</Link>
+						<Link href='/login/' className='text-light'>
+							{'Already have an account? Sign in'}
+						</Link>
 					</form>
 				)}
 			</div>

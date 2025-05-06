@@ -1,14 +1,23 @@
-import { TextField, Button, Link, FormControlLabel, Checkbox } from '@mui/material';
-import { Controller } from 'react-hook-form';
-import { useForm } from 'react-hook-form';
-import axiosInstance from './APIs/Axios.jsx';
+import { TextField, Button, Link } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { Controller, set, useForm } from 'react-hook-form';
+import axiosInstance from './APIs/Axios.jsx';
 import AlreadyLoggedIn from './AlreadyLoggedIn.jsx';
+import { useState, useEffect } from 'react';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 
-export default function LoginPanel() {
+export default function Login() {
 	const navigate = useNavigate();
-	const { handleSubmit, control } = useForm();
-	const submission = (data) => {
+	const formSchema = yup.object({
+		email: yup	.string().email('Invalid email format').required('Email is required!'),
+		password: yup.string().required('Password is required!'),
+	});
+
+	const { handleSubmit, control } = useForm({ resolver: yupResolver(formSchema) });
+
+	function submission(data) {
+		// When Submitted
 		axiosInstance
 			.post('/login/', { username: data.username, password: data.password })
 			.then((response) => {
@@ -19,15 +28,19 @@ export default function LoginPanel() {
 				alert('Login failed! Please check your credentials.');
 				console.error('Login error:', error);
 			});
-	};
+	}
 
 	return (
-		// FIX THE LOGOUT HERE
 		<main className='container-xs container-login glassy mx-auto'>
 			<div className='d-flex flex-column align-items-center text-center'>
 				<h3 style={{ fontSize: '2.5rem', color: '#5DD95D' }}>
-					<i className='bi-person-lock'></i>
-					{localStorage.getItem('token') ? <AlreadyLoggedIn /> : <span>&nbsp;Login</span>}
+					{localStorage.getItem('token') ? (
+						<AlreadyLoggedIn />
+					) : (
+						<span>
+							<i className='bi-box-arrow-in-right'></i>&nbsp;Login
+						</span>
+					)}
 				</h3>
 				{!localStorage.getItem('token') && (
 					<form onSubmit={handleSubmit(submission)}>
@@ -71,14 +84,18 @@ export default function LoginPanel() {
 								/>
 							)}
 						/>
-						<FormControlLabel control={<Checkbox value='remember' onChange={onchange} checked />} label='Remember me' />
+
 						<Button type='submit' fullWidth variant='contained' sx={{ mt: 2, mb: 2 }}>
 							Sign In
 						</Button>
 
-						<Link href='#'>Forgot password?</Link>
+						<Link href='/forgot-password/' className='text-light'>
+							Forgot password?
+						</Link>
 						<br />
-						<Link href='/register/'>{"Don't have an account? Sign Up"}</Link>
+						<Link href='/register/' className='text-light'>
+							{"Don't have an account? Sign Up"}
+						</Link>
 					</form>
 				)}
 			</div>

@@ -23,14 +23,15 @@ class CustomUserManager(BaseUserManager):
 
 class CustomUser(AbstractUser):
     username = models.CharField(max_length=30, unique=True)
-    nickname = models.CharField(max_length=30)
+    email = models.EmailField(unique=True)
+    nickname = models.CharField(max_length=30, blank=True, null=True)
     birthday = models.DateField(null=True, blank=True)
     # profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     bio = models.TextField(max_length=500, blank=True, null=True)
     # nationality = models.CharField(max_length=100, blank=True, null=True)
 
     # Specify the required fields for user creation
-    REQUIRED_FIELDS = ['email', 'username', 'password']
+    REQUIRED_FIELDS = ['email', 'password']
     objects = CustomUserManager()
 
     def __str__(self):
