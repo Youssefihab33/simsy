@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import './app.css';
 import ProtectedRoutes from './components/ProtectedRoutes';
 import Header from './components/Header';
@@ -8,13 +8,20 @@ import Login from './components/Login';
 import Footer from './components/Footer';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 export default function App() {
-	const location = useLocation();
+	const theme = createTheme({
+		palette: {
+			primary: { main: '#9a0606' },
+			secondary: { main: '#5dd95d' },
+			tertiary: { main: '#54a9de' },
+		},
+	});
 	// const noNavbar = ['/register/', '/login/'];
 
 	return (
-		<>
+		<ThemeProvider theme={theme}>
 			<Header />
 			<Routes>
 				<Route path='/login/' element={<Login />} />
@@ -26,9 +33,8 @@ export default function App() {
 					<Route path='/' element={<Homepage />} />
 					{/* <Route path='/about' element={<About />} /> */}
 				</Route>
-
 			</Routes>
 			<Footer />
-		</>
+		</ThemeProvider>
 	);
 }

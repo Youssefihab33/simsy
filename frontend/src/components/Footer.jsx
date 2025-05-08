@@ -1,13 +1,13 @@
 export default function Footer() {
 	return (
 		<footer>
-			<hr class='m-4' />
-			<div class='container-lg d-flex flex-wrap'>
-				<p class='col-lg-4'>©SIMSY-</p>
+			<hr className='m-4' />
+			<div className='container-lg d-flex flex-wrap'>
+				<p className='col-lg-4'>©SIMSY-</p>
 
-				<p class='col-lg-4 text-center'>SOMETHING</p>
+				<p className='col-lg-4 text-center'>SOMETHING</p>
 
-				<p class='col-lg-4 text-end'>SMTH</p>
+				<p className='col-lg-4 text-end'>SMTH</p>
 			</div>
 		</footer>
 	);

@@ -24,21 +24,10 @@
   font-size: 1.5rem;
 }
 
-.container{
-	color: #fff;
-}
-
 .glassy{
 	background: #ffffff11;
-    color: white;
-}
-
-.container-login{
-	padding: 50px;
 	border-radius: 25px;
-	min-width: 350px;
-	width: 35%;
-	backdrop-filter: blur(50px);
+    color: white;
 }
 
 .artistPicHover {

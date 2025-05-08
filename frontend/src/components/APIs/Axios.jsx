@@ -1,4 +1,3 @@
-import { red } from '@mui/material/colors';
 import axios from 'axios';
 
 const baseURL = 'http://127.0.0.1:8000';
@@ -32,8 +31,6 @@ axiosInstance.interceptors.response.use(
     (error) => {
         if (error.response.status === 401) {
             localStorage.removeItem('token')
-            console.error('Unauthorized access - redirecting to login');
-            window.location.href = '/login/';
         }
         return Promise.reject(error);
     }

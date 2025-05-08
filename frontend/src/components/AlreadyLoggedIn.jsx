@@ -19,9 +19,9 @@ export default function AlreadyLoggedIn() {
 
 	return (
 		<>
-			<span>
+			<h1 className='fw-bold secondaryColor my-3'>
 				<i className='bi-person-check'></i>&nbsp;Already logged in
-			</span>
+			</h1>
 			<br />
 			<a className='text-decoration-none text-info' href='/' style={{ fontSize: '1.5rem' }}>
 				<i className='bi-house'></i> Go to homepage

@@ -10,7 +10,7 @@ export default function Register() {
 	const navigate = useNavigate();
 	const formSchema = yup.object({
 		email: yup.string().email('Invalid email format').required('Email is required!'),
-		username: yup.string().required('Username is required!'),
+		username: yup.string().required('Username is required!').min(3, 'Username must be at least 3 characters long'),
 		password: yup.string().required('Password is required!').min(8, 'Password must be at least 8 characters long'),
 		password2: yup
 			.string()
