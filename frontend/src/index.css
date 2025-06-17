@@ -85,14 +85,6 @@ body {
 
 header {
 	background-color: transparent !important;
-	min-height: fit-content;
-	height: 15vh;
-	max-height: 20%;
-	margin-top: 20px;
-	margin-bottom: 50px;
-	justify-content: space-around;
-	align-items: center;
-	text-align: center;
 }
 
 footer {

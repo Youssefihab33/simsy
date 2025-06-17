@@ -2,9 +2,10 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth.decorators import login_required
 from django.dispatch import receiver
-from django.urls import reverse
 from rest_framework import viewsets, permissions
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from django_rest_passwordreset.signals import reset_password_token_created, post_password_reset
 from knox.models import AuthToken
@@ -50,7 +51,7 @@ class LoginViewSet(viewsets.ViewSet):
             user = authenticate(request, username=username, password=password)
             if user:
                 send_email('Login Notification - SIMSY',
-                           'email/login.html', user, 'DO LATER')
+                           'email/login.html', user, 'DO LATER')                # A DO LATER HERE
                 # Create token for the user
                 token = AuthToken.objects.create(user)[1]
                 return Response({'user': self.serializer_class(user).data, 'token': token})
@@ -69,9 +70,22 @@ class RegisterViewSet(viewsets.ViewSet):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data)
+            return Response(serializer.data, status=201)
         else:
             return Response(serializer.errors, status=400)
+
+
+class UserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            serializer = UserSerializer(request.user)
+            print("Done:", serializer.data)
+            return Response(serializer.data, status=200)
+        except CustomUser.DoesNotExist:
+            # Handle the case where a profile doesn't exist (optional)
+            return Response({'error': 'Profile not found'}, status=404)
 
 
 @receiver(reset_password_token_created)
@@ -84,4 +98,5 @@ def password_reset_token_created(reset_password_token, *args, **kwargs):
 @receiver(post_password_reset)
 def password_reset(sender, **kwargs):
     send_email("Password Changed Successfully - SIMSY",
+               # A DO LATER HERE
                'email/password_changed.html', kwargs['user'], 'DO LATER')

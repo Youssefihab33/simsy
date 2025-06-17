@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
+import { UserProvider } from './components/APIs/Context';
 import './app.css';
-import ProtectedRoutes from './components/ProtectedRoutes';
+import ProtectedRoutes from './components/APIs/ProtectedRoutes';
 import Header from './components/Header';
 import Homepage from './components/Homepage';
 import Register from './components/Register';
@@ -18,23 +19,25 @@ export default function App() {
 			tertiary: { main: '#54a9de' },
 		},
 	});
-	// const noNavbar = ['/register/', '/login/'];
+	const noNavbar = ['/register/', '/login/'];
 
 	return (
 		<ThemeProvider theme={theme}>
-			<Header />
-			<Routes>
-				<Route path='/login/' element={<Login />} />
-				<Route path='/register/' element={<Register />} />
-				<Route path='/forgot-password/' element={<ForgotPassword />} />
-				<Route path='/reset-password/:token' element={<ResetPassword />} />
+			<UserProvider>
+				<Header />
+				<Routes>
+					<Route path='/login/' element={<Login />} />
+					<Route path='/register/' element={<Register />} />
+					<Route path='/forgot-password/' element={<ForgotPassword />} />
+					<Route path='/reset-password/:token' element={<ResetPassword />} />
 
-				<Route element={<ProtectedRoutes />}>
-					<Route path='/' element={<Homepage />} />
-					{/* <Route path='/about' element={<About />} /> */}
-				</Route>
-			</Routes>
-			<Footer />
+					<Route element={<ProtectedRoutes />}>
+						<Route path='/' element={<Homepage />} />
+						{/* <Route path='/about' element={<About />} /> */}
+					</Route>
+				</Routes>
+				<Footer />
+			</UserProvider>
 		</ThemeProvider>
 	);
 }

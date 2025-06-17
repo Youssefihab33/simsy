@@ -43,7 +43,7 @@ export default function Homepage() {
 	// }, false);
 
 	return (
-		<section class='container'>
+		<section class='container my-5'>
 			
 			<Tabs defaultActiveKey='new' id='homepageTabs' className='mb-3' justify>
 				<Tab eventKey='favorites' title={<span class='homeNav text-warning bi-star-fill'> Favorites (0)</span>}>

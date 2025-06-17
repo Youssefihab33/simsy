@@ -26,7 +26,8 @@ class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     nickname = models.CharField(max_length=30, blank=True, null=True)
     birthday = models.DateField(null=True, blank=True)
-    # profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
+    profile_picture = models.ImageField(
+        upload_to='users/profile_pic/', blank=True, null=True)
     bio = models.TextField(max_length=500, blank=True, null=True)
     # nationality = models.CharField(max_length=100, blank=True, null=True)
 

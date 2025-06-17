@@ -1,4 +1,4 @@
-import axiosInstance from './APIs/Axios';
+import axiosInstance from '../APIs/Axios';
 import { useNavigate } from 'react-router-dom';
 
 export default function AlreadyLoggedIn() {

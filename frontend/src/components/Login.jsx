@@ -3,7 +3,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import { useNavigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import axiosInstance from './APIs/Axios.jsx';
-import AlreadyLoggedIn from './AlreadyLoggedIn.jsx';
+import AlreadyLoggedIn from './snippets/AlreadyLoggedIn.jsx';
 import { useState } from 'react';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -27,8 +27,7 @@ export default function Login() {
 
 	const submission = (data) => {
 		// When Submitted
-		axiosInstance.post('/login/', { username: data.username, password: data.password })
-		.then((response) => {
+		axiosInstance.post('/login/', { username: data.username, password: data.password }).then((response) => {
 			if (response.status === 200) {
 				localStorage.setItem('token', response.data.token);
 				navigate('/');
@@ -36,7 +35,7 @@ export default function Login() {
 				setInvalidCredentials(true);
 			}
 		});
-	}
+	};
 
 	return (
 		<Container maxWidth='sm'>

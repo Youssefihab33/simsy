@@ -2,7 +2,7 @@ import { TextField, Button, Link } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import axiosInstance from './APIs/Axios.jsx';
-import AlreadyLoggedIn from './AlreadyLoggedIn.jsx';
+import AlreadyLoggedIn from './snippets/AlreadyLoggedIn.jsx';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
