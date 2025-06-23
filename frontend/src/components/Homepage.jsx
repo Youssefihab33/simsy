@@ -1,16 +1,36 @@
 import Tab from 'react-bootstrap/Tab';
 import Tabs from 'react-bootstrap/Tabs';
+import axiosInstance from './APIs/Axios';
+import ShowCard from './snippets/ShowCard';
+import { useState, useEffect } from 'react';
 
 export default function Homepage() {
+	const [loading, setLoading] = useState(true);
+	const [shows, setShows] = useState([]);
+
+	useEffect(() => {
+		// Fetch shows data when the component mounts
+		const fetchShows = async () => {
+			try {
+				const response = await axiosInstance.get('/shows/show/');
+				setShows(response.data);
+				console.log('Retrieved data: ', response.data);
+			} catch (error) {
+				console.error('Error fetching shows data:', error);
+			}
+			setLoading(false);
+		};
+		fetchShows();
+	}, []);
 	// const [currentTab, setCurrentTab] = useState(0);
-	
+
 	// // Random Shows refresh
 	// function randomShowsRefresh(){
 	//     $.ajax({
 	//         type: "GET",
 	//         url: "{% url 'random_shows_query' %}",
 	//         data: {
-	//             template: "components/bgShowCard.html"
+	//             template: "components/showCard.html"
 	//         },
 	//         success: function(data){
 	//             $("#randomShowsDiv").html(data)
@@ -41,43 +61,54 @@ export default function Homepage() {
 	//         $("[data-name=random]").click()
 	//     }
 	// }, false);
-
-	return (
-		<section class='container my-5'>
-			
-			<Tabs defaultActiveKey='new' id='homepageTabs' className='mb-3' justify>
-				<Tab eventKey='favorites' title={<span class='homeNav text-warning bi-star-fill'> Favorites (0)</span>}>
-                    Favorites
-                </Tab>
-				<Tab eventKey='watchlist' title={<span class='homeNav text-info bi-list-columns'> Watchlist (0)</span>}>
-					Watchlist
-				</Tab>
-				<Tab eventKey='new' title={<span class='homeNav primaryColor bi-fire'> New</span>}>
-					New
-				</Tab>
-				<Tab eventKey='history' title={<span class='homeNav tertiaryColor bi-clock-history'> History</span>}>
-					History
-				</Tab>
-				<Tab eventKey='random' title={<span class='homeNav secondaryColor bi-magic'> For you</span>}>
-					<span class='h3 primaryColor mb-5'>
-						<b class='bi-arrow-repeat' onclick='randomShowsRefresh()'></b>
-					</span>
-					<br />
-					<div id='randomShowsDiv'>RANDOM</div>
-				</Tab>
-			</Tabs>
-
-			<div class='text-end mt-3 me-5'>
-				<a class='text-info text-decoration-none' href="{% url 'explore' %}">
-					Discover <strong>NEW</strong> Content?
-					<br />
-					Go to &nbsp;
-					<strong>
-						<i class='bi-search-heart'></i> Explore
-					</strong>
-				</a>
+	if (loading) {
+		return (
+			<div className='text-center text-light mt-5'>
+				<h3>Loading...</h3>
 			</div>
+		);
+	} else {
+		return (
+			<section class='container my-5'>
+				<Tabs defaultActiveKey='new' id='homepageTabs' className='mb-3' justify>
+					<Tab eventKey='favorites' title={<span class='homeNav text-warning bi-star-fill'> Favorites (0)</span>}>
+					
+					</Tab>
+					<Tab eventKey='watchlist' title={<span class='homeNav text-info bi-list-columns'> Watchlist (0)</span>}>
+						{shows.map((show) => {
+							return <ShowCard key={show.id} show={show} />;
+						})}
+					</Tab>
+					<Tab eventKey='new' title={<span class='homeNav primaryColor bi-fire'> New</span>}>
+						{shows.map((show) => {
+							return <ShowCard key={show.id} show={show} />;
+						})}
+					</Tab>
+					<Tab eventKey='history' title={<span class='homeNav tertiaryColor bi-clock-history'> History</span>}>
+						{shows.map((show) => {
+							return <ShowCard key={show.id} show={show} />;
+						})}
+					</Tab>
+					<Tab eventKey='random' title={<span class='homeNav secondaryColor bi-magic'> For you</span>}>
+						<span class='h3 primaryColor mb-5'>
+							<b class='bi-arrow-repeat' onclick='randomShowsRefresh()'></b>
+						</span>
+						<br />
+						<div id='randomShowsDiv'>RANDOM</div>
+					</Tab>
+				</Tabs>
 
-		</section>
-	);
+				<div class='text-end mt-3 me-5'>
+					<a class='text-info text-decoration-none' href="{% url 'explore' %}">
+						Discover <strong>NEW</strong> Content?
+						<br />
+						Go to &nbsp;
+						<strong>
+							<i class='bi-search-heart'></i> Explore
+						</strong>
+					</a>
+				</div>
+			</section>
+		);
+	}
 }

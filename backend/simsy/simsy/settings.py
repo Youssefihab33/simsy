@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'knox',
     'corsheaders',
     'users',
+    'shows',
 ]
 
 MIDDLEWARE = [
@@ -106,7 +107,7 @@ DEFAULT_FROM_EMAIL = os.getenv('EMAIL_DEFAULT_FROM')
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR.parent.parent / 'data' / 'db.sqlite3',
     }
 }
 

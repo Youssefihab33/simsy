@@ -1,4 +1,9 @@
 from django.db import models
+from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
+from datetime import date; this_year = date.today().strftime("%Y")
+from .storage import OverwriteStorage, File_Rename
+User = get_user_model()
 
 # Create your models here.
 

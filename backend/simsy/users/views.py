@@ -81,7 +81,6 @@ class UserView(APIView):
     def get(self, request):
         try:
             serializer = UserSerializer(request.user)
-            print("Done:", serializer.data)
             return Response(serializer.data, status=200)
         except CustomUser.DoesNotExist:
             # Handle the case where a profile doesn't exist (optional)
