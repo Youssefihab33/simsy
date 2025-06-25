@@ -2,7 +2,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import *
-# from users.serializers import UserSerializer
+from users.serializers import UserSerializer
 User = get_user_model()
 
 
@@ -88,12 +88,13 @@ class ShowSerializer(serializers.ModelSerializer):
     rating = RatingSerializer(read_only=True)
     artists = ArtistSerializer(many=True, read_only=True)
 
-    episodes = models.JSONField(encoder=None, decoder=None, default=dict, blank=True)
+    episodes = models.JSONField(
+        encoder=None, decoder=None, default=dict, blank=True)
 
-    # users = UserSerializer(many=True, read_only=True)
+    users = UserSerializer(many=True, read_only=True)
 
-    # favorites = UserSerializer(many=True, read_only=True)
-    # watchlist = UserSerializer(many=True, read_only=True)
+    favorites = UserSerializer(many=True, read_only=True)
+    watchlist = UserSerializer(many=True, read_only=True)
 
     finalized = serializers.BooleanField(read_only=True)
 
@@ -102,6 +103,4 @@ class ShowSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Show
-        fields = ['name', 'year', 'kind', 'sample', 'captions', 'image', 'imdb', 'description', 'countries', 'languages', 'genres',
-                  'labels', 'rating', 'artists', 'episodes', 'finalized', 'created', 'updated']
-        
+        fields = '__all__'

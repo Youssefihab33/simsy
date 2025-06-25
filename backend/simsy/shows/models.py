@@ -94,8 +94,6 @@ class Show(models.Model):
 
     episodes    = models.JSONField(encoder=None, decoder=None, default=dict, blank=True)
 
-    users       = models.ManyToManyField(User, related_name='shows', blank=True, default=User.objects.all)
-
     favorites   = models.ManyToManyField(User, related_name='favorite_shows', blank=True)
     watchlist   = models.ManyToManyField(User, related_name='watchlist_shows', blank=True)
 

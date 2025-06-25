@@ -32,7 +32,7 @@ admin.site.register(Rating, ratingAdminDisplay)
 
 class showAdminDisplay(admin.ModelAdmin):
     list_display = ['id','name','year','kind', 'sample','captions','rating','finalized','image']
-    list_filter = ['finalized','users', 'labels', 'favorites','watchlist','kind','sample','languages','captions','rating','year']
+    list_filter = ['finalized', 'labels', 'favorites','watchlist','kind','sample','languages','captions','rating','year']
     ordering = ['-id']
     list_max_show_all = 5000
     list_per_page = 1000

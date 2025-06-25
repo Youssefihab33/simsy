@@ -1,6 +1,9 @@
 from rest_framework import permissions, viewsets
 from .serializers import *
+import random
 
+# Keep the commented-out code for future reference but they won't work due to performance issues
+"""
 class GenreView(viewsets.ModelViewSet):
     queryset = Genre.objects.all()
     serializer_class = GenreSerializer
@@ -32,6 +35,17 @@ class ArtistView(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
 class ShowView(viewsets.ModelViewSet):
-    queryset = Show.objects.order_by('-created')[:10]
+    queryset = Show.objects.all()
+    serializer_class = ShowSerializer
+    permission_classes = [permissions.AllowAny]
+"""
+
+class NewShowsView(viewsets.ModelViewSet):
+    queryset = Show.objects.order_by('-updated')[:15]
+    serializer_class = ShowSerializer
+    permission_classes = [permissions.AllowAny]
+
+class RandomShowsView(viewsets.ModelViewSet):
+    queryset = random.sample(list(Show.objects.all()), 15) if Show.objects.all().count() > 15 else Show.objects.all()
     serializer_class = ShowSerializer
     permission_classes = [permissions.AllowAny]
