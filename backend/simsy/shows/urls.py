@@ -8,7 +8,10 @@ router = DefaultRouter()
 # router.register('language', LanguageView, basename='language')
 # router.register('country', CountryView, basename='country')
 # router.register('artist', ArtistView, basename='artist')
+router.register('favoriteShows', FavoriteShowsView, basename='favoriteShows')
+router.register('watchlistShows', WatchlistShowsView, basename='watchlistShows')
 router.register('newShows', NewShowsView, basename='newShows')
+router.register('historyShows', HistoryShowsView, basename='historyShows')
 router.register('randomShows', RandomShowsView, basename='randomShows')
 
 urlpatterns = router.urls

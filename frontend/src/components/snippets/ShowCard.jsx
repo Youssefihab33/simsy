@@ -1,185 +1,203 @@
 import { useNavigate } from 'react-router-dom';
-import $ from 'jquery';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import axiosInstance from '../APIs/Axios';
+
+// Debounce helper function (can be a utility outside the component, or inline for simplicity here)
+const debounce = (func, delay) => {
+    let timeout;
+    return function executed(...args) {
+        const context = this;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), delay);
+    };
+};
 
 export default function ShowCard({
-	show = {
-		id: 1,
-		kind: 'film',
-		year: 2023,
-		languages: ['English'],
-		countries: ['USA'],
-		genres: ['Drama', 'Action'],
-		rating: 8.5,
-		captions: true,
-		favorites: [],
-		watchlist: [],
-		updated: '2023-10-01T12:00:00Z',
-		name: 'Show Name',
-		sample: false,
-		description: 'This is a brief description of the show.',
-		image: 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcQCAVNHSTMg1kboB9nLrl_xjF7cJQJsjj8fNPqkYwb8pc_mmpe9&psig=AOvVaw1drnveOAIfTpaxcIltJK22&ust=1750255082518000&source=images&cd=vfe&opi=89978449&ved=0CBAQjRxqFwoTCIjzsrXO-I0DFQAAAAAdAAAAABAE',
-	},
+    show = {
+        id: 1,
+        kind: 'film',
+        year: 2023,
+        languages: ['English'],
+        countries: ['USA'],
+        genres: ['Drama', 'Action'],
+        rating: 8.5,
+        captions: true,
+        // Assuming these come from your API directly for initial state
+        is_favorited: false, // Add this to your default show prop structure
+        is_watchlisted: false, // Add this to your default show prop structure
+        updated: '2023-10-01T12:00:00Z',
+        name: 'Show Name',
+        sample: false,
+        description: 'This is a brief description of the show.',
+        image: 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcQCAVNHSTMg1kboB9nLrl_xjF7cJQJsjj8fNPqkYwb8pc_mmpe9&psig=AOvVaw1drnveOAIfTpaxcIltJK22&ust=1750255082518000&source=images&cd=vfe&opi=89978449&ved=0CBAQjRxqFwoTCIjzsrXO-I0DFQAAAAAdAAAAABAE',
+    },
 }) {
-	const navigate = useNavigate();
+    const navigate = useNavigate();
 
-	function toggle_favorite(show_id) {
-		$.ajax({
-			type: 'GET',
-			url: "/toggle_fav/",
-			data: {
-				showID: show_id,
-			},
-			success: function (data) {
-				if (data.status == 500) {
-					alert(data.message);
-				}
-				if (data.current_state == true) {
-					$(`[id=favoriteBtn${show_id}]`).each(function () {
-						$(this).removeclassName('text-secondary').addclassName('text-warning');
-					});
-				} else if (data.current_state == false) {
-					$(`[id=favoriteBtn${show_id}]`).each(function () {
-						$(this).removeclassName('text-warning').addclassName('text-secondary');
-					});
-				}
-			},
-		});
-	}
+    // Use React state to manage favorited and watchlisted status
+    // Initialize with the prop, which should come from your fetched show data
+    const [isFavorited, setIsFavorited] = useState(show.is_favorited);
+    const [isWatchlisted, setIsWatchlisted] = useState(show.is_watchlisted);
 
-	function toggle_watchlist(show_id) {
-		$.ajax({
-			type: 'GET',
-			url: "/toggle_watchlist/",
-			data: {
-				showID: show_id,
-			},
-			success: function (data) {
-				if (data.status == 500) {
-					alert(data.message);
-				}
-				if (data.current_state == true) {
-					$(`[id=watchlistBtn${show_id}]`).each(function () {
-						$(this).removeclassName('text-secondary').addclassName('text-info');
-					});
-				} else if (data.current_state == false) {
-					$(`[id=watchlistBtn${show_id}]`).each(function () {
-						$(this).removeclassName('text-info').addclassName('text-secondary');
-					});
-				}
-			},
-		});
-	}
+    // State to manage loading status for each toggle button
+    const [isLoadingFav, setIsLoadingFav] = useState(false);
+    const [isLoadingWatchlist, setIsLoadingWatchlist] = useState(false);
 
-	return (
-		<>
-			<div className='card d-inline-flex text-center text-light bg-transparent border-0 m-1'>
-				<div className='showCard-container'>
-					<div className='showCard'>
-						<div className='showCard-front bg-dark img-container' onClick={() => navigate(`/show/${show.id}`)}>
-							{show.sample && (
-								<div className='ribbon ribbon-top-left'>
-									<span>Sample</span>
-								</div>
-							)}
-							<img className='showCard-image d-block' src={show.image} alt={show.name} />
-							<div className='showCard-front-textbox'>
-								<div className='showCard-front-text'>{show.name}</div>
-							</div>
-						</div>
-						<div
-							className='showCard-transparent-overlay'
-							// onClick={(event) => {
-							// 	event.stopPropagation();
-							// 	event.stopDefault();
-							// }}
-						>
-							{show.captions && <i className='bi-badge-cc me-1'></i>}
-							<span
-								id='favoriteBtn{{show.id}}'
-								onClick={toggle_favorite(show.id)}
-								className='bi-star-fill {% if request.user in show.favorites.all %}text-warning{% else %}text-secondary{% endif %} me-1'
-							></span>
-							<span
-								id='watchlistBtn{{show.id}}'
-								onClick={toggle_watchlist(show.id)}
-								className='bi-watch {% if request.user in show.watchlist.all %}text-info{% else %}text-secondary{% endif %} me-1'
-							></span>
-							<span
-								id='info{{show.id}}target'
-								className='bi-info-circle me-1'
-								tabIndex='0'
-								style={{ cursor: 'help' }}
-								data-bs-toggle='popover'
-								data-bs-trigger='hover focus'
-								data-bs-title='This Should Be Replaced By JavaScript!'
-							></span>
-						</div>
-					</div>
-				</div>
-			</div>
+    // Use a ref to store the latest favorite/watchlist state for the debounce callback
+    // This prevents the debounce callback from capturing stale state
+    const isFavoritedRef = useRef(isFavorited);
+    const isWatchlistedRef = useRef(isWatchlisted);
 
-			<div id='info{{show.id}}' className='d-none'>
-				{/* id#{{show.id}} | {{show.kind|capfirst}} | {{show.year}}</br></br>
-    {% for language in show.languages.all %}{% if forloop.counter > 1 %}, {% endif %}<span>{{language}}</span>{% endfor %}</br></br>
-    {% for country in show.countries.all %}{% if forloop.counter > 1 %}, {% endif %}<span>{{country}}</span>{% endfor %}</br></br>
-    {% for genre in show.genres.all %}{% if forloop.counter > 1 %}, {% endif %}{{genre}}{% endfor %}<br/></br>
-    {{show.rating}}
-    <hr> */}
-				{/* <small className="text-muted">Last Edited {{show.updated|timesince}} ago</small><br/> */}
-			</div>
-		</>
-	);
-}
+    useEffect(() => {
+        isFavoritedRef.current = isFavorited;
+    }, [isFavorited]);
 
-{
-	/* <style>
+    useEffect(() => {
+        isWatchlistedRef.current = isWatchlisted;
+    }, [isWatchlisted]);
 
-</style>
+    // Update local state if the 'show' prop changes (e.g., when parent re-fetches data)
+    useEffect(() => {
+        setIsFavorited(show.is_favorited);
+        setIsWatchlisted(show.is_watchlisted);
+    }, [show.is_favorited, show.is_watchlisted]);
 
-{% for show in shows %}
-<script>
-    $(document).ready(function() {
-        var options = {
-            html: true,
-            title: "{{show.name}}",
-            content: $('[id=info{{show.id}}]').html()
+
+    // Convert to an async function using axiosInstance
+    const actualToggleFavorite = useCallback(async (showId) => {
+        if (isLoadingFav) return; // Prevent multiple requests if one is already pending
+        setIsLoadingFav(true);
+
+        try {
+            // Replace $.ajax with axiosInstance
+            const response = await axiosInstance.get(`/toggle_fav/?showID=${showId}`);
+            if (response.data.status === 500) {
+                alert(response.data.message);
+            } else {
+                // Update React state based on the response
+                setIsFavorited(response.data.current_state);
+            }
+        } catch (error) {
+            console.error('Error toggling favorite:', error);
+            // You might want to show a more user-friendly error message here
+            alert('Error toggling favorite. Please try again.');
+        } finally {
+            setIsLoadingFav(false);
         }
-        $('[id=info{{show.id}}target]').each(function(){var popover = new bootstrap.Popover($(this), options)})
-    });
-</script>
-{% endfor %}
-<script>
-    
-</script>
- */
+    }, [isLoadingFav]); // Dependency on isLoadingFav ensures we use the latest value
+
+    const actualToggleWatchlist = useCallback(async (showId) => {
+        if (isLoadingWatchlist) return; // Prevent multiple requests if one is already pending
+        setIsLoadingWatchlist(true);
+
+        try {
+            // Replace $.ajax with axiosInstance
+            const response = await axiosInstance.get(`/toggle_watchlist/?showID=${showId}`);
+            if (response.data.status === 500) {
+                alert(response.data.message);
+            } else {
+                // Update React state based on the response
+                setIsWatchlisted(response.data.current_state);
+            }
+        } catch (error) {
+            console.error('Error toggling watchlist:', error);
+            // You might want to show a more user-friendly error message here
+            alert('Error toggling watchlist. Please try again.');
+        } finally {
+            setIsLoadingWatchlist(false);
+        }
+    }, [isLoadingWatchlist]); // Dependency on isLoadingWatchlist
+
+
+    // Debounced versions of the toggle functions
+    // Using useCallback and useRef to ensure these debounced functions don't change unnecessarily
+    const debouncedToggleFavorite = useCallback(debounce((showId) => {
+        actualToggleFavorite(showId);
+    }, 300), [actualToggleFavorite]); // Debounce for 300ms
+
+    const debouncedToggleWatchlist = useCallback(debounce((showId) => {
+        actualToggleWatchlist(showId);
+    }, 300), [actualToggleWatchlist]); // Debounce for 300ms
+
+
+    // Function to handle click, calls the debounced function
+    const handleFavoriteClick = (e) => {
+        e.stopPropagation(); // Prevent the card's navigation click
+        debouncedToggleFavorite(show.id);
+    };
+
+    const handleWatchlistClick = (e) => {
+        e.stopPropagation(); // Prevent the card's navigation click
+        debouncedToggleWatchlist(show.id);
+    };
+
+
+    return (
+        <>
+            <div className='card d-inline-flex text-center text-light bg-transparent border-0 m-1'>
+                <div className='showCard-container'>
+                    <div className='showCard'>
+                        <div className='showCard-front bg-dark img-container' onClick={() => navigate(`/show/${show.id}`)}>
+                            {show.sample && (
+                                <div className='ribbon ribbon-top-left'>
+                                    <span>Sample</span>
+                                </div>
+                            )}
+                            <img className='showCard-image d-block' src={show.image} alt={show.name} />
+                            <div className='showCard-front-textbox'>
+                                <div className='showCard-front-text'>{show.name}</div>
+                            </div>
+                        </div>
+                        <div
+                            className='showCard-transparent-overlay'
+                            // The original event handlers were probably causing issues or were for jQuery popovers.
+                            // Removed the commented out onClick with stopPropagation/Default here, as the new onClick on spans handles it.
+                        >
+                            {show.captions && <i className='bi-badge-cc me-1'></i>}
+
+                            {/* Favorite Button */}
+                            <span
+                                id={`favoriteBtn${show.id}`} // Using template literal for ID
+                                onClick={handleFavoriteClick} // Use the new handler
+                                className={`bi-star-fill ${isFavorited ? 'text-warning' : 'text-secondary'} me-1 ${isLoadingFav ? 'disabled-icon' : ''}`} // Add disabled class
+                                style={{ cursor: isLoadingFav ? 'not-allowed' : 'pointer' }} // Visual feedback for disabled
+                            ></span>
+
+                            {/* Watchlist Button */}
+                            <span
+                                id={`watchlistBtn${show.id}`} // Using template literal for ID
+                                onClick={handleWatchlistClick} // Use the new handler
+                                className={`bi-watch ${isWatchlisted ? 'text-info' : 'text-secondary'} me-1 ${isLoadingWatchlist ? 'disabled-icon' : ''}`} // Add disabled class
+                                style={{ cursor: isLoadingWatchlist ? 'not-allowed' : 'pointer' }} // Visual feedback for disabled
+                            ></span>
+
+                            {/* Info Button - Keep as is, ensure popover is handled via JS (likely in Homepage.jsx or a separate useEffect) */}
+                            <span
+                                id={`info${show.id}target`} // Using template literal for ID
+                                className='bi-info-circle me-1'
+                                tabIndex='0'
+                                style={{ cursor: 'help' }}
+                                data-bs-toggle='popover'
+                                data-bs-trigger='hover focus'
+                                data-bs-title='This Should Be Replaced By JavaScript!' // This will need dynamic update via useEffect as well
+                            ></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Hidden div for popover content - you'll likely need to generate this dynamically */}
+            {/* from props or an effect if your info is truly dynamic per show */}
+            <div id={`info${show.id}`} className='d-none'>
+                 {/* Replace with actual React rendering of show details if needed */}
+                {/* Example:
+                <div>ID: {show.id} | {show.kind} | {show.year}</div>
+                <div>Languages: {show.languages.join(', ')}</div>
+                <div>Countries: {show.countries.join(', ')}</div>
+                <div>Genres: {show.genres.join(', ')}</div>
+                <div>Rating: {show.rating}</div>
+                */}
+            </div>
+        </>
+    );
 }
-
-// import Card from '@mui/material/Card';
-// import CardActions from '@mui/material/CardActions';
-// import CardContent from '@mui/material/CardContent';
-// import CardMedia from '@mui/material/CardMedia';
-// import Button from '@mui/material/Button';
-// import Typography from '@mui/material/Typography';
-
-// export default function ShowCard({ showName = "Show Name", showDescription = "This is a brief description of the show.", showImage = "https://www.google.com/url?sa=i&url=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcQCAVNHSTMg1kboB9nLrl_xjF7cJQJsjj8fNPqkYwb8pc_mmpe9&psig=AOvVaw1drnveOAIfTpaxcIltJK22&ust=1750255082518000&source=images&cd=vfe&opi=89978449&ved=0CBAQjRxqFwoTCIjzsrXO-I0DFQAAAAAdAAAAABAE" }) {
-//   return (
-//     <Card sx={{ maxWidth: 250 }}>
-//       <CardMedia
-//         sx={{ height: 300 }}
-//         image= {showImage}
-//         title={showName}
-//       />
-//       <CardContent>
-//         <Typography gutterBottom variant="h5" component="div">
-//           {showName}
-//         </Typography>
-//         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-//           {showDescription}
-//         </Typography>
-//       </CardContent>
-//       <CardActions>
-//         <Button size="small">Details</Button>
-//       </CardActions>
-//     </Card>
-//   );
-// }

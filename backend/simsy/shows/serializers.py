@@ -70,6 +70,17 @@ class ArtistSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class ShowCardSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(read_only=True)
+    sample = serializers.BooleanField(read_only=True)
+    captions = serializers.BooleanField(read_only=True)
+    image = serializers.ImageField(allow_empty_file=True, read_only=True)
+
+    class Meta:
+        model = Show
+        fields = ['id', 'name', 'sample', 'captions', 'image']
+
+
 class ShowSerializer(serializers.ModelSerializer):
     name = serializers.CharField(read_only=True)
     year = serializers.CharField(read_only=True)
@@ -88,10 +99,7 @@ class ShowSerializer(serializers.ModelSerializer):
     rating = RatingSerializer(read_only=True)
     artists = ArtistSerializer(many=True, read_only=True)
 
-    episodes = models.JSONField(
-        encoder=None, decoder=None, default=dict, blank=True)
-
-    users = UserSerializer(many=True, read_only=True)
+    episodes = models.JSONField(encoder=None, decoder=None, default=dict, blank=True)
 
     favorites = UserSerializer(many=True, read_only=True)
     watchlist = UserSerializer(many=True, read_only=True)
