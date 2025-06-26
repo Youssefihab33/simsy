@@ -15,20 +15,9 @@ const debounce = (func, delay) => {
 export default function ShowCard({
     show = {
         id: 1,
-        kind: 'film',
-        year: 2023,
-        languages: ['English'],
-        countries: ['USA'],
-        genres: ['Drama', 'Action'],
-        rating: 8.5,
-        captions: true,
-        // Assuming these come from your API directly for initial state
-        is_favorited: false, // Add this to your default show prop structure
-        is_watchlisted: false, // Add this to your default show prop structure
-        updated: '2023-10-01T12:00:00Z',
         name: 'Show Name',
         sample: false,
-        description: 'This is a brief description of the show.',
+		captions: true,
         image: 'https://www.google.com/url?sa=i&url=https%3A%2F%2Fencrypted-tbn0.gstatic.com%2Fimages%3Fq%3Dtbn%3AANd9GcQCAVNHSTMg1kboB9nLrl_xjF7cJQJsjj8fNPqkYwb8pc_mmpe9&psig=AOvVaw1drnveOAIfTpaxcIltJK22&ust=1750255082518000&source=images&cd=vfe&opi=89978449&ved=0CBAQjRxqFwoTCIjzsrXO-I0DFQAAAAAdAAAAABAE',
     },
 }) {
@@ -153,13 +142,13 @@ export default function ShowCard({
                             // The original event handlers were probably causing issues or were for jQuery popovers.
                             // Removed the commented out onClick with stopPropagation/Default here, as the new onClick on spans handles it.
                         >
-                            {show.captions && <i className='bi-badge-cc me-1'></i>}
+                            {show.captions && <i className='bi-badge-cc text-secondary mx-1'></i>}
 
                             {/* Favorite Button */}
                             <span
                                 id={`favoriteBtn${show.id}`} // Using template literal for ID
                                 onClick={handleFavoriteClick} // Use the new handler
-                                className={`bi-star-fill ${isFavorited ? 'text-warning' : 'text-secondary'} me-1 ${isLoadingFav ? 'disabled-icon' : ''}`} // Add disabled class
+                                className={`bi-star-fill ${isFavorited ? 'text-warning' : 'text-secondary'} mx-1 ${isLoadingFav ? 'disabled-icon' : ''}`} // Add disabled class
                                 style={{ cursor: isLoadingFav ? 'not-allowed' : 'pointer' }} // Visual feedback for disabled
                             ></span>
 
@@ -167,14 +156,14 @@ export default function ShowCard({
                             <span
                                 id={`watchlistBtn${show.id}`} // Using template literal for ID
                                 onClick={handleWatchlistClick} // Use the new handler
-                                className={`bi-watch ${isWatchlisted ? 'text-info' : 'text-secondary'} me-1 ${isLoadingWatchlist ? 'disabled-icon' : ''}`} // Add disabled class
+                                className={`bi-watch ${isWatchlisted ? 'text-info' : 'text-secondary'} mx-1 ${isLoadingWatchlist ? 'disabled-icon' : ''}`} // Add disabled class
                                 style={{ cursor: isLoadingWatchlist ? 'not-allowed' : 'pointer' }} // Visual feedback for disabled
                             ></span>
 
                             {/* Info Button - Keep as is, ensure popover is handled via JS (likely in Homepage.jsx or a separate useEffect) */}
                             <span
                                 id={`info${show.id}target`} // Using template literal for ID
-                                className='bi-info-circle me-1'
+                                className='bi-info-circle text-secondary mx-1'
                                 tabIndex='0'
                                 style={{ cursor: 'help' }}
                                 data-bs-toggle='popover'

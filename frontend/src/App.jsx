@@ -10,6 +10,7 @@ import Footer from './components/Footer';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import ShowDetail from './components/ShowDetail';
 
 export default function App() {
 	const theme = createTheme({
@@ -27,6 +28,7 @@ export default function App() {
 				<Header />
 				<Routes>
 					<Route path='/login/' element={<Login />} />
+					<Route path='/show/:show_id' element={<ShowDetail />} />
 					<Route path='/register/' element={<Register />} />
 					<Route path='/forgot-password/' element={<ForgotPassword />} />
 					<Route path='/reset-password/:token' element={<ResetPassword />} />

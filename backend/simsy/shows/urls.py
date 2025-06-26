@@ -1,4 +1,5 @@
 from rest_framework.routers import DefaultRouter
+from django.urls import path
 from .views import *
 
 router = DefaultRouter()
@@ -13,5 +14,11 @@ router.register('watchlistShows', WatchlistShowsView, basename='watchlistShows')
 router.register('newShows', NewShowsView, basename='newShows')
 router.register('historyShows', HistoryShowsView, basename='historyShows')
 router.register('randomShows', RandomShowsView, basename='randomShows')
+# Your custom URL pattern
+# Note: You need to import ShowDetailView from your views.py
+urlpatterns = [
+    path('show/<int:show_id>/', ShowDetailView.as_view(), name='show-detail'),
+]
 
-urlpatterns = router.urls
+# Append the router's URLs to your custom URLs
+urlpatterns += router.urls
