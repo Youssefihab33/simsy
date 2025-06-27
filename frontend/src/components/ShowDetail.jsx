@@ -364,10 +364,10 @@ export default function ShowDetails() {
 						left: '50%',
 						transform: 'translate(-50%, -50%)',
 						width: '90vw',
-						maxWidth: 1200,
-						bgcolor: 'background.paper',
+						// maxWidth: 1200,
+						bgcolor: accentColor,
 						boxShadow: 24,
-						p: { xs: 1, md: 3 },
+						p: { xs: 1, md: 0.7 },
 						borderRadius: '8px',
 						outline: 'none',
 					}}
