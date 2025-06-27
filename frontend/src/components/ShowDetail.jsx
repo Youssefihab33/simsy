@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axiosInstance from './APIs/Axios.jsx';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { Typography, Button, Chip, Avatar, Tooltip, Modal, Box } from '@mui/material';
@@ -10,7 +10,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import LoadingSpinner from './snippets/LoadingSpinner';
 import styles from './modules/ShowDetails.module.css';
-import { Axios } from 'axios';
+import VideoJS, { videoJsOptions } from './snippets/VideoJS.jsx';
 
 export default function ShowDetails() {
 	const [show, setShow] = useState(null);
@@ -19,33 +19,40 @@ export default function ShowDetails() {
 	const [open, setOpen] = useState(false);
 	const handleOpen = () => setOpen(true);
 	const handleClose = () => setOpen(false);
+	const playerRef = useRef(null);
 	const [inFavorites, setInFavorites] = useState(null);
 	const [inWatchlist, setInWatchlist] = useState(null);
 	const handleFavoritesToggle = () => {
-		axiosInstance.post(`shows/toggleFavorite/${show.id}/`).then((response) => {
-            if (response.status === 200) {
-                setInFavorites(response.data.in_favorites);
-            } else {
-                console.error('Error toggling favorite (non 200):', response.statusText);
-            }
-        }).catch((error) => {
-            console.error('Error toggling favorite:', error);
-        });
+		axiosInstance
+			.post(`shows/toggleFavorite/${show.id}/`)
+			.then((response) => {
+				if (response.status === 200) {
+					setInFavorites(response.data.in_favorites);
+				} else {
+					console.error('Error toggling favorite (non 200):', response.statusText);
+				}
+			})
+			.catch((error) => {
+				console.error('Error toggling favorite:', error);
+			});
 	};
 	const handleWatchlistToggle = () => {
-        axiosInstance.post(`shows/toggleWatchlist/${show.id}/`).then((response) => {
-            if (response.status === 200) {
-                setInWatchlist(response.data.in_watchlist);
-            } else {
-                console.error('Error toggling watchlist (non 200):', response.statusText);
-            }
-        }).catch((error) => {
-            console.error('Error toggling watchlist:', error);
-        });
+		axiosInstance
+			.post(`shows/toggleWatchlist/${show.id}/`)
+			.then((response) => {
+				if (response.status === 200) {
+					setInWatchlist(response.data.in_watchlist);
+				} else {
+					console.error('Error toggling watchlist (non 200):', response.statusText);
+				}
+			})
+			.catch((error) => {
+				console.error('Error toggling watchlist:', error);
+			});
 	};
 
+	// Fetch show details
 	useEffect(() => {
-		// Fetch show details when the component mounts
 		axiosInstance
 			.get(`shows/show/${show_id}/`)
 			.then((response) => {
@@ -85,6 +92,17 @@ export default function ShowDetails() {
 	} else {
 		console.error('Unknown show kind:', show.kind);
 	}
+
+	// Set up Video.js options
+	videoJsOptions.sources = [
+		{
+			src: video_link,
+			type: 'video/mp4',
+		},
+	];
+	const handlePlayerReady = (player) => {
+		playerRef.current = player;
+	};
 
 	return (
 		<div className={styles.showDetailsContainer}>
@@ -220,36 +238,6 @@ export default function ShowDetails() {
 							</Row>
 						</div>
 
-						{/* Genres */}
-						<div className='mb-5'>
-							<Typography variant='h5' component='h3' gutterBottom className='fw-bold' sx={{ color: accentColor + ' !important' }}>
-								Genres & Labels
-							</Typography>
-							<div className='d-flex flex-wrap'>
-								{show.genres.map((genre) => (
-									<Tooltip key={genre.id} title={genre.description} placement='top'>
-										<Chip
-											label={genre.name}
-											variant='outlined'
-											sx={{ margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' }}
-											avatar={<Avatar src={genre.image} />}
-										/>
-									</Tooltip>
-								))}
-								<h3>|</h3>
-								{show.labels.map((label) => (
-									<Tooltip key={label.id} title={label.description} placement='top'>
-										<Chip
-											label={label.name}
-											variant='outlined'
-											sx={{ margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' }}
-											avatar={<Avatar src={label.image} />}
-										/>
-									</Tooltip>
-								))}
-							</div>
-						</div>
-
 						{/* Countries & Languages */}
 						<div className='mb-5'>
 							<Typography variant='h5' component='h3' gutterBottom className='fw-bold' sx={{ color: accentColor + ' !important' }}>
@@ -274,6 +262,36 @@ export default function ShowDetails() {
 											variant='outlined'
 											sx={{ margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' }}
 											avatar={<Avatar src={language.image} />}
+										/>
+									</Tooltip>
+								))}
+							</div>
+						</div>
+
+						{/* Genres */}
+						<div className='mb-5'>
+							<Typography variant='h5' component='h3' gutterBottom className='fw-bold' sx={{ color: accentColor + ' !important' }}>
+								Genres & Labels
+							</Typography>
+							<div className='d-flex flex-wrap'>
+								{show.genres.map((genre) => (
+									<Tooltip key={genre.id} title={genre.description} placement='top'>
+										<Chip
+											label={genre.name}
+											variant='outlined'
+											sx={{ margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' }}
+											avatar={<Avatar src={genre.image} />}
+										/>
+									</Tooltip>
+								))}
+								<h3>|</h3>
+								{show.labels.map((label) => (
+									<Tooltip key={label.id} title={label.description} placement='top'>
+										<Chip
+											label={label.name}
+											variant='outlined'
+											sx={{ margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' }}
+											avatar={<Avatar src={label.image} />}
 										/>
 									</Tooltip>
 								))}
@@ -354,24 +372,7 @@ export default function ShowDetails() {
 						outline: 'none',
 					}}
 				>
-					{/* Responsive container for 16:9 aspect ratio */}
-					<div style={{ position: 'relative', paddingTop: '56.25%', height: 0 }}>
-						<iframe
-							src={video_link}
-							title={`Watching ${show.name}`}
-							frameBorder='0'
-							allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
-							allowFullScreen
-							style={{
-								position: 'absolute',
-								top: 0,
-								left: 0,
-								width: '100%',
-								height: '100%',
-								borderRadius: '8px',
-							}}
-						></iframe>
-					</div>
+					<VideoJS options={videoJsOptions} onReady={handlePlayerReady} />
 				</Box>
 			</Modal>
 		</div>
