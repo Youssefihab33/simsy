@@ -18,6 +18,8 @@ export default function App() {
 			primary: { main: '#9a0606' },
 			secondary: { main: '#5dd95d' },
 			tertiary: { main: '#54a9de' },
+			favorite: { main: '#D4AF37' },
+			watchlist: { main: '#0dcaf0' },
 		},
 	});
 	const noNavbar = ['/register/', '/login/'];

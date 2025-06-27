@@ -66,7 +66,7 @@ body:before {
 	background: radial-gradient(circle, var(--color1), var(--color2), var(--color3), var(--color2), var(--color1));
 	height: 100%;
 	width: 100%;
-	opacity: 45%;
+	opacity: 20%;
 	z-index: -1;
 	animation: gradient 6000s ease infinite;
 	background-size: 500% 500%;

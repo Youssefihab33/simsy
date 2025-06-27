@@ -99,7 +99,8 @@ class ShowSerializer(serializers.ModelSerializer):
     rating = RatingSerializer(read_only=True)
     artists = ArtistSerializer(many=True, read_only=True)
 
-    episodes = models.JSONField(encoder=None, decoder=None, default=dict, blank=True)
+    episodes = models.JSONField(
+        encoder=None, decoder=None, default=dict, blank=True)
 
     favorites = UserSerializer(many=True, read_only=True)
     watchlist = UserSerializer(many=True, read_only=True)
@@ -109,6 +110,24 @@ class ShowSerializer(serializers.ModelSerializer):
     created = models.DateTimeField()
     updated = models.DateTimeField()
 
+    in_favorites = serializers.SerializerMethodField()
+    in_watchlist = serializers.SerializerMethodField()
+
+    def get_in_favorites(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.favorites.filter(id=request.user.id).exists()
+        return False
+
+    def get_in_watchlist(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.watchlist.filter(id=request.user.id).exists()
+        return False
+
     class Meta:
         model = Show
-        fields = '__all__'
+        fields = ['id', 'name', 'year', 'kind', 'sample', 'captions', 'image',
+                  'imdb', 'description', 'countries', 'languages', 'genres', 'labels',
+                  'rating', 'artists', 'episodes', 'favorites', 'watchlist', 'finalized', 'created', 'updated',
+                  'in_favorites', 'in_watchlist']

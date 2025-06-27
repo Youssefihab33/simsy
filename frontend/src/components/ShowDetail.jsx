@@ -2,17 +2,47 @@ import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axiosInstance from './APIs/Axios.jsx';
 import { Container, Row, Col, Card } from 'react-bootstrap';
-import { Typography, Button, Chip, Avatar, Tooltip } from '@mui/material';
+import { Typography, Button, Chip, Avatar, Tooltip, Modal, Box } from '@mui/material';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
+import BookmarkAddedIcon from '@mui/icons-material/BookmarkAdded';
 import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import LoadingSpinner from './snippets/LoadingSpinner';
-import styles from './modules/ShowDetails.module.css'; // Import the CSS module
+import styles from './modules/ShowDetails.module.css';
+import { Axios } from 'axios';
 
 export default function ShowDetails() {
 	const [show, setShow] = useState(null);
 	const { show_id } = useParams();
 	const [hoveredArtist, setHoveredArtist] = useState(null);
+	const [open, setOpen] = useState(false);
+	const handleOpen = () => setOpen(true);
+	const handleClose = () => setOpen(false);
+	const [inFavorites, setInFavorites] = useState(null);
+	const [inWatchlist, setInWatchlist] = useState(null);
+	const handleFavoritesToggle = () => {
+		axiosInstance.post(`shows/toggleFavorite/${show.id}/`).then((response) => {
+            if (response.status === 200) {
+                setInFavorites(response.data.in_favorites);
+            } else {
+                console.error('Error toggling favorite (non 200):', response.statusText);
+            }
+        }).catch((error) => {
+            console.error('Error toggling favorite:', error);
+        });
+	};
+	const handleWatchlistToggle = () => {
+        axiosInstance.post(`shows/toggleWatchlist/${show.id}/`).then((response) => {
+            if (response.status === 200) {
+                setInWatchlist(response.data.in_watchlist);
+            } else {
+                console.error('Error toggling watchlist (non 200):', response.statusText);
+            }
+        }).catch((error) => {
+            console.error('Error toggling watchlist:', error);
+        });
+	};
 
 	useEffect(() => {
 		// Fetch show details when the component mounts
@@ -21,6 +51,8 @@ export default function ShowDetails() {
 			.then((response) => {
 				if (response.status === 200) {
 					setShow(response.data);
+					setInFavorites(response.data.in_favorites);
+					setInWatchlist(response.data.in_watchlist);
 				} else {
 					console.error('Error fetching show details (non 200):', response.statusText);
 				}
@@ -34,18 +66,24 @@ export default function ShowDetails() {
 		return <LoadingSpinner />;
 	}
 
-	// Determine the accent color based on show.kind
+	// Determine values based on show.kind
 	let accentColor = '#555555';
 	let hoverColor = '#777777';
+	let video_link = '';
 	if (show.kind === 'film') {
 		accentColor = '#9A0606';
 		hoverColor = '#B00707';
+		video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}.mp4`;
 	} else if (show.kind === 'series') {
 		accentColor = '#5DD95D';
 		hoverColor = '#79E679';
+		video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}/s1e1.mp4`;
 	} else if (show.kind === 'program') {
 		accentColor = '#54A9DE';
 		hoverColor = '#6CB5E3';
+		video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}/.mp4`;
+	} else {
+		console.error('Unknown show kind:', show.kind);
 	}
 
 	return (
@@ -72,14 +110,28 @@ export default function ShowDetails() {
 									className='me-3'
 									startIcon={<PlayArrowIcon />}
 									sx={{ backgroundColor: accentColor, '&:hover': { backgroundColor: hoverColor } }}
+									onClick={handleOpen}
 								>
 									Watch Now
 								</Button>
-								<Button variant='outlined' startIcon={<FavoriteIcon />} size='large' className='text-warning border-warning me-2'>
-									Add to Favorites
+								<Button
+									variant={inFavorites ? 'contained' : 'outlined'}
+									startIcon={inFavorites ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+									size='small'
+									color='favorite'
+									className='me-2'
+									onClick={handleFavoritesToggle}
+								>
+									{inFavorites ? 'In your Favorites' : 'Add to Favorites'}
 								</Button>
-								<Button variant='outlined' startIcon={<BookmarkAddIcon />} size='large' className='text-info border-info'>
-									Add to Watchlist
+								<Button
+									variant={inWatchlist ? 'contained' : 'outlined'}
+									startIcon={inWatchlist ? <BookmarkAddedIcon /> : <BookmarkAddIcon />}
+									size='small'
+									color='watchlist'
+									onClick={handleWatchlistToggle}
+								>
+									{inWatchlist ? 'In your Watchlist' : 'Add to Watchlist'}
 								</Button>
 							</div>
 							{/* This is the IMDb widget from the API response */}
@@ -112,6 +164,14 @@ export default function ShowDetails() {
 							<Row className='text-light'>
 								<Col md={6} className='mb-3'>
 									<Typography variant='subtitle1' className='text-muted' sx={{ color: accentColor + ' !important' }}>
+										Type:
+									</Typography>
+									<Typography variant='body1' className='text-light'>
+										{show.kind.charAt(0).toUpperCase() + show.kind.slice(1)}
+									</Typography>
+								</Col>
+								<Col md={6} className='mb-3'>
+									<Typography variant='subtitle1' className='text-muted' sx={{ color: accentColor + ' !important' }}>
 										Year:
 									</Typography>
 									<Typography variant='body1' className='text-light'>
@@ -120,11 +180,14 @@ export default function ShowDetails() {
 								</Col>
 								<Col md={6} className='mb-3'>
 									<Typography variant='subtitle1' className='text-muted' sx={{ color: accentColor + ' !important' }}>
-										Type:
+										Rating:
 									</Typography>
-									<Typography variant='body1' className='text-light'>
-										{show.kind.charAt(0).toUpperCase() + show.kind.slice(1)}
-									</Typography>
+									<div className='d-flex align-items-center'>
+										<img src={show.rating.image} alt={show.rating.name} style={{ height: '30px', marginRight: '8px' }} />
+										<Typography variant='body1' className='text-light'>
+											{show.rating.name}
+										</Typography>
+									</div>
 								</Col>
 								<Col md={6} className='mb-3'>
 									<Typography variant='subtitle1' className='text-muted' sx={{ color: accentColor + ' !important' }}>
@@ -134,28 +197,35 @@ export default function ShowDetails() {
 										{show.captions ? 'Available (English)' : 'Not Available'}
 									</Typography>
 								</Col>
-								{show.rating && (
-									<Col md={6} className='mb-3'>
-										<Typography variant='subtitle1' className='text-muted' sx={{ color: accentColor + ' !important' }}>
-											Rating:
-										</Typography>
-										<div className='d-flex align-items-center'>
-											<img src={show.rating.image} alt={show.rating.name} style={{ height: '30px', marginRight: '8px' }} />
-											<Typography variant='body1' className='text-light'>
-												{show.rating.name}
+								{show.kind !== 'film' && (
+									<>
+										<Col md={6} className='mb-3'>
+											<Typography variant='subtitle1' className='text-muted' sx={{ color: accentColor + ' !important' }}>
+												Status:
 											</Typography>
-										</div>
-									</Col>
+											<Typography variant='body1' className='text-light'>
+												{show.sample ? 'A Sample' : `Full ${show.kind.charAt(0).toUpperCase() + show.kind.slice(1)}`}
+											</Typography>
+										</Col>
+										<Col md={6} className='mb-3'>
+											<Typography variant='subtitle1' className='text-muted' sx={{ color: accentColor + ' !important' }}>
+												Episodes:
+											</Typography>
+											<Typography variant='body1' className='text-light'>
+												# of Episodes
+											</Typography>
+										</Col>
+									</>
 								)}
 							</Row>
 						</div>
 
 						{/* Genres */}
 						<div className='mb-5'>
-							<Typography variant='h5' component='h3' gutterBottom className='fw-bold text-light' sx={{ color: accentColor + ' !important' }}>
-								Genres
+							<Typography variant='h5' component='h3' gutterBottom className='fw-bold' sx={{ color: accentColor + ' !important' }}>
+								Genres & Labels
 							</Typography>
-							<div>
+							<div className='d-flex flex-wrap'>
 								{show.genres.map((genre) => (
 									<Tooltip key={genre.id} title={genre.description} placement='top'>
 										<Chip
@@ -166,12 +236,23 @@ export default function ShowDetails() {
 										/>
 									</Tooltip>
 								))}
+								<h3>|</h3>
+								{show.labels.map((label) => (
+									<Tooltip key={label.id} title={label.description} placement='top'>
+										<Chip
+											label={label.name}
+											variant='outlined'
+											sx={{ margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' }}
+											avatar={<Avatar src={label.image} />}
+										/>
+									</Tooltip>
+								))}
 							</div>
 						</div>
 
 						{/* Countries & Languages */}
 						<div className='mb-5'>
-							<Typography variant='h5' component='h3' gutterBottom className='fw-bold text-light' sx={{ color: accentColor + ' !important' }}>
+							<Typography variant='h5' component='h3' gutterBottom className='fw-bold' sx={{ color: accentColor + ' !important' }}>
 								Countries & Languages
 							</Typography>
 							<div className='d-flex flex-wrap'>
@@ -185,8 +266,7 @@ export default function ShowDetails() {
 										/>
 									</Tooltip>
 								))}
-							</div>
-							<div className='d-flex flex-wrap mt-3'>
+								<h3>|</h3>
 								{show.languages.map((language) => (
 									<Tooltip key={language.id} title={language.description} placement='top'>
 										<Chip
@@ -204,13 +284,13 @@ export default function ShowDetails() {
 					{/* Right Column for Cast */}
 					<Col md={4}>
 						{/* Cast & Crew Section */}
-						<div className='mb-5'>
+						<div className='overflow-visible mb-5'>
 							<Typography variant='h4' component='h2' gutterBottom className='fw-bold text-light'>
 								Cast
 							</Typography>
 							{/* Make the cast container scrollable */}
 							<div className={styles.castContainer}>
-								<Row xs={2} sm={2} md={2} className='g-2'>
+								<Row xs={2} className='g-2'>
 									{/* 2x2 grid */}
 									{show.artists.map((artist) => (
 										<Col key={artist.id}>
@@ -219,16 +299,12 @@ export default function ShowDetails() {
 												<Typography variant='subtitle1' className='fw-bold text-light'>
 													{artist.name}
 												</Typography>
-												<Typography variant='body2' className='text-muted text-light'>
-													{artist.birthYear}
-												</Typography>
 												{hoveredArtist?.id === artist.id && (
 													<div className={styles.artistInfoHover}>
 														<Typography variant='body2' sx={{ mt: 1 }}>
-															**Bio:**
-															{/* This is a placeholder for additional artist info from your API */}
+															{artist.birthYear} | {artist.nationality.name}
 															<br />
-															{`Artist details for ${artist.name} will go here.`}
+															{new Date().getFullYear() - artist.birthYear} Years old
 														</Typography>
 													</div>
 												)}
@@ -248,18 +324,56 @@ export default function ShowDetails() {
 						<Typography variant='h6' component='h4' gutterBottom className='text-light'>
 							Additional Info
 						</Typography>
-						<Typography variant='body2' className='text-muted text-light'>
+						<Typography variant='body2' className='text-light'>
 							**Finalized:** {show.finalized ? 'Yes' : 'No'}
 						</Typography>
-						<Typography variant='body2' className='text-muted text-light'>
+						<Typography variant='body2' className='text-light'>
 							**Created:** {new Date(show.created).toLocaleString()}
 						</Typography>
-						<Typography variant='body2' className='text-muted text-light'>
+						<Typography variant='body2' className='text-light'>
 							**Updated:** {new Date(show.updated).toLocaleString()}
 						</Typography>
 					</Col>
 				</Row>
 			</Container>
+
+			{/* --- Video Player Modal --- */}
+			<Modal open={open} onClose={handleClose} aria-labelledby='video-player-modal' aria-describedby='video-player-for-show'>
+				<Box
+					sx={{
+						position: 'absolute',
+						top: '50%',
+						left: '50%',
+						transform: 'translate(-50%, -50%)',
+						width: '90vw',
+						maxWidth: 1200,
+						bgcolor: 'background.paper',
+						boxShadow: 24,
+						p: { xs: 1, md: 3 },
+						borderRadius: '8px',
+						outline: 'none',
+					}}
+				>
+					{/* Responsive container for 16:9 aspect ratio */}
+					<div style={{ position: 'relative', paddingTop: '56.25%', height: 0 }}>
+						<iframe
+							src={video_link}
+							title={`Watching ${show.name}`}
+							frameBorder='0'
+							allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
+							allowFullScreen
+							style={{
+								position: 'absolute',
+								top: 0,
+								left: 0,
+								width: '100%',
+								height: '100%',
+								borderRadius: '8px',
+							}}
+						></iframe>
+					</div>
+				</Box>
+			</Modal>
 		</div>
 	);
 }

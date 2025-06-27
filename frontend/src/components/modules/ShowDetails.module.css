@@ -37,8 +37,9 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 1rem;
-    margin: 0.5rem;
+    min-height: 150px;
+    padding: 10px;
+    margin: 5px;
     cursor: pointer;
     transition: transform 0.2s;
     background-color: #212529;
@@ -51,8 +52,9 @@
 }
 
 .artistImage {
-    width: 100px;
-    height: 100px;
+    margin-top: 20px;
+    min-width: 100px;
+    min-height: 100px;
     margin-bottom: 0.5rem;
 }
 
@@ -83,8 +85,9 @@
 
 .castContainer {
     max-height: 100vh; /* Adjust this value as needed */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
     overflow-y: auto;
-    padding-right: 15px; /* Add padding to prevent content from touching the scrollbar */
+    padding: 10px; /* Add padding to prevent content from touching the scrollbar */
 }
 
 /* Optional: Style the scrollbar for better aesthetics */
