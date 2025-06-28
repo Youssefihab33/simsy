@@ -75,10 +75,24 @@ class ShowCardSerializer(serializers.ModelSerializer):
     sample = serializers.BooleanField(read_only=True)
     captions = serializers.BooleanField(read_only=True)
     image = serializers.ImageField(allow_empty_file=True, read_only=True)
+    in_favorites = serializers.SerializerMethodField()
+    in_watchlist = serializers.SerializerMethodField()
+
+    def get_in_favorites(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.favorites.filter(id=request.user.id).exists()
+        return False
+
+    def get_in_watchlist(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.watchlist.filter(id=request.user.id).exists()
+        return False
 
     class Meta:
         model = Show
-        fields = ['id', 'name', 'sample', 'captions', 'image']
+        fields = ['id', 'name', 'sample', 'captions', 'image', 'in_favorites', 'in_watchlist']
 
 
 class ShowSerializer(serializers.ModelSerializer):

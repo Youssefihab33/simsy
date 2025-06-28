@@ -1,6 +1,9 @@
 import { useRef, useEffect } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
+import 'videojs-playlist-ui/dist/videojs-playlist-ui.css';
+import 'videojs-playlist';
+import 'videojs-playlist-ui';
 import 'videojs-hotkeys';
 import 'videojs-seek-buttons';
 import 'videojs-mobile-ui';
@@ -8,14 +11,12 @@ import 'videojs-mobile-ui';
 export const VideoJS = (props) => {
 	const videoRef = useRef(null);
 	const playerRef = useRef(null);
-	const { options, onReady } = props;
+	const { options, onReady, isPlaylist = false } = props;
 
 	useEffect(() => {
 		// Make sure Video.js player is only initialized once
 		if (!playerRef.current) {
-			// The Video.js player needs to be _inside_ the component el for React 18 Strict Mode.
 			const videoElement = document.createElement('video-js');
-
 			videoElement.classList.add('vjs-big-play-centered');
 			videoRef.current.appendChild(videoElement);
 
@@ -24,15 +25,46 @@ export const VideoJS = (props) => {
 				onReady && onReady(player);
 			}));
 
-			// You could update an existing player in the `else` block here
-			// on prop change, for example:
+			// --- Playlist setup logic ---
+			// If it's a playlist, call the playlist plugin on the player instance.
+			if (isPlaylist) {
+				// The playlist items are expected to be in options.sources
+				player.playlist(options.sources);
+
+				// Initialize the playlist UI. This will create the playlist UI component.
+				// The container for the playlist UI is where the div with `data-vjs-player` is.
+				// We'll add a class to the container div in the JSX to target it.
+				player.playlistUi({
+        el: playerRef.current,
+    })
+
+				// You can add event listeners for the playlist here if needed
+				player.on('playlistitem', () => {
+				  console.log('Now playing:', player.playlist.currentItem());
+				});
+			}
 		} else {
+			// This block is for updating an existing player.
+			// When updating, we need to handle the playlist logic as well.
 			const player = playerRef.current;
 
+			// Update player options
 			player.autoplay(options.autoplay);
-			player.src(options.sources);
+
+			// Check if we are dealing with a playlist or a single source
+			if (isPlaylist) {
+				// If it's a playlist, update the playlist.
+				// This will replace the entire playlist with the new one.
+				player.playlist(options.sources);
+
+				// You can also reset to the first item
+				// player.playlist.currentItem(0);
+			} else {
+				// If it's a single source, update the source as before.
+				player.src(options.sources);
+			}
 		}
-	}, [options, videoRef]);
+	}, [options, videoRef, isPlaylist, onReady]);
 
 	// Dispose the Video.js player when the functional component unmounts
 	useEffect(() => {
@@ -47,7 +79,8 @@ export const VideoJS = (props) => {
 	}, [playerRef]);
 
 	return (
-		<div data-vjs-player>
+		// Add a class to the container div so we can target it for the playlist UI
+		<div data-vjs-player className={`video-js-container ${isPlaylist ? 'vjs-playlist-ui' : ''}`}>
 			<div ref={videoRef} />
 		</div>
 	);
@@ -89,5 +122,82 @@ export const videoJsOptions = {
 				disabled: false,
 			},
 		},
+        playlist: {
+            autoadvance: true,
+        },
+        playlistUi: {
+            el: 'the_playlist_container_id',
+        },
 	},
 };
+
+// --- Example usage in your parent component ---
+
+// Example for a single film
+// export const filmOptions = {
+// 	...videoJsOptions,
+// 	sources: [
+// 		{
+// 			src: 'path/to/your/film.mp4',
+// 			type: 'video/mp4',
+// 		},
+// 	],
+// };
+
+// Example for a series
+// export const seriesPlaylist = {
+// 	...videoJsOptions,
+// 	// This is the playlist array that the plugin will use
+// 	sources: [
+// 		{
+// 			src: 'path/to/series/episode1.mp4',
+// 			type: 'video/mp4',
+// 			title: 'Episode 1: The Beginning',
+// 			poster: 'path/to/poster1.jpg',
+// 		},
+// 		{
+// 			src: 'path/to/series/episode2.mp4',
+// 			type: 'video/mp4',
+// 			title: 'Episode 2: The Plot Thickens',
+// 			poster: 'path/to/poster2.jpg',
+// 		},
+// 		{
+// 			src: 'path/to/series/episode3.mp4',
+// 			type: 'video/mp4',
+// 			title: 'Episode 3: The Climax',
+// 			poster: 'path/to/poster3.jpg',
+// 		},
+// 	],
+// };
+
+// --- How you would use it in a parent component (e.g., App.jsx) ---
+/*
+import React, { useState } from 'react';
+import { VideoJS, filmOptions, seriesPlaylist } from './VideoJS';
+
+function App() {
+  const [isSeries, setIsSeries] = useState(false);
+  const playerRef = useRef(null);
+
+  const handlePlayerReady = (player) => {
+    playerRef.current = player;
+    // You can do more with the player here
+  };
+
+  const options = isSeries ? seriesPlaylist : filmOptions;
+
+  return (
+    <div>
+      <h1>My Video App</h1>
+      <button onClick={() => setIsSeries(!isSeries)}>
+        Switch to {isSeries ? 'Film' : 'Series'}
+      </button>
+      <VideoJS 
+        options={options} 
+        onReady={handlePlayerReady} 
+        isPlaylist={isSeries} 
+      />
+    </div>
+  );
+}
+*/

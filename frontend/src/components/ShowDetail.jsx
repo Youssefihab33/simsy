@@ -10,7 +10,7 @@ import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import LoadingSpinner from './snippets/LoadingSpinner';
 import styles from './modules/ShowDetails.module.css';
-import VideoJS, { videoJsOptions } from './snippets/VideoJS.jsx';
+import { VideoJS, videoJsOptions } from './snippets/VideoJS.jsx';
 
 export default function ShowDetails() {
 	const [show, setShow] = useState(null);
@@ -74,34 +74,67 @@ export default function ShowDetails() {
 	}
 
 	// Determine values based on show.kind
-	let accentColor = '#555555';
-	let hoverColor = '#777777';
+	let accentColor = '';
+	let hoverColor = '';
 	let video_link = '';
-	if (show.kind === 'film') {
-		accentColor = '#9A0606';
-		hoverColor = '#B00707';
-		video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}.mp4`;
-	} else if (show.kind === 'series') {
-		accentColor = '#5DD95D';
-		hoverColor = '#79E679';
-		video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}/s1e1.mp4`;
-	} else if (show.kind === 'program') {
-		accentColor = '#54A9DE';
-		hoverColor = '#6CB5E3';
-		video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}/.mp4`;
-	} else {
-		console.error('Unknown show kind:', show.kind);
+	let seriesPlaylist = {};
+	let filmOptions = {};
+	switch (show.kind) {
+		case 'film':
+			accentColor = '#9A0606';
+			hoverColor = '#B00707';
+			video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}.mp4`;
+			filmOptions = {
+				...videoJsOptions,
+				sources: [
+					{
+						src: video_link,
+						type: 'video/mp4',
+					},
+				],
+			};
+			break;
+		case 'series':
+			accentColor = '#5DD95D';
+			hoverColor = '#79E679';
+			video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}/s1e1.mp4`;
+			seriesPlaylist = {
+				...videoJsOptions,
+				sources: [
+					{
+						src: video_link,
+						type: 'video/mp4',
+						title: 'Episode 1: The Beginning',
+						poster: 'path/to/poster1.jpg',
+					},
+					{
+						src: video_link,
+						type: 'video/mp4',
+						title: 'Episode 2: The Plot Thickens',
+						poster: 'path/to/poster2.jpg',
+					},
+					{
+						src: video_link,
+						type: 'video/mp4',
+						title: 'Episode 3: The Climax',
+						poster: 'path/to/poster3.jpg',
+					},
+				],
+			};
+			break;
+		case 'program':
+			accentColor = '#54A9DE';
+			hoverColor = '#6CB5E3';
+			video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}/.mp4`;
+			break;
+		default:
+			console.error('Unknown show kind:', show.kind);
 	}
 
 	// Set up Video.js options
-	videoJsOptions.sources = [
-		{
-			src: video_link,
-			type: 'video/mp4',
-		},
-	];
 	const handlePlayerReady = (player) => {
 		playerRef.current = player;
+		console.log('filmOptions:', filmOptions, 'seriesPlaylist:', seriesPlaylist);
 	};
 
 	return (
@@ -364,7 +397,6 @@ export default function ShowDetails() {
 						left: '50%',
 						transform: 'translate(-50%, -50%)',
 						width: '90vw',
-						// maxWidth: 1200,
 						bgcolor: accentColor,
 						boxShadow: 24,
 						p: { xs: 1, md: 0.7 },
@@ -372,7 +404,9 @@ export default function ShowDetails() {
 						outline: 'none',
 					}}
 				>
-					<VideoJS options={videoJsOptions} onReady={handlePlayerReady} />
+					<div>
+						<VideoJS isPlaylist={show.kind !== 'film'} options={show.kind !== 'film' ? seriesPlaylist : filmOptions} onReady={handlePlayerReady} />
+					</div>
 				</Box>
 			</Modal>
 		</div>

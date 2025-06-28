@@ -1,7 +1,7 @@
 import React from 'react';
 import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Container, Avatar, Button, Tooltip, MenuItem } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import AdbIcon from '@mui/icons-material/Adb';
+import FiberNewIcon from '@mui/icons-material/FiberNew';
 
 const pages = ['Home', 'Explore'];
 const settings = ['Profile', 'Dashboard', 'Logout'];
@@ -36,17 +36,25 @@ export default function Header() {
 			<AppBar position='sticky'>
 				<Container maxWidth='xl' className='glassy rounded-0'>
 					<Toolbar disableGutters>
-						<AdbIcon sx={{ display: { xs: 'none', md: 'flex' }, mr: 1 }} />
+						<FiberNewIcon sx={{ color:'var(--color1)', opacity:'50%', display: { xs: 'none', md: 'flex' }, mr: 1 }} />
 						<Typography
 							variant='h6'
 							noWrap
 							component='a'
 							href='/'
 							sx={{
+								backgroundcolor: "primary",
+								backgroundImage: `linear-gradient(90deg, var(--color1), var(--color2), var(--color3))`,
+								backgroundSize: "100%",
+								backgroundRepeat: "repeat",
+								backgroundClip: "text",
+								WebkitBackgroundClip: "text",
+								WebkitTextFillColor: "transparent",
 								mr: 2,
 								display: { xs: 'none', md: 'flex' },
 								fontFamily: 'monospace',
 								fontWeight: 700,
+								fontStyle: 'italic',
 								letterSpacing: '.3rem',
 								color: 'inherit',
 								textDecoration: 'none',
@@ -82,7 +90,7 @@ export default function Header() {
 								))}
 							</Menu>
 						</Box>
-						<AdbIcon sx={{ display: { xs: 'flex', md: 'none' }, mr: 1 }} />
+						<FiberNewIcon sx={{ color:'primary', display: { xs: 'flex', md: 'none' }, mr: 1 }} />
 						<Typography
 							variant='h5'
 							noWrap
