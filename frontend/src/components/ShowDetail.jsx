@@ -68,7 +68,6 @@ const useShowData = (showId) => {
 const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 	const [open, setOpen] = useState(false);
 	const playerRef = useRef(null);
-	const intervalRef = useRef(null);
 	const [season, setSeason] = useState(1);
 	const [episode, setEpisode] = useState(1);
 
@@ -83,10 +82,6 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 
 	const handleClose = () => {
 		setOpen(false);
-		if (intervalRef.current) {
-			clearInterval(intervalRef.current);
-			intervalRef.current = null;
-		}
 		fetchUserShowData(); // Refresh user show data after modal closes
 	};
 
@@ -109,16 +104,6 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 			player.on('loadedmetadata', () => {
 				player.currentTime(userShowData?.time_reached || 0);
 				player.play();
-
-				// Backup interval each 1 min
-				if (intervalRef.current) {
-					clearInterval(intervalRef.current);
-				}
-				intervalRef.current = setInterval(() => {
-					if (!player.paused()) {
-						sendTimeReached(show.id, player.currentTime());
-					}
-				}, 60000);
 			});
 
 			player.on(['pause', 'fullscreenchange', 'dispose'], () => {
@@ -130,15 +115,6 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 		},
 		[sendTimeReached, show, userShowData]
 	);
-
-	// Cleanup interval on unmount
-	useEffect(() => {
-		return () => {
-			if (intervalRef.current) {
-				clearInterval(intervalRef.current);
-			}
-		};
-	}, []);
 
 	// Determine video source and captions based on show kind
 	const getVideoDetails = useCallback(() => {
