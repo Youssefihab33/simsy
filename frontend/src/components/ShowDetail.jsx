@@ -106,21 +106,19 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 		(player) => {
 			playerRef.current = player;
 
-			// Set up a listener for the 'loadedmetadata' event
 			player.on('loadedmetadata', () => {
-				// Now it's safe to set the currentTime
 				player.currentTime(userShowData?.time_reached || 0);
 				player.play();
 
-				// Backup interval each 30 seconds
+				// Backup interval each 1 min
 				if (intervalRef.current) {
-				    clearInterval(intervalRef.current);
+					clearInterval(intervalRef.current);
 				}
 				intervalRef.current = setInterval(() => {
-				    if (!player.paused()) {
-				        sendTimeReached(show.id, player.currentTime());
-				    }
-				}, 30000);
+					if (!player.paused()) {
+						sendTimeReached(show.id, player.currentTime());
+					}
+				}, 60000);
 			});
 
 			player.on(['pause', 'fullscreenchange', 'dispose'], () => {
