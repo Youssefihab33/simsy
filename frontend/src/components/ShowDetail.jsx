@@ -8,6 +8,10 @@ import BookmarkAddIcon from '@mui/icons-material/BookmarkAdd';
 import BookmarkAddedIcon from '@mui/icons-material/BookmarkAdded';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import FirstPageIcon from '@mui/icons-material/FirstPage';
+import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
+import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
+import LastPageIcon from '@mui/icons-material/LastPage';
 import LoadingSpinner from './snippets/LoadingSpinner';
 import styles from './modules/ShowDetails.module.css';
 import { VideoJS, videoJsOptions } from './snippets/VideoJS.jsx';
@@ -70,6 +74,7 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 	const playerRef = useRef(null);
 	const [season, setSeason] = useState(1);
 	const [episode, setEpisode] = useState(1);
+	const [episodeError, setEpisodeError] = useState(null)
 
 	useEffect(() => {
 		if (userShowData) {
@@ -112,7 +117,7 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 				sendTimeReached(show.id, 0);
 			});
 		},
-		[sendTimeReached, show, userShowData]
+		[sendTimeReached, show, userShowData, season, episode]
 	);
 
 	// Determine video source and captions based on show kind
@@ -168,7 +173,41 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 	// Also guard accentColor
 	const accentColor = getAccentColor(show?.kind);
 
-	return { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor };
+	const perviousEpisode = () => {
+		axiosInstance
+			.get(`shows/previous_episode/${show.id}/${season}/${episode}/`)
+			.then((response) => {
+				console.log(response.data);
+				if (response.data.changed == false){
+					setEpisodeError(response.data.message)
+				}else{
+					setSeason(response.data.new_season)
+					setEpisode(response.data.new_episode)
+				}
+			})
+			.catch((error) => {
+				setEpisodeError(error.response.data)
+			});
+	};
+
+	const nextEpisode = () => {
+		axiosInstance
+			.get(`shows/next_episode/${show.id}/${season}/${episode}/`)
+			.then((response) => {
+				console.log(response.data);
+				if (response.data.changed == false){
+					setEpisodeError(response.data.message)
+				}else{
+					setSeason(response.data.new_season)
+					setEpisode(response.data.new_episode)
+				}
+			})
+			.catch((error) => {
+				setEpisodeError(error.response.data)
+			});
+	};
+
+	return { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor, season, episode, perviousEpisode, nextEpisode, episodeError };
 };
 
 // Helper to determine accent color
@@ -206,12 +245,12 @@ export default function ShowDetails() {
 	const { show_id } = useParams();
 	const [hoveredArtist, setHoveredArtist] = useState(null);
 
-	const { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, fetchUserShowData } = useShowData(show_id);
+	const { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, fetchUserShowData, episodeError } = useShowData(show_id);
 
 	const handleFavoritesToggle = useToggleApi(show?.id, inFavorites, setInFavorites, 'toggleFavorite', 'favorites');
 	const handleWatchlistToggle = useToggleApi(show?.id, inWatchlist, setInWatchlist, 'toggleWatchlist', 'watchlist');
 
-	const { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor } = useMediaPlayer(show, userShowData, fetchUserShowData);
+	const { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor, season, episode, perviousEpisode, nextEpisode } = useMediaPlayer(show, userShowData, fetchUserShowData);
 
 	// Dynamic hover color based on accentColor
 	const hoverColor = accentColor === '#9A0606' ? '#B00707' : accentColor === '#5DD95D' ? '#79E679' : accentColor === '#54A9DE' ? '#6CB5E3' : '#6CB5E3'; // Default hover color
@@ -247,7 +286,7 @@ export default function ShowDetails() {
 								{show.name}
 							</Typography>
 							<Typography variant='h5' component='p' className='text-light mb-5'>
-								{show.year} | {show.kind.charAt(0).toUpperCase() + show.kind.slice(1)}
+								{show.year} | {show.kind.charAt(0).toUpperCase() + show.kind.slice(1)} | {show.kind != 'film' && `S${season}E${episode}`}
 							</Typography>
 							<div className='d-flex align-items-center mb-4'>
 								<Button
@@ -469,6 +508,18 @@ export default function ShowDetails() {
 					}}
 				>
 					{open && <VideoJS options={playerOptions} onReady={handlePlayerReady} color={accentColor} />}
+					{show.kind != 'film' && (
+						<div className='text-center text-light m-3'>
+							<FirstPageIcon /> <ArrowBackIosNewIcon onClick={perviousEpisode} />
+							<span className='mx-4'>
+								S{season}E{episode}
+							</span>
+							<ArrowForwardIosIcon onClick={nextEpisode} /> <LastPageIcon />
+							{episodeError && (
+								<p className='text-danger'>{episodeError}{console.log(episodeError)}</p>
+							)}
+						</div>
+					)}
 				</Box>
 			</Modal>
 		</div>

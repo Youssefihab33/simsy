@@ -40,6 +40,77 @@ class UserShowView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 
+class previousEpisode(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id, current_season, current_episode):
+        try:
+            show = Show.objects.get(id=show_id)
+        except Show.DoesNotExist:
+            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
+
+        if current_season == 1 and current_episode == 1:
+            message='Already the first episode of first season!'
+            new_season = 1
+            new_episode = 1
+            changed = False
+        elif current_season != 1 and current_episode == 1:
+            message='Back to first episode of previous season.'
+            new_season = current_season - 1
+            new_episode = show.episodes[str(new_season)]
+            changed = True
+        else:
+            message='Back to previous episode'
+            new_season = current_season
+            new_episode = current_episode - 1
+            changed = True
+
+        request.user.episode_reached[str(show.id)]['s'] = new_season
+        request.user.episode_reached[str(show.id)]['e'] = new_episode
+        request.user.save()
+
+        return Response({
+            'message': message,
+            'new_season': new_season,
+            'new_episode': new_episode,
+            'changed': changed,
+        }, status=status.HTTP_200_OK)
+
+class nextEpisode(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id, current_season, current_episode):
+        try:
+            show = Show.objects.get(id=show_id)
+        except Show.DoesNotExist:
+            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
+
+        if current_season == len(show.episodes) and current_episode == show.episodes[str(current_season)]:
+            message='Last episode of last season!'
+            new_season = current_season
+            new_episode = current_episode
+            changed = False
+        elif current_season != len(show.episodes) and current_episode == show.episodes[str(current_season)]:
+            message='First episode of the next season.'
+            new_season = current_season + 1
+            new_episode = 1
+            changed = True
+        else:
+            message = 'Next Episode'
+            new_season = current_season
+            new_episode = current_episode + 1
+            changed = True
+
+        request.user.episode_reached[str(show.id)]['s'] = new_season
+        request.user.episode_reached[str(show.id)]['e'] = new_episode
+        request.user.save()
+
+        return Response({
+            'message': message,
+            'new_season': new_season,
+            'new_episode': new_episode,
+            'changed': changed,
+        }, status=status.HTTP_200_OK)
 
 class FavoriteShowsView(viewsets.ModelViewSet):
     serializer_class = ShowCardSerializer
