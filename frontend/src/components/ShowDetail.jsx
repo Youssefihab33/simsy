@@ -59,7 +59,7 @@ const useShowData = (showId) => {
 		if (show) {
 			fetchUserShowData();
 		}
-	}, [show, fetchUserShowData]); // Depend on 'show' and the memoized fetcher
+	}, [show, fetchUserShowData]);
 
 	return { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, fetchUserShowData };
 };
@@ -88,8 +88,7 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 	const sendTimeReached = useCallback(
 		async (currentShowId, timeReached) => {
 			try {
-				const response = await axiosInstance.get(`shows/update_time_reached/${currentShowId}/${season || 0}/${episode || 0}/${Math.round(timeReached)}`);
-				console.log(response.data.message);
+				await axiosInstance.get(`shows/update_time_reached/${currentShowId}/${season || 0}/${episode || 0}/${Math.round(timeReached)}`);
 			} catch (error) {
 				console.error('Error updating time reached:', error);
 			}
@@ -122,9 +121,9 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 		let captionsSrc = '';
 		const videoRoot = import.meta.env.VITE_VIDEOS_SOURCE_ROOT;
 
-		// Add a check for 'show' before accessing its properties
+		// Check for 'show' before accessing its properties
 		if (!show) {
-			return { videoSrc: '', captionsSrc: '' }; // Return empty if show is not available yet
+			return { videoSrc: '', captionsSrc: '' };
 		}
 
 		switch (show?.kind) {
@@ -187,12 +186,12 @@ const getAccentColor = (kind) => {
 };
 
 // Helper for API toggles (favorites/watchlist)
-const useToggleApi = (showId, inState, setInState, endpoint) => {
+const useToggleApi = (showId, inState, setInState, endpoint, name) => {
 	const handleToggle = useCallback(async () => {
 		try {
 			const response = await axiosInstance.post(`shows/${endpoint}/${showId}/`);
 			if (response.status === 200) {
-				setInState(response.data[`in_${endpoint}`]);
+				setInState(response.data[`in_${name}`]);
 			} else {
 				throw new Error(`Error toggling ${endpoint}: ${response.statusText}`);
 			}
@@ -209,8 +208,8 @@ export default function ShowDetails() {
 
 	const { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, fetchUserShowData } = useShowData(show_id);
 
-	const handleFavoritesToggle = useToggleApi(show?.id, inFavorites, setInFavorites, 'toggleFavorite');
-	const handleWatchlistToggle = useToggleApi(show?.id, inWatchlist, setInWatchlist, 'toggleWatchlist');
+	const handleFavoritesToggle = useToggleApi(show?.id, inFavorites, setInFavorites, 'toggleFavorite', 'favorites');
+	const handleWatchlistToggle = useToggleApi(show?.id, inWatchlist, setInWatchlist, 'toggleWatchlist', 'watchlist');
 
 	const { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor } = useMediaPlayer(show, userShowData, fetchUserShowData);
 
