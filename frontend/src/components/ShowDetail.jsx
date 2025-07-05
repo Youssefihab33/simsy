@@ -27,8 +27,6 @@ const useShowData = (showId) => {
 			const response = await axiosInstance.get(`shows/show/${showId}/`);
 			if (response.status === 200) {
 				setShow(response.data);
-				setInFavorites(response.data.in_favorites);
-				setInWatchlist(response.data.in_watchlist);
 			} else {
 				throw new Error(`Error fetching show details: ${response.statusText}`);
 			}
@@ -45,10 +43,10 @@ const useShowData = (showId) => {
 		try {
 			const response = await axiosInstance.get(`shows/user/${showId}`);
 			setUserShowData(response.data);
-			console.log(response.data)
+			setInFavorites(response.data.in_favorites);
+			setInWatchlist(response.data.in_watchlist);
 		} catch (err) {
 			console.error('Error fetching user show data:', err);
-			// console.log(err.response.data)
 			setError(err);
 		}
 	}, [showId]);

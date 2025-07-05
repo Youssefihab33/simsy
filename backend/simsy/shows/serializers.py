@@ -6,6 +6,14 @@ from users.models import CustomUser
 from users.serializers import UserSerializer
 User = get_user_model()
 
+def get_in_f_or_w(user, show, type):
+    if user.is_authenticated:
+        match type:
+            case 'f':
+                return show.favorites.filter(id=user.id).exists()
+            case 'w':
+                return show.watchlist.filter(id=user.id).exists()
+    return False
 
 class GenreSerializer(serializers.ModelSerializer):
     name = serializers.CharField(read_only=True)
@@ -80,16 +88,10 @@ class ShowCardSerializer(serializers.ModelSerializer):
     in_watchlist = serializers.SerializerMethodField()
 
     def get_in_favorites(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.favorites.filter(id=request.user.id).exists()
-        return False
+        return get_in_f_or_w(self.context['request'].user, obj, 'f')
 
     def get_in_watchlist(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.watchlist.filter(id=request.user.id).exists()
-        return False
+        return get_in_f_or_w(self.context['request'].user, obj, 'w')
 
     class Meta:
         model = Show
@@ -125,58 +127,80 @@ class ShowSerializer(serializers.ModelSerializer):
     created = models.DateTimeField()
     updated = models.DateTimeField()
 
-    in_favorites = serializers.SerializerMethodField()
-    in_watchlist = serializers.SerializerMethodField()
-
-    def get_in_favorites(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.favorites.filter(id=request.user.id).exists()
-        return False
-
-    def get_in_watchlist(self, obj):
-        request = self.context.get('request')
-        if request and request.user.is_authenticated:
-            return obj.watchlist.filter(id=request.user.id).exists()
-        return False
-
     class Meta:
         model = Show
         fields = ['id', 'name', 'year', 'kind', 'sample', 'captions', 'image',
                   'imdb', 'description', 'countries', 'languages', 'genres', 'labels',
-                  'rating', 'artists', 'episodes', 'favorites', 'watchlist', 'finalized', 'created', 'updated',
-                  'in_favorites', 'in_watchlist']
+                  'rating', 'artists', 'episodes', 'favorites', 'watchlist', 'finalized', 'created', 'updated']
 
 
 class UserShowSerializer(serializers.ModelSerializer):
     episode_reached = serializers.SerializerMethodField()
     season_reached = serializers.SerializerMethodField()
     time_reached = serializers.SerializerMethodField()
+    in_favorites = serializers.SerializerMethodField()
+    in_watchlist = serializers.SerializerMethodField()
 
     class Meta:
         model = CustomUser
-        fields = ['season_reached', 'episode_reached', 'time_reached', 'time_autosave', 'autoplay', 'view_captions']
+        fields = ['season_reached', 'episode_reached', 'time_reached', 'time_autosave', 'autoplay', 'view_captions', 'in_favorites', 'in_watchlist']
 
-    def get_x_reached(self, obj, type):
-        show_id_str = str(self.context.get('request').parser_context['kwargs'].get('show_id'))
-        show_kind = Show.objects.get(id=show_id_str).kind
+    def _get_show(self):
+        """Helper to safely retrieve Show object from context."""
+        request = self.context['request']
+        if not request:
+            raise serializers.ValidationError("Request context is missing.")
+        show_id_str = str(self.context['show_id'])
+        if not show_id_str:
+            raise serializers.ValidationError("Show ID context is missing.")
+        try:
+            show = Show.objects.get(id=show_id_str)
+        except Show.DoesNotExist:
+            raise serializers.ValidationError(f"Show with ID {show_id_str} not found.")
+        return show
 
-        match type:
-            case 's' | 'e':
-                # Init
-                if show_id_str not in obj.episode_reached:
-                    obj.episode_reached[show_id_str] = {}
-                if type not in obj.episode_reached[show_id_str] or obj.episode_reached[show_id_str][type] is None:
-                    obj.episode_reached[show_id_str][type] = 1
-                    obj.save()
-                # Return
-                return obj.episode_reached.get(show_id_str).get(type) if show_kind != 'film' else None
-            case 't':
-                return obj.time_reached.get(show_id_str, 0) if show_kind == 'film' else obj.time_reached.get(show_id_str, 0).get(str(self.get_season_reached(obj))).get(str(self.get_episode_reached(obj)))
-        
-    def get_episode_reached(self, obj):
-        return self.get_x_reached(obj, 'e')
+    def _get_or_initialize_progress_value(self, obj, show_id, key_type, default_value=1):
+        """
+        Retrieves the season/episode progress. If not found or None, initializes it
+        to default_value (typically 1) and saves the user object.
+        """
+        if show_id not in obj.episode_reached:
+            obj.episode_reached[show_id] = {}; obj.save()
+        try:
+            current_value = obj.episode_reached[show_id][key_type]
+        except KeyError:
+            obj.episode_reached[show_id][key_type] = default_value; obj.save()
+            return default_value
+        return current_value
+
     def get_season_reached(self, obj):
-        return self.get_x_reached(obj, 's')
+        show = self._get_show()
+        if show.kind == 'film':
+            return None
+        return self._get_or_initialize_progress_value(obj, str(show.id), 's')
+
+    def get_episode_reached(self, obj):
+        show = self._get_show()
+        if show.kind == 'film':
+            return None
+        return self._get_or_initialize_progress_value(obj, str(show.id), 'e')
+
     def get_time_reached(self, obj):
-        return self.get_x_reached(obj, 't')
+        show = self._get_show()
+
+        if show.kind == 'film':
+            return obj.time_reached.get(str(show.id), 0)
+        else:
+            season = self._get_or_initialize_progress_value(obj, str(show.id), 's')
+            episode = self._get_or_initialize_progress_value(obj, str(show.id), 'e')
+            # Safely access the nested dictionary
+            # Convert keys to string if they are stored as such in time_reached
+            return obj.time_reached.get(str(show.id), {}).get(str(season), {}).get(str(episode), 0)
+    
+    def get_in_favorites(self, obj):
+        show = self._get_show()
+        return get_in_f_or_w(obj, show, 'f')
+
+    def get_in_watchlist(self, obj):
+        show = self._get_show()
+        return get_in_f_or_w(obj, show, 'w')

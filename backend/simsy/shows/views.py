@@ -28,14 +28,12 @@ class ShowDetailView(RetrieveAPIView):
             return False
         return show.watchlist.filter(id=self.request.user.id).exists()
 
-
 class UserShowView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-
     def get(self, request, show_id):
         try:
             serializer = UserShowSerializer(
-                request.user, context={'request': request})
+                request.user, context={'request': request, 'show_id': show_id})
             return Response(serializer.data, status=200)
         except CustomUser.DoesNotExist:
             return Response({'error': 'User not found'}, status=404)

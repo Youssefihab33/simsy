@@ -37,8 +37,6 @@ def send_email(subject, template, user, btnLink=""):
     message.send()
 
 # Create your views here.
-
-
 class LoginViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
