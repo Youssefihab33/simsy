@@ -45,8 +45,10 @@ const useShowData = (showId) => {
 		try {
 			const response = await axiosInstance.get(`shows/user/${showId}`);
 			setUserShowData(response.data);
+			console.log(response.data)
 		} catch (err) {
 			console.error('Error fetching user show data:', err);
+			// console.log(err.response.data)
 			setError(err);
 		}
 	}, [showId]);

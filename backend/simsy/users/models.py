@@ -32,8 +32,6 @@ class CustomUser(AbstractUser):
         'shows.Country', on_delete=models.CASCADE, blank=True, null=True)
 
     # shows related fields
-    season_reached = models.JSONField(
-        encoder=None, decoder=None, default=dict, blank=True)
     episode_reached = models.JSONField(
         encoder=None, decoder=None, default=dict, blank=True)
     time_reached = models.JSONField(
@@ -43,9 +41,7 @@ class CustomUser(AbstractUser):
     # user preferences
     time_autosave = models.BooleanField(default=True)
     autoplay = models.BooleanField(default=True)
-    view_artists = models.BooleanField(default=True)
     view_captions = models.BooleanField(default=True)
-    episode_selector_opened = models.BooleanField(default=True)
     remember_home_tab = models.BooleanField(default=True)
     home_tab = models.IntegerField(default=3)
 

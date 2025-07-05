@@ -157,32 +157,26 @@ class UserShowSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['season_reached', 'episode_reached', 'time_reached', 'time_autosave', 'autoplay', 'view_captions']
 
-    def get_show_id(self):
-        """Helper to get show_id from serializer context."""
-        request = self.context.get('request')
-        if request:
-            return str(request.parser_context['kwargs'].get('show_id'))
-        return None
-
-    def get_episode_reached(self, obj):
-        show_id_str = self.get_show_id()
-        if show_id_str and isinstance(obj.episode_reached, dict):
-            return obj.episode_reached.get(show_id_str)
-        return None
-
-    def get_season_reached(self, obj):
-        show_id_str = self.get_show_id()
-        if show_id_str and isinstance(obj.season_reached, dict):
-            return obj.season_reached.get(show_id_str)
-        return None
-
-    def get_time_reached(self, obj):
-        show_id_str = self.get_show_id()
+    def get_x_reached(self, obj, type):
+        show_id_str = str(self.context.get('request').parser_context['kwargs'].get('show_id'))
         show_kind = Show.objects.get(id=show_id_str).kind
-        if show_id_str and isinstance(obj.time_reached, dict):
-            match show_kind:
-                case 'film':
-                    return obj.time_reached.get(show_id_str, 0)
-                case 'series' | 'program' :
-                    return obj.time_reached.get(show_id_str, 0).get(str(self.get_season_reached(obj))).get(str(self.get_episode_reached(obj)))
-        return 0
+
+        match type:
+            case 's' | 'e':
+                # Init
+                if show_id_str not in obj.episode_reached:
+                    obj.episode_reached[show_id_str] = {}
+                if type not in obj.episode_reached[show_id_str] or obj.episode_reached[show_id_str][type] is None:
+                    obj.episode_reached[show_id_str][type] = 1
+                    obj.save()
+                # Return
+                return obj.episode_reached.get(show_id_str).get(type) if show_kind != 'film' else None
+            case 't':
+                return obj.time_reached.get(show_id_str, 0) if show_kind == 'film' else obj.time_reached.get(show_id_str, 0).get(str(self.get_season_reached(obj))).get(str(self.get_episode_reached(obj)))
+        
+    def get_episode_reached(self, obj):
+        return self.get_x_reached(obj, 'e')
+    def get_season_reached(self, obj):
+        return self.get_x_reached(obj, 's')
+    def get_time_reached(self, obj):
+        return self.get_x_reached(obj, 't')
