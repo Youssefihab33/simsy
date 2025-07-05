@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useState, useEffect, useRef, useContext } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import axiosInstance from './APIs/Axios.jsx';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { Typography, Button, Chip, Avatar, Tooltip, Modal, Box } from '@mui/material';
@@ -12,173 +12,252 @@ import LoadingSpinner from './snippets/LoadingSpinner';
 import styles from './modules/ShowDetails.module.css';
 import { VideoJS, videoJsOptions } from './snippets/VideoJS.jsx';
 
-export default function ShowDetails() {
-	const { show_id } = useParams();
+// Custom hook for API calls
+const useShowData = (showId) => {
 	const [show, setShow] = useState(null);
 	const [userShowData, setUserShowData] = useState(null);
-	const [season, setSeason] = useState(1);
-	const [episode, setEpisode] = useState(1);
-	const [hoveredArtist, setHoveredArtist] = useState(null);
+	const [inFavorites, setInFavorites] = useState(null);
+	const [inWatchlist, setInWatchlist] = useState(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(null);
+
+	const fetchShowDetails = useCallback(async () => {
+		try {
+			setLoading(true);
+			const response = await axiosInstance.get(`shows/show/${showId}/`);
+			if (response.status === 200) {
+				setShow(response.data);
+				setInFavorites(response.data.in_favorites);
+				setInWatchlist(response.data.in_watchlist);
+			} else {
+				throw new Error(`Error fetching show details: ${response.statusText}`);
+			}
+		} catch (err) {
+			console.error('Error fetching show details:', err);
+			setError(err);
+		} finally {
+			setLoading(false);
+		}
+	}, [showId]);
+
+	const fetchUserShowData = useCallback(async () => {
+		if (!showId) return;
+		try {
+			const response = await axiosInstance.get(`shows/user/${showId}`);
+			setUserShowData(response.data);
+		} catch (err) {
+			console.error('Error fetching user show data:', err);
+			setError(err);
+		}
+	}, [showId]);
+
+	useEffect(() => {
+		fetchShowDetails();
+	}, [fetchShowDetails]);
+
+	useEffect(() => {
+		if (show) {
+			fetchUserShowData();
+		}
+	}, [show, fetchUserShowData]); // Depend on 'show' and the memoized fetcher
+
+	return { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, fetchUserShowData };
+};
+
+// Custom hook for media player logic
+const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 	const [open, setOpen] = useState(false);
 	const playerRef = useRef(null);
 	const intervalRef = useRef(null);
-	const [inFavorites, setInFavorites] = useState(null);
-	const [inWatchlist, setInWatchlist] = useState(null);
-	const handleOpen = () => {
-		setOpen(true);
-	};
+	const [season, setSeason] = useState(1);
+	const [episode, setEpisode] = useState(1);
+
+	useEffect(() => {
+		if (userShowData) {
+			setSeason(userShowData.season_reached);
+			setEpisode(userShowData.episode_reached);
+		}
+	}, [userShowData]);
+
+	const handleOpen = () => setOpen(true);
+
 	const handleClose = () => {
 		setOpen(false);
 		if (intervalRef.current) {
 			clearInterval(intervalRef.current);
 			intervalRef.current = null;
 		}
-	};
-	const handleFavoritesToggle = () => {
-		axiosInstance
-			.post(`shows/toggleFavorite/${show.id}/`)
-			.then((response) => {
-				if (response.status === 200) {
-					setInFavorites(response.data.in_favorites);
-				} else {
-					console.error('Error toggling favorite (non 200):', response.statusText);
-				}
-			})
-			.catch((error) => {
-				console.error('Error toggling favorite:', error);
-			});
-	};
-	const handleWatchlistToggle = () => {
-		axiosInstance
-			.post(`shows/toggleWatchlist/${show.id}/`)
-			.then((response) => {
-				if (response.status === 200) {
-					setInWatchlist(response.data.in_watchlist);
-				} else {
-					console.error('Error toggling watchlist (non 200):', response.statusText);
-				}
-			})
-			.catch((error) => {
-				console.error('Error toggling watchlist:', error);
-			});
+		fetchUserShowData(); // Refresh user show data after modal closes
 	};
 
-	// Fetch show details & User-show related data
-	useEffect(() => {
-		axiosInstance
-			.get(`shows/show/${show_id}/`)
-			.then((response) => {
-				if (response.status === 200) {
-					setShow(response.data);
-					setInFavorites(response.data.in_favorites);
-					setInWatchlist(response.data.in_watchlist);
-				} else {
-					console.error('Error fetching show details (non 200):', response.statusText);
-				}
-			})
-			.catch((error) => {
-				console.error('Error fetching show details:', error);
-			});
-	}, [show_id]);
+	const sendTimeReached = useCallback(
+		async (currentShowId, timeReached) => {
+			try {
+				const response = await axiosInstance.get(`shows/update_time_reached/${currentShowId}/${season || 0}/${episode || 0}/${Math.round(timeReached)}`);
+				console.log(response.data.message);
+			} catch (error) {
+				console.error('Error updating time reached:', error);
+			}
+		},
+		[season, episode]
+	);
 
-	// Fetch User-Show Related Data
+	const handlePlayerReady = useCallback(
+		(player) => {
+			playerRef.current = player;
+
+			// Set up a listener for the 'loadedmetadata' event
+			player.on('loadedmetadata', () => {
+				// Now it's safe to set the currentTime
+				player.currentTime(userShowData?.time_reached || 0);
+				player.play();
+
+				// Backup interval each 30 seconds
+				if (intervalRef.current) {
+				    clearInterval(intervalRef.current);
+				}
+				intervalRef.current = setInterval(() => {
+				    if (!player.paused()) {
+				        sendTimeReached(show.id, player.currentTime());
+				    }
+				}, 30000);
+			});
+
+			player.on(['pause', 'fullscreenchange', 'dispose'], () => {
+				sendTimeReached(show.id, player.currentTime());
+			});
+			player.on('ended', () => {
+				sendTimeReached(show.id, 0);
+			});
+		},
+		[sendTimeReached, show, userShowData]
+	);
+
+	// Cleanup interval on unmount
 	useEffect(() => {
-		if (show) {
-			axiosInstance
-				.get(`shows/user/${show.id}`)
-				.then((response) => {
-					setUserShowData(response.data);
-					setSeason(response.data.season_reached);
-					setEpisode(response.data.episode_reached);
-				});
+		return () => {
+			if (intervalRef.current) {
+				clearInterval(intervalRef.current);
+			}
+		};
+	}, []);
+
+	// Determine video source and captions based on show kind
+	const getVideoDetails = useCallback(() => {
+		let videoSrc = '';
+		let captionsSrc = '';
+		const videoRoot = import.meta.env.VITE_VIDEOS_SOURCE_ROOT;
+
+		// Add a check for 'show' before accessing its properties
+		if (!show) {
+			return { videoSrc: '', captionsSrc: '' }; // Return empty if show is not available yet
 		}
-	}, [show]);
 
-	if (!show) {
+		switch (show?.kind) {
+			case 'film':
+				videoSrc = `${videoRoot}/videos/${show.name}.mp4`;
+				captionsSrc = `${videoRoot}/captions/${show.name}.vtt`;
+				break;
+			case 'series':
+				videoSrc = `${videoRoot}/videos/${show.name}/s${season}e${episode}.mp4`;
+				captionsSrc = `${videoRoot}/captions/${show.name}/s${season}e${episode}.vtt`;
+				break;
+			default:
+				console.error('Unknown show kind:', show?.kind);
+				// Consider a default video/caption source or handle this error more gracefully
+				break;
+		}
+		return { videoSrc, captionsSrc };
+	}, [show, season, episode]);
+
+	const { videoSrc, captionsSrc } = getVideoDetails();
+
+	// Ensure playerOptions are only built if show is available
+	const playerOptions = show
+		? {
+				...videoJsOptions,
+				sources: [{ src: videoSrc, type: 'video/mp4' }],
+				tracks:
+					show?.captions && captionsSrc
+						? [
+								{
+									kind: 'captions',
+									srclang: 'en',
+									label: 'English',
+									src: captionsSrc,
+									mode: userShowData?.view_captions ? 'showing' : 'disabled',
+								},
+						  ]
+						: [],
+		  }
+		: {}; // Provide a default empty object or null if show is not ready
+
+	// Also guard accentColor
+	const accentColor = getAccentColor(show?.kind);
+
+	return { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor };
+};
+
+// Helper to determine accent color
+const getAccentColor = (kind) => {
+	switch (kind) {
+		case 'film':
+			return '#9A0606';
+		case 'series':
+			return '#5DD95D';
+		case 'program':
+			return '#54A9DE';
+		default:
+			return '#9A0606'; // Default color
+	}
+};
+
+// Helper for API toggles (favorites/watchlist)
+const useToggleApi = (showId, inState, setInState, endpoint) => {
+	const handleToggle = useCallback(async () => {
+		try {
+			const response = await axiosInstance.post(`shows/${endpoint}/${showId}/`);
+			if (response.status === 200) {
+				setInState(response.data[`in_${endpoint}`]);
+			} else {
+				throw new Error(`Error toggling ${endpoint}: ${response.statusText}`);
+			}
+		} catch (error) {
+			console.error(`Error toggling ${endpoint}:`, error);
+		}
+	}, [showId, setInState, endpoint]);
+	return handleToggle;
+};
+
+export default function ShowDetails() {
+	const { show_id } = useParams();
+	const [hoveredArtist, setHoveredArtist] = useState(null);
+
+	const { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, fetchUserShowData } = useShowData(show_id);
+
+	const handleFavoritesToggle = useToggleApi(show?.id, inFavorites, setInFavorites, 'toggleFavorite');
+	const handleWatchlistToggle = useToggleApi(show?.id, inWatchlist, setInWatchlist, 'toggleWatchlist');
+
+	const { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor } = useMediaPlayer(show, userShowData, fetchUserShowData);
+
+	// Dynamic hover color based on accentColor
+	const hoverColor = accentColor === '#9A0606' ? '#B00707' : accentColor === '#5DD95D' ? '#79E679' : accentColor === '#54A9DE' ? '#6CB5E3' : '#6CB5E3'; // Default hover color
+
+	if (loading) {
 		return <LoadingSpinner />;
 	}
 
-	// Determine values based on show.kind
-	let accentColor,
-		hoverColor,
-		videoSrc,
-		captionsSrc = '';
-	switch (show.kind) {
-		case 'film':
-			accentColor = '#9A0606';
-			hoverColor = '#B00707';
-			videoSrc = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}/videos/${show.name}.mp4`;
-			captionsSrc = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}/captions/${show.name}.vtt`;
-			break;
-		case 'series':
-			accentColor = '#5DD95D';
-			hoverColor = '#79E679';
-			videoSrc = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}/videos/${show.name}/s${season}e${episode}.mp4`;
-			captionsSrc = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}/captions/${show.name}/s${season}e${episode}.vtt`;
-			break;
-		case 'program':
-			accentColor = '#54A9DE';
-			hoverColor = '#6CB5E3';
-			break;
-		default:
-			console.error('Unknown show kind:', show.kind);
+	if (error) {
+		return <div className='text-light text-center mt-5'>Error loading show details. Please try again later.</div>;
 	}
 
-	const playerOptions = {
-		...videoJsOptions,
-		sources: [
-			{
-				src: videoSrc,
-				type: 'video/mp4',
-			},
-		],
-		tracks:
-			show.captions && captionsSrc
-				? [
-						{
-							kind: 'captions',
-							srclang: 'en',
-							label: 'English',
-							src: captionsSrc,
-							mode: userShowData.view_captions ? 'showing' : 'disabled',
-						},
-				  ]
-				: [],
-	};
+	if (!show) {
+		return null; // Or a message indicating no show found
+	}
 
-	// Set up Video.js options
-	const handlePlayerReady = (player) => {
-		playerRef.current = player;
-		player
-			.requestFullscreen()
-			.then(() => {
-				return player.play();
-			})
-			.then(() => {
-				player.currentTime(userShowData.time_reached);
-				if (intervalRef.current) {
-					clearInterval(intervalRef.current);
-				}
-				intervalRef.current = setInterval(() => {
-					if (!player.paused()) {
-						sendTimeReached(show.id, player.currentTime());
-					}
-				}, 2500);
-			})
-			.catch((error) => {
-				console.error('Error in media operations:', error);
-			});
-	};
-
-	const sendTimeReached = (show_id, timeReached) => {
-		axiosInstance
-			.get(`shows/update_time_reached/${show_id}/${season || 0}/${episode || 0}/${Math.round(timeReached)}`)
-			.then((response) => {
-				console.log(response.data.message);
-			})
-			.catch((error) => {
-				console.error(error);
-			});
+	const commonChipProps = {
+		variant: 'outlined',
+		sx: { margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' },
 	};
 
 	return (
@@ -187,7 +266,6 @@ export default function ShowDetails() {
 			<div className={styles.heroSection} style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(${show.image})` }}>
 				<Container>
 					<Row className='align-items-center'>
-						{/* Poster and Details Column */}
 						<Col md={4} className='d-flex justify-content-center justify-content-md-start mb-4 mb-md-0'>
 							<img src={show.image} alt={`${show.name} poster`} className={styles.posterImage} />
 						</Col>
@@ -229,7 +307,6 @@ export default function ShowDetails() {
 									{inWatchlist ? 'In your Watchlist' : 'Add to Watchlist'}
 								</Button>
 							</div>
-							{/* This is the IMDb widget from the API response */}
 							{show.imdb && <div dangerouslySetInnerHTML={{ __html: show.imdb }} />}
 						</Col>
 					</Row>
@@ -239,9 +316,7 @@ export default function ShowDetails() {
 			{/* --- Main Details Section --- */}
 			<Container className='my-5'>
 				<Row>
-					{/* Left Column for Details */}
 					<Col md={8}>
-						{/* Overview */}
 						<div className='mb-5'>
 							<Typography variant='h4' component='h2' gutterBottom className='fw-bold text-light'>
 								Overview
@@ -251,7 +326,6 @@ export default function ShowDetails() {
 							</Typography>
 						</div>
 
-						{/* Key Information Grid */}
 						<div className='mb-5'>
 							<Typography variant='h5' component='h3' gutterBottom className='fw-bold text-light'>
 								Details
@@ -307,7 +381,7 @@ export default function ShowDetails() {
 												Episodes:
 											</Typography>
 											<Typography variant='body1' className='text-light'>
-												# of Episodes
+												{show.number_of_episodes || '# of Episodes'} {/* Use actual prop if available */}
 											</Typography>
 										</Col>
 									</>
@@ -315,7 +389,6 @@ export default function ShowDetails() {
 							</Row>
 						</div>
 
-						{/* Countries & Languages */}
 						<div className='mb-5'>
 							<Typography variant='h5' component='h3' gutterBottom className='fw-bold' sx={{ color: accentColor + ' !important' }}>
 								Countries & Languages
@@ -323,29 +396,18 @@ export default function ShowDetails() {
 							<div className='d-flex flex-wrap'>
 								{show.countries.map((country) => (
 									<Tooltip key={country.id} title={country.description} placement='top'>
-										<Chip
-											label={country.name}
-											variant='outlined'
-											sx={{ margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' }}
-											avatar={<Avatar src={country.flag} />}
-										/>
+										<Chip label={country.name} avatar={<Avatar src={country.flag} />} {...commonChipProps} />
 									</Tooltip>
 								))}
 								{show.countries.length > 0 && show.languages.length > 0 && <h3 style={{ margin: '4px 8px' }}>|</h3>}
 								{show.languages.map((language) => (
 									<Tooltip key={language.id} title={language.description} placement='top'>
-										<Chip
-											label={language.name}
-											variant='outlined'
-											sx={{ margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' }}
-											avatar={<Avatar src={language.image} />}
-										/>
+										<Chip label={language.name} avatar={<Avatar src={language.image} />} {...commonChipProps} />
 									</Tooltip>
 								))}
 							</div>
 						</div>
 
-						{/* Genres */}
 						<div className='mb-5'>
 							<Typography variant='h5' component='h3' gutterBottom className='fw-bold' sx={{ color: accentColor + ' !important' }}>
 								Genres & Labels
@@ -353,40 +415,26 @@ export default function ShowDetails() {
 							<div className='d-flex flex-wrap'>
 								{show.genres.map((genre) => (
 									<Tooltip key={genre.id} title={genre.description} placement='top'>
-										<Chip
-											label={genre.name}
-											variant='outlined'
-											sx={{ margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' }}
-											avatar={<Avatar src={genre.image} />}
-										/>
+										<Chip label={genre.name} avatar={<Avatar src={genre.image} />} {...commonChipProps} />
 									</Tooltip>
 								))}
 								{show.genres.length > 0 && show.labels.length > 0 && <h3 style={{ margin: '4px 8px' }}>|</h3>}
 								{show.labels.map((label) => (
 									<Tooltip key={label.id} title={label.description} placement='top'>
-										<Chip
-											label={label.name}
-											variant='outlined'
-											sx={{ margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' }}
-											avatar={<Avatar src={label.image} />}
-										/>
+										<Chip label={label.name} avatar={<Avatar src={label.image} />} {...commonChipProps} />
 									</Tooltip>
 								))}
 							</div>
 						</div>
 					</Col>
 
-					{/* Right Column for Cast */}
 					<Col md={4}>
-						{/* Cast & Crew Section */}
 						<div className='overflow-visible mb-5'>
 							<Typography variant='h4' component='h2' gutterBottom className='fw-bold text-light'>
 								Cast
 							</Typography>
-							{/* Make the cast container scrollable */}
 							<div className={styles.castContainer}>
 								<Row xs={2} className='g-2'>
-									{/* 2x2 grid */}
 									{show.artists.map((artist) => (
 										<Col key={artist.id}>
 											<Card className={styles.artistCard} onMouseEnter={() => setHoveredArtist(artist)} onMouseLeave={() => setHoveredArtist(null)}>
@@ -397,9 +445,9 @@ export default function ShowDetails() {
 												{hoveredArtist?.id === artist.id && (
 													<div className={styles.artistInfoHover}>
 														<Typography variant='body2' sx={{ mt: 1 }}>
-															{artist.birthYear} | {artist.nationality.name}
+															{artist.birthYear} | {artist.nationality?.name}
 															<br />
-															{new Date().getFullYear() - artist.birthYear} Years old
+															{artist.birthYear ? `${new Date().getFullYear() - artist.birthYear} Years old` : ''}
 														</Typography>
 													</div>
 												)}
@@ -412,7 +460,6 @@ export default function ShowDetails() {
 					</Col>
 				</Row>
 
-				{/* Additional Details */}
 				<hr style={{ borderColor: 'rgba(255, 255, 255, 0.2)' }} />
 				<Row className='mt-5'>
 					<Col>

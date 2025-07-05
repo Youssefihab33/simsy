@@ -178,6 +178,11 @@ class UserShowSerializer(serializers.ModelSerializer):
 
     def get_time_reached(self, obj):
         show_id_str = self.get_show_id()
+        show_kind = Show.objects.get(id=show_id_str).kind
         if show_id_str and isinstance(obj.time_reached, dict):
-            return obj.time_reached.get(show_id_str, 0)
+            match show_kind:
+                case 'film':
+                    return obj.time_reached.get(show_id_str, 0)
+                case 'series' | 'program' :
+                    return obj.time_reached.get(show_id_str, 0).get(str(self.get_season_reached(obj))).get(str(self.get_episode_reached(obj)))
         return 0
