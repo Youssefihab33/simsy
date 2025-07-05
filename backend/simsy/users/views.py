@@ -7,8 +7,8 @@ from django.dispatch import receiver
 from rest_framework import viewsets, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django_rest_passwordreset.signals import reset_password_token_created, post_password_reset
-from knox.models import AuthToken
+from django_rest_passwordreset.signals import reset_password_token_created, post_password_reset # type: ignore
+from knox.models import AuthToken # type: ignore
 from datetime import datetime
 from .serializers import *
 from .models import *

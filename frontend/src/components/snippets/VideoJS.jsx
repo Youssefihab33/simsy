@@ -1,17 +1,14 @@
 import { useRef, useEffect } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
-import 'videojs-playlist-ui/dist/videojs-playlist-ui.css';
-import 'videojs-playlist';
-import 'videojs-playlist-ui';
+// import '@videojs/themes/dist/forest/index.css';
 import 'videojs-hotkeys';
 import 'videojs-seek-buttons';
 import 'videojs-mobile-ui';
 
-export const VideoJS = (props) => {
+export function VideoJS({ options, onReady, color }) {
 	const videoRef = useRef(null);
 	const playerRef = useRef(null);
-	const { options, onReady, isPlaylist = false } = props;
 
 	useEffect(() => {
 		// Make sure Video.js player is only initialized once
@@ -24,52 +21,20 @@ export const VideoJS = (props) => {
 				videojs.log('player is ready');
 				onReady && onReady(player);
 			}));
-
-			// --- Playlist setup logic ---
-			// If it's a playlist, call the playlist plugin on the player instance.
-			if (isPlaylist) {
-				// The playlist items are expected to be in options.sources
-				player.playlist(options.sources);
-
-				// Initialize the playlist UI. This will create the playlist UI component.
-				// The container for the playlist UI is where the div with `data-vjs-player` is.
-				// We'll add a class to the container div in the JSX to target it.
-				player.playlistUi({
-        el: playerRef.current,
-    })
-
-				// You can add event listeners for the playlist here if needed
-				player.on('playlistitem', () => {
-				  console.log('Now playing:', player.playlist.currentItem());
-				});
-			}
 		} else {
 			// This block is for updating an existing player.
 			// When updating, we need to handle the playlist logic as well.
 			const player = playerRef.current;
 
-			// Update player options
+			// Update player options (ADD THE REST OF THE OPTIONS HERE)
 			player.autoplay(options.autoplay);
-
-			// Check if we are dealing with a playlist or a single source
-			if (isPlaylist) {
-				// If it's a playlist, update the playlist.
-				// This will replace the entire playlist with the new one.
-				player.playlist(options.sources);
-
-				// You can also reset to the first item
-				// player.playlist.currentItem(0);
-			} else {
-				// If it's a single source, update the source as before.
-				player.src(options.sources);
-			}
+			player.src(options.sources);
 		}
-	}, [options, videoRef, isPlaylist, onReady]);
+	}, [options, videoRef, onReady]);
 
 	// Dispose the Video.js player when the functional component unmounts
 	useEffect(() => {
 		const player = playerRef.current;
-
 		return () => {
 			if (player && !player.isDisposed()) {
 				player.dispose();
@@ -78,15 +43,45 @@ export const VideoJS = (props) => {
 		};
 	}, [playerRef]);
 
+	// This useEffect handles applying the custom color
+	// useEffect(() => {
+    //     const player = playerRef.current;
+
+    //     if (player && color) {
+    //         const playerEl = player.el(); // Get the player's root DOM element
+
+    //         // Function to safely apply style if element exists
+    //         const applyStyle = (selector, styleProp, value) => {
+    //             const element = playerEl.querySelector(selector);
+    //             if (element) {
+    //                 element.style[styleProp] = value;
+    //             }
+    //         };
+
+    //         // Main color (e.g., icons, progress bar)
+    //         applyStyle('.vjs-theme-forest.video-js', 'color', color); // For general icons/text
+    //         applyStyle('.vjs-theme-forest .vjs-play-progress', 'backgroundColor', color);
+    //         applyStyle('.vjs-theme-forest .vjs-slider.vjs-volume-level', 'backgroundColor', color);
+    //         applyStyle('.vjs-theme-forest .vjs-big-play-button', 'borderColor', color);
+    //         applyStyle('.vjs-theme-forest .vjs-big-play-button', 'backgroundColor', color + 'b3'); // Example with 70% opacity
+
+    //         applyStyle('.vjs-theme-forest .vjs-control-bar', 'backgroundColor', '#ff0000');
+    //         applyStyle('.vjs-theme-forest .vjs-current-time', 'color', '#00ff00');
+    //         applyStyle('.vjs-theme-forest .vjs-duration', 'color', '#00ff00');
+    //     }
+    // }, [color]); // This effect depends only on the 'color' prop
+
+// Things to refactor
+// any "user"
+// The Styles applying useEffect()
+
 	return (
 		// Add a class to the container div so we can target it for the playlist UI
-		<div data-vjs-player className={`video-js-container ${isPlaylist ? 'vjs-playlist-ui' : ''}`}>
-			<div ref={videoRef} />
+		<div data-vjs-player className='video-js-container'>
+			<div ref={videoRef} className='vjs-theme-forest'/>
 		</div>
 	);
-};
-
-export default VideoJS;
+}
 
 // Video.js options
 export const videoJsOptions = {
@@ -122,12 +117,6 @@ export const videoJsOptions = {
 				disabled: false,
 			},
 		},
-        playlist: {
-            autoadvance: true,
-        },
-        playlistUi: {
-            el: 'the_playlist_container_id',
-        },
 	},
 };
 

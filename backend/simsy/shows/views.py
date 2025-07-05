@@ -33,7 +33,7 @@ class LanguageView(viewsets.ModelViewSet):
     queryset = Language.objects.all()
     serializer_class = LanguageSerializer
     permission_classes = [permissions.AllowAny]
-    
+
 class CountryView(viewsets.ModelViewSet):
     queryset = Country.objects.all()
     serializer_class = CountrySerializer
@@ -66,6 +66,20 @@ class ShowDetailView(RetrieveAPIView):
         if not self.request.user.is_authenticated:
             return False
         return show.watchlist.filter(id=self.request.user.id).exists()
+
+
+class UserShowView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id):
+        try:
+            serializer = UserShowSerializer(
+                request.user, context={'request': request})
+            return Response(serializer.data, status=200)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found'}, status=404)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
 
 
 class FavoriteShowsView(viewsets.ModelViewSet):
@@ -166,6 +180,7 @@ class RandomShowsView(viewsets.ModelViewSet):
             return random.sample(list(all_shows), 10)
         return all_shows
 
+
 class ToggleFavoriteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -211,4 +226,40 @@ class ToggleWatchlistView(APIView):
         return Response({
             'message': message,
             'in_watchlist': current_status
+        }, status=status.HTTP_200_OK)
+
+
+class UpdateTimeReached(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id, season, episode, time_reached):
+        try:
+            show = Show.objects.get(id=show_id)
+        except Show.DoesNotExist:
+            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
+
+        if str(show.id) not in request.user.time_reached:
+            request.user.time_reached[str(show.id)] = {}
+
+        match show.kind:
+            case 'film':
+                request.user.time_reached[str(show.id)] = time_reached
+                request.user.save()
+                message = f'Updated time_reached for the Film \'{show.name}\' to {time_reached}'
+            case 'series':
+                # Ensure the dictionary for the season exists within that show_id
+                if str(season) not in request.user.time_reached[str(show.id)]:
+                    request.user.time_reached[str(show.id)][str(season)] = {}
+                request.user.time_reached[str(show.id)][str(
+                    season)][str(episode)] = time_reached
+                request.user.save()
+                message = f'Updated time_reached for the Series \'{show.name}\' Season {season} Episode {episode} to {time_reached}'
+            case 'program':
+                print('program')
+            case _:
+                return Response({'detail': 'Unknown Show Type!'}, status=status.HTTP_417_EXPECTATION_FAILED)
+
+        return Response({
+            'message': message,
+            'new_time_reached': time_reached
         }, status=status.HTTP_200_OK)

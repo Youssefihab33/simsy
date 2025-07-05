@@ -10,7 +10,6 @@ export const UserProvider = ({ children }) => {
 
     useEffect(() => {
         const fetchUserData = async () => {
-            console.log("Fetching user data...");
             try {
                 axiosInstance.get('/api/profile').then(res => setUserData(res.data));
             } catch (err) {
@@ -22,7 +21,7 @@ export const UserProvider = ({ children }) => {
         };
 
         fetchUserData();
-    }, []); // Empty dependency array means this runs once on mount
+    }, []);
 
     if (loading) return <div>Loading user data...</div>;
     if (error) return <div>Error: {error}</div>;

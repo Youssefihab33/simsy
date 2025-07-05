@@ -18,8 +18,10 @@ router.register('randomShows', RandomShowsView, basename='randomShows')
 # Note: You need to import ShowDetailView from your views.py
 urlpatterns = [
     path('show/<int:show_id>/', ShowDetailView.as_view(), name='show-detail'),
+    path('user/<int:show_id>/', UserShowView.as_view(), name='user-show-data'),
     path('toggleFavorite/<int:show_id>/', ToggleFavoriteView.as_view(), name='toggle-favorite'),
     path('toggleWatchlist/<int:show_id>/', ToggleWatchlistView.as_view(), name='toggle-watchlist'),
+    path('update_time_reached/<int:show_id>/<int:season>/<int:episode>/<int:time_reached>/', UpdateTimeReached.as_view(), name='update-time-reached'),
 ]
 
 # Append the router's URLs to your custom URLs

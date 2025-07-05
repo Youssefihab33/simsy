@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useContext } from 'react';
 import axiosInstance from './APIs/Axios.jsx';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { Typography, Button, Chip, Avatar, Tooltip, Modal, Box } from '@mui/material';
@@ -13,15 +13,27 @@ import styles from './modules/ShowDetails.module.css';
 import { VideoJS, videoJsOptions } from './snippets/VideoJS.jsx';
 
 export default function ShowDetails() {
-	const [show, setShow] = useState(null);
 	const { show_id } = useParams();
+	const [show, setShow] = useState(null);
+	const [userShowData, setUserShowData] = useState(null);
+	const [season, setSeason] = useState(1);
+	const [episode, setEpisode] = useState(1);
 	const [hoveredArtist, setHoveredArtist] = useState(null);
 	const [open, setOpen] = useState(false);
-	const handleOpen = () => setOpen(true);
-	const handleClose = () => setOpen(false);
 	const playerRef = useRef(null);
+	const intervalRef = useRef(null);
 	const [inFavorites, setInFavorites] = useState(null);
 	const [inWatchlist, setInWatchlist] = useState(null);
+	const handleOpen = () => {
+		setOpen(true);
+	};
+	const handleClose = () => {
+		setOpen(false);
+		if (intervalRef.current) {
+			clearInterval(intervalRef.current);
+			intervalRef.current = null;
+		}
+	};
 	const handleFavoritesToggle = () => {
 		axiosInstance
 			.post(`shows/toggleFavorite/${show.id}/`)
@@ -51,7 +63,7 @@ export default function ShowDetails() {
 			});
 	};
 
-	// Fetch show details
+	// Fetch show details & User-show related data
 	useEffect(() => {
 		axiosInstance
 			.get(`shows/show/${show_id}/`)
@@ -69,72 +81,104 @@ export default function ShowDetails() {
 			});
 	}, [show_id]);
 
+	// Fetch User-Show Related Data
+	useEffect(() => {
+		if (show) {
+			axiosInstance
+				.get(`shows/user/${show.id}`)
+				.then((response) => {
+					setUserShowData(response.data);
+					setSeason(response.data.season_reached);
+					setEpisode(response.data.episode_reached);
+				});
+		}
+	}, [show]);
+
 	if (!show) {
 		return <LoadingSpinner />;
 	}
 
 	// Determine values based on show.kind
-	let accentColor = '';
-	let hoverColor = '';
-	let video_link = '';
-	let seriesPlaylist = {};
-	let filmOptions = {};
+	let accentColor,
+		hoverColor,
+		videoSrc,
+		captionsSrc = '';
 	switch (show.kind) {
 		case 'film':
 			accentColor = '#9A0606';
 			hoverColor = '#B00707';
-			video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}.mp4`;
-			filmOptions = {
-				...videoJsOptions,
-				sources: [
-					{
-						src: video_link,
-						type: 'video/mp4',
-					},
-				],
-			};
+			videoSrc = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}/videos/${show.name}.mp4`;
+			captionsSrc = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}/captions/${show.name}.vtt`;
 			break;
 		case 'series':
 			accentColor = '#5DD95D';
 			hoverColor = '#79E679';
-			video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}/s1e1.mp4`;
-			seriesPlaylist = {
-				...videoJsOptions,
-				sources: [
-					{
-						src: video_link,
-						type: 'video/mp4',
-						title: 'Episode 1: The Beginning',
-						poster: 'path/to/poster1.jpg',
-					},
-					{
-						src: video_link,
-						type: 'video/mp4',
-						title: 'Episode 2: The Plot Thickens',
-						poster: 'path/to/poster2.jpg',
-					},
-					{
-						src: video_link,
-						type: 'video/mp4',
-						title: 'Episode 3: The Climax',
-						poster: 'path/to/poster3.jpg',
-					},
-				],
-			};
+			videoSrc = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}/videos/${show.name}/s${season}e${episode}.mp4`;
+			captionsSrc = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}/captions/${show.name}/s${season}e${episode}.vtt`;
 			break;
 		case 'program':
 			accentColor = '#54A9DE';
 			hoverColor = '#6CB5E3';
-			video_link = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT}${show.name}/.mp4`;
 			break;
 		default:
 			console.error('Unknown show kind:', show.kind);
 	}
 
+	const playerOptions = {
+		...videoJsOptions,
+		sources: [
+			{
+				src: videoSrc,
+				type: 'video/mp4',
+			},
+		],
+		tracks:
+			show.captions && captionsSrc
+				? [
+						{
+							kind: 'captions',
+							srclang: 'en',
+							label: 'English',
+							src: captionsSrc,
+							mode: userShowData.view_captions ? 'showing' : 'disabled',
+						},
+				  ]
+				: [],
+	};
+
 	// Set up Video.js options
 	const handlePlayerReady = (player) => {
 		playerRef.current = player;
-		console.log('filmOptions:', filmOptions, 'seriesPlaylist:', seriesPlaylist);
+		player
+			.requestFullscreen()
+			.then(() => {
+				return player.play();
+			})
+			.then(() => {
+				player.currentTime(userShowData.time_reached);
+				if (intervalRef.current) {
+					clearInterval(intervalRef.current);
+				}
+				intervalRef.current = setInterval(() => {
+					if (!player.paused()) {
+						sendTimeReached(show.id, player.currentTime());
+					}
+				}, 2500);
+			})
+			.catch((error) => {
+				console.error('Error in media operations:', error);
+			});
+	};
+
+	const sendTimeReached = (show_id, timeReached) => {
+		axiosInstance
+			.get(`shows/update_time_reached/${show_id}/${season || 0}/${episode || 0}/${Math.round(timeReached)}`)
+			.then((response) => {
+				console.log(response.data.message);
+			})
+			.catch((error) => {
+				console.error(error);
+			});
 	};
 
 	return (
@@ -287,7 +331,7 @@ export default function ShowDetails() {
 										/>
 									</Tooltip>
 								))}
-								<h3>|</h3>
+								{show.countries.length > 0 && show.languages.length > 0 && <h3 style={{ margin: '4px 8px' }}>|</h3>}
 								{show.languages.map((language) => (
 									<Tooltip key={language.id} title={language.description} placement='top'>
 										<Chip
@@ -317,7 +361,7 @@ export default function ShowDetails() {
 										/>
 									</Tooltip>
 								))}
-								<h3>|</h3>
+								{show.genres.length > 0 && show.labels.length > 0 && <h3 style={{ margin: '4px 8px' }}>|</h3>}
 								{show.labels.map((label) => (
 									<Tooltip key={label.id} title={label.description} placement='top'>
 										<Chip
@@ -404,9 +448,7 @@ export default function ShowDetails() {
 						outline: 'none',
 					}}
 				>
-					<div>
-						<VideoJS isPlaylist={show.kind !== 'film'} options={show.kind !== 'film' ? seriesPlaylist : filmOptions} onReady={handlePlayerReady} />
-					</div>
+					{open && <VideoJS options={playerOptions} onReady={handlePlayerReady} color={accentColor} />}
 				</Box>
 			</Modal>
 		</div>

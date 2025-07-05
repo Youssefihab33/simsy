@@ -2,6 +2,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import *
+from users.models import CustomUser
 from users.serializers import UserSerializer
 User = get_user_model()
 
@@ -145,3 +146,38 @@ class ShowSerializer(serializers.ModelSerializer):
                   'imdb', 'description', 'countries', 'languages', 'genres', 'labels',
                   'rating', 'artists', 'episodes', 'favorites', 'watchlist', 'finalized', 'created', 'updated',
                   'in_favorites', 'in_watchlist']
+
+
+class UserShowSerializer(serializers.ModelSerializer):
+    episode_reached = serializers.SerializerMethodField()
+    season_reached = serializers.SerializerMethodField()
+    time_reached = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CustomUser
+        fields = ['season_reached', 'episode_reached', 'time_reached', 'time_autosave', 'autoplay', 'view_captions']
+
+    def get_show_id(self):
+        """Helper to get show_id from serializer context."""
+        request = self.context.get('request')
+        if request:
+            return str(request.parser_context['kwargs'].get('show_id'))
+        return None
+
+    def get_episode_reached(self, obj):
+        show_id_str = self.get_show_id()
+        if show_id_str and isinstance(obj.episode_reached, dict):
+            return obj.episode_reached.get(show_id_str)
+        return None
+
+    def get_season_reached(self, obj):
+        show_id_str = self.get_show_id()
+        if show_id_str and isinstance(obj.season_reached, dict):
+            return obj.season_reached.get(show_id_str)
+        return None
+
+    def get_time_reached(self, obj):
+        show_id_str = self.get_show_id()
+        if show_id_str and isinstance(obj.time_reached, dict):
+            return obj.time_reached.get(show_id_str, 0)
+        return 0
