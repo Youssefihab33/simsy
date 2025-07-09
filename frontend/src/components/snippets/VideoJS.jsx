@@ -86,7 +86,7 @@ export const videoJsOptions = {
 	loop: false,
 	responsive: true,
 	fluid: true,
-	// aspectRatio: '16:9',
+	aspectRatio: '19:9',
 	playbackRates: [0.75, 1, 1.25, 1.5, 1.75, 2.0],
 	plugins: {
 		hotkeys: {

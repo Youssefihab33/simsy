@@ -18,72 +18,87 @@ import { VideoJS, videoJsOptions } from './snippets/VideoJS.jsx';
 
 // Custom hook for API calls
 const useShowData = (showId) => {
-	const [show, setShow] = useState(null);
-	const [userShowData, setUserShowData] = useState(null);
-	const [inFavorites, setInFavorites] = useState(null);
-	const [inWatchlist, setInWatchlist] = useState(null);
+	// Consolidate show and user-related data into single state objects
+	const [showDetails, setShowDetails] = useState(null);
+	const [userInteraction, setUserInteraction] = useState({
+		inFavorites: false,
+		inWatchlist: false,
+		userShowData: null, // Keep the full user data here if needed
+	});
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 
-	const fetchShowDetails = useCallback(async () => {
+	const fetchData = useCallback(async () => {
+		if (!showId) {
+			setLoading(false);
+			return;
+		}
+
+		setError(null); // Clear previous errors
+
 		try {
-			setLoading(true);
-			const response = await axiosInstance.get(`shows/show/${showId}/`);
-			if (response.status === 200) {
-				setShow(response.data);
+			// Used Promise.all for concurrent requests for efficiency
+			const [showResponse, userResponse] = await Promise.all([axiosInstance.get(`shows/show/${showId}/`), axiosInstance.get(`shows/user/${showId}`)]);
+
+			if (showResponse.status === 200) {
+				setShowDetails(showResponse.data);
 			} else {
-				throw new Error(`Error fetching show details: ${response.statusText}`);
+				throw new Error(`Error fetching show details: ${showResponse.statusText}`);
+			}
+
+			if (userResponse.status === 200) {
+				setUserInteraction({
+					inFavorites: userResponse.data.in_favorites,
+					inWatchlist: userResponse.data.in_watchlist,
+					userShowData: userResponse.data,
+				});
+			} else {
+				throw new Error(`Error fetching user show data: ${userResponse.statusText}`);
 			}
 		} catch (err) {
-			console.error('Error fetching show details:', err);
+			console.error('Error in useShowData hook:', err);
 			setError(err);
 		} finally {
 			setLoading(false);
 		}
 	}, [showId]);
 
-	const fetchUserShowData = useCallback(async () => {
-		if (!showId) return;
-		try {
-			const response = await axiosInstance.get(`shows/user/${showId}`);
-			console.log('fetchUserShowData ', response.data);
-			setUserShowData(response.data);
-			setInFavorites(response.data.in_favorites);
-			setInWatchlist(response.data.in_watchlist);
-		} catch (err) {
-			console.error('Error fetching user show data:', err);
-			setError(err);
-		}
-	}, [showId]);
-
 	useEffect(() => {
-		fetchShowDetails();
-	}, [fetchShowDetails]);
+		fetchData();
+	}, [fetchData]);
 
-	useEffect(() => {
-		if (show) {
-			fetchUserShowData();
-		}
-	}, [show, fetchUserShowData]);
+	// Functions to update favorite/watchlist status locally (without immediate API call here)
+	const toggleFavoriteLocal = useCallback(() => {
+		setUserInteraction((prev) => ({ ...prev, inFavorites: !prev.inFavorites }));
+	}, []);
 
-	return { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, fetchUserShowData };
+	const toggleWatchlistLocal = useCallback(() => {
+		setUserInteraction((prev) => ({ ...prev, inWatchlist: !prev.inWatchlist }));
+	}, []);
+
+	return {
+		show: showDetails,
+		userShowData: userInteraction.userShowData,
+		inFavorites: userInteraction.inFavorites,
+		inWatchlist: userInteraction.inWatchlist,
+		setInFavorites: toggleFavoriteLocal,
+		setInWatchlist: toggleWatchlistLocal,
+		loading,
+		error,
+		refetchShowData: fetchData, // Renamed for clarity to refetch all data
+	};
 };
 
 // Custom hook for media player logic
-// Custom hook for media player logic
-const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
-	const [open, setOpen] = useState(false);
+const useMediaPlayer = (show, userShowData, refetchShowData) => {
+	const [modalOpen, setModalOpen] = useState(false);
 	const playerRef = useRef(null);
 	const [season, setSeason] = useState(1);
 	const [episode, setEpisode] = useState(1);
 	const [episodeChangeMessage, setEpisodeChangeMessage] = useState(null);
-	// Added state for the specific starting time for the current video playing
 	const [currentVideoStartTime, setCurrentVideoStartTime] = useState(0);
-
-	// Add a state for the player key to force remount
 	const [playerKey, setPlayerKey] = useState(0);
 
-	// Update season/episode refs (these are fine)
 	const seasonRef = useRef(season);
 	const episodeRef = useRef(episode);
 	useEffect(() => {
@@ -93,28 +108,24 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 		episodeRef.current = episode;
 	}, [episode]);
 
-	// Initialize season/episode and starting time from userShowData on initial load
 	useEffect(() => {
 		if (userShowData) {
 			setSeason(userShowData.season_reached);
 			setEpisode(userShowData.episode_reached);
-			setCurrentVideoStartTime(userShowData.time_reached || 0); // Set initial time
+			setCurrentVideoStartTime(userShowData.time_reached || 0);
 		}
 	}, [userShowData]);
 
-	const handleOpen = () => {
-		setOpen(true);
-		// When opening the modal, ensure the currentVideoStartTime is set from userShowData
-		// for the initial play. This might be redundant with the above useEffect,
-		// but ensures consistency if modal opens/closes without page refresh.
+	const handleModalOpen = () => {
+		setModalOpen(true);
 		if (userShowData) {
 			setCurrentVideoStartTime(userShowData.time_reached || 0);
 		}
 	};
 
-	const handleClose = () => {
-		setOpen(false);
-		fetchUserShowData(); // Fetch latest user data when closing
+	const handleModalClose = () => {
+		setModalOpen(false);
+		refetchShowData(); // Fetch latest user data when closing
 	};
 
 	const sendTimeReached = useCallback(async (currentShowId, currentSeason, currentEpisode, timeReached) => {
@@ -124,14 +135,14 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 		} catch (error) {
 			console.error('Error updating time reached:', error);
 		}
-	}, []); // Dependencies: none, since it uses current refs or passed args
+	}, []);
 
-	// handlePlayerReady will now receive the currentVideoStartTime explicitly
+	const episodeChangedRef = useRef(false);
+
 	const handlePlayerReady = useCallback(
 		(player) => {
 			playerRef.current = player;
 
-			// Set the current time using the state that holds the latest starting time
 			player.currentTime(currentVideoStartTime);
 			player.play();
 
@@ -142,6 +153,16 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 				sendTimeReached(show.id, seasonRef.current, episodeRef.current, 0);
 			});
 
+			// If an episode just changed, request fullscreen here
+			if (episodeChangedRef.current) {
+				if (!player.isFullscreen()) {
+					player.requestFullscreen();
+				}
+				player.play(); // Ensure playback starts
+				episodeChangedRef.current = false; // Reset the flag
+			}
+
+			// Cleanup function for VideoJS player
 			return () => {
 				if (playerRef.current) {
 					playerRef.current.dispose();
@@ -149,7 +170,7 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 				}
 			};
 		},
-		[sendTimeReached, show, currentVideoStartTime] // IMPORTANT: currentVideoStartTime is a dependency now
+		[sendTimeReached, show, currentVideoStartTime]
 	);
 
 	const getVideoDetails = useCallback(() => {
@@ -167,7 +188,6 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 				captionsSrc = `${videoRoot}/captions/${show.name}.vtt`;
 				break;
 			case 'series':
-				// This relies on the 'season' and 'episode' states
 				videoSrc = `${videoRoot}/videos/${show.name}/s${season}e${episode}.mp4`;
 				captionsSrc = `${videoRoot}/captions/${show.name}/s${season}e${episode}.vtt`;
 				break;
@@ -176,7 +196,7 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 				break;
 		}
 		return { videoSrc, captionsSrc };
-	}, [show, season, episode]); // Still depends on season and episode to generate new paths
+	}, [show, season, episode]);
 
 	const { videoSrc, captionsSrc } = getVideoDetails();
 
@@ -201,26 +221,23 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 
 	const accentColor = getAccentColor(show?.kind);
 
-	// Change the method to POST here (though your original uses GET, keep consistent for now)
 	const action_Episode = async (action) => {
 		try {
 			const response = await axiosInstance.get(`shows/${action}_episode/${show.id}/${seasonRef.current}/${episodeRef.current}/`);
 			if (response.data.changed === false) {
-				// Use strict equality
 				setEpisodeChangeMessage(response.data.message);
 			} else {
 				setSeason(response.data.new_season);
 				setEpisode(response.data.new_episode);
-				setCurrentVideoStartTime(response.data.starting_time); // Update the starting time state
-				setEpisodeChangeMessage(null); // Clear any previous message
+				setCurrentVideoStartTime(response.data.starting_time);
+				setEpisodeChangeMessage(null);
 
-				// Increment the key to force remount of VideoJS with new options/startTime
-				setPlayerKey((prevKey) => prevKey + 1);
-
+				episodeChangedRef.current = true; // Set flag to true before forcing remount
+				setPlayerKey((prevKey) => prevKey + 1); // Force remount
 				console.log('action_Episode success:', response.data);
 			}
 		} catch (error) {
-			setEpisodeChangeMessage(error.response.data || 'Error changing episode.');
+			setEpisodeChangeMessage(error.response?.data || 'Error changing episode.');
 			console.error('Error in action_Episode:', error);
 		}
 	};
@@ -233,7 +250,7 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 		action_Episode('next');
 	};
 
-	return { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor, season, episode, perviousEpisode, nextEpisode, episodeChangeMessage, playerKey };
+	return { modalOpen, handleModalOpen, handleModalClose, handlePlayerReady, playerOptions, accentColor, season, episode, perviousEpisode, nextEpisode, episodeChangeMessage, playerKey, playerRef };
 };
 
 // Helper to determine accent color
@@ -251,39 +268,124 @@ const getAccentColor = (kind) => {
 };
 
 // Helper for API toggles (favorites/watchlist)
-const useToggleApi = (showId, inState, setInState, endpoint, name) => {
+const useToggleApi = (showId, setInState, endpoint, name) => {
 	const handleToggle = useCallback(async () => {
+		if (!showId) return; // Ensure showId exists before making API call
 		try {
 			const response = await axiosInstance.post(`shows/${endpoint}/${showId}/`);
 			if (response.status === 200) {
-				setInState(response.data[`in_${name}`]);
+				setInState(response.data[`in_${name}`]); // Update local state based on API response
 			} else {
 				throw new Error(`Error toggling ${endpoint}: ${response.statusText}`);
 			}
 		} catch (error) {
 			console.error(`Error toggling ${endpoint}:`, error);
 		}
-	}, [showId, setInState, endpoint]);
+	}, [showId, setInState, endpoint, name]); // Added 'name' to dependencies
 	return handleToggle;
 };
 
 export default function ShowDetails() {
 	const { show_id } = useParams();
 	const [hoveredArtist, setHoveredArtist] = useState(null);
+	const searchbarRef = useRef(null);
 
-	const { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, fetchUserShowData, episodeChangeMessage } = useShowData(show_id);
-
-	const handleFavoritesToggle = useToggleApi(show?.id, inFavorites, setInFavorites, 'toggleFavorite', 'favorites');
-	const handleWatchlistToggle = useToggleApi(show?.id, inWatchlist, setInWatchlist, 'toggleWatchlist', 'watchlist');
-
-	const { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor, season, episode, perviousEpisode, nextEpisode, playerKey } = useMediaPlayer(
+	// Using the refactored useShowData hook
+	const {
 		show,
 		userShowData,
-		fetchUserShowData
-	);
+		inFavorites,
+		inWatchlist,
+		setInFavorites, // This is now a local state setter provided by useShowData
+		setInWatchlist, // This is now a local state setter provided by useShowData
+		loading,
+		error,
+		refetchShowData, // Use this to refetch all show and user data
+	} = useShowData(show_id);
 
-	// Dynamic hover color based on accentColor
-	const hoverColor = accentColor === '#9A0606' ? '#B00707' : accentColor === '#5DD95D' ? '#79E679' : accentColor === '#54A9DE' ? '#6CB5E3' : '#6CB5E3'; // Default hover color
+	// These hooks now just handle the API call part, and use the local state setters from useShowData
+	const handleFavoritesToggle = useToggleApi(show?.id, setInFavorites, 'toggleFavorite', 'favorites');
+	const handleWatchlistToggle = useToggleApi(show?.id, setInWatchlist, 'toggleWatchlist', 'watchlist');
+
+	const { modalOpen, handleModalOpen, handleModalClose, handlePlayerReady, playerOptions, accentColor, season, episode, perviousEpisode, nextEpisode, episodeChangeMessage, playerKey, playerRef } =
+		useMediaPlayer(show, userShowData, refetchShowData); // Pass refetchShowData to mediaPlayer
+
+	// Key Presses
+	const handleKeyPress = useCallback(
+		(event) => {
+			// Ensure the searchbar is not the active element
+			const isSearchbarActive = searchbarRef.current && document.activeElement === searchbarRef.current;
+			if (isSearchbarActive) {
+				return; // Do nothing if searchbar is active
+			}
+			if (!modalOpen) {
+				if (event.code == 'KeyK') {
+					handleModalOpen();
+				}
+				return; // Start Watching when 'K' is pressed and Do nothing else
+			}
+			if (playerRef.current) {
+				switch (event.code) {
+					case 'KeyK': // K --> Pause/Play
+						playerRef.current.focus();
+						if (playerRef.current.paused()) {
+							playerRef.current.play();
+						} else {
+							playerRef.current.pause();
+						}
+						break;
+
+					case 'KeyJ': // J --> Previous Episode
+						if (show.kind !== 'film') {
+							perviousEpisode();
+						}
+						break;
+					case 'KeyL': // L --> Next Episode
+						if (show.kind !== 'film') {
+							nextEpisode();
+						}
+						break;
+					case 'KeyC': // C --> Toggle Captions
+						if (show.captions) {
+							playerRef.current.focus();
+							// Assuming captionsToggle is a function available in the scope or passed as a prop
+						}
+						break;
+					case 'KeyF': // F --> Fullscreen
+						playerRef.current.focus();
+						// The original code just focuses, actual fullscreen logic might be handled by playerRef.current
+						break;
+					case 'KeyX': // X --> Toggle speed (forward or reverse with Shift)
+						playerRef.current.focus();
+						if (event.shiftKey) {
+							playerRef.current.playbackRate(playerRef.current.playbackRate() - 0.25);
+						} else {
+							playerRef.current.playbackRate(playerRef.current.playbackRate() + 0.25);
+						}
+						break;
+					case 'KeyZ': // Z --> Set Speed to 1
+						playerRef.current.focus();
+						playerRef.current.playbackRate(1);
+						break;
+					default:
+						break;
+				}
+			}
+		},
+		[show, playerRef.current, modalOpen]
+	); // Dependencies for useCallback
+
+	useEffect(() => {
+		// Attach the event listener when the component mounts
+		document.addEventListener('keypress', handleKeyPress);
+
+		// Clean up the event listener when the component unmounts
+		return () => {
+			document.removeEventListener('keypress', handleKeyPress);
+		};
+	}, [handleKeyPress]); // Dependency for useEffect
+
+	const hoverColor = accentColor === '#9A0606' ? '#B00707' : accentColor === '#5DD95D' ? '#79E679' : accentColor === '#54A9DE' ? '#6CB5E3' : '#6CB5E3';
 
 	if (loading) {
 		return <LoadingSpinner />;
@@ -325,7 +427,7 @@ export default function ShowDetails() {
 									className='me-3'
 									startIcon={<PlayArrowIcon />}
 									sx={{ backgroundColor: accentColor, '&:hover': { backgroundColor: hoverColor } }}
-									onClick={handleOpen}
+									onClick={handleModalOpen}
 								>
 									Watch Now
 								</Button>
@@ -423,7 +525,7 @@ export default function ShowDetails() {
 												Episodes:
 											</Typography>
 											<Typography variant='body1' className='text-light'>
-												{show.number_of_episodes || '# of Episodes'} {/* Use actual prop if available */}
+												{show.number_of_episodes || '# of Episodes'}
 											</Typography>
 										</Col>
 									</>
@@ -522,7 +624,7 @@ export default function ShowDetails() {
 			</Container>
 
 			{/* --- Video Player Modal --- */}
-			<Modal open={open} onClose={handleClose} aria-labelledby='video-player-modal' aria-describedby='video-player-for-show'>
+			<Modal open={modalOpen} onClose={handleModalClose} aria-labelledby='video-player-modal' aria-describedby='video-player-for-show'>
 				<Box
 					sx={{
 						position: 'absolute',
@@ -537,9 +639,8 @@ export default function ShowDetails() {
 						outline: 'none',
 					}}
 				>
-					{/* Pass the playerKey here */}
-					{open && <VideoJS key={playerKey} options={playerOptions} onReady={handlePlayerReady} color={accentColor} />}
-					{show?.kind !== 'film' && ( // Added optional chaining for show
+					{modalOpen && <VideoJS key={playerKey} options={playerOptions} onReady={handlePlayerReady} color={accentColor} />}
+					{show?.kind !== 'film' && (
 						<div className='text-center text-light m-3'>
 							<FirstPageIcon /> <ArrowBackIosNewIcon onClick={perviousEpisode} />
 							<span className='mx-4'>
