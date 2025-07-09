@@ -1,7 +1,7 @@
 import { useRef, useEffect } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
-// import '@videojs/themes/dist/forest/index.css';
+import '@videojs/themes/dist/sea/index.css';
 import 'videojs-hotkeys';
 import 'videojs-seek-buttons';
 import 'videojs-mobile-ui';
@@ -44,41 +44,37 @@ export function VideoJS({ options, onReady, color }) {
 	}, [playerRef]);
 
 	// This useEffect handles applying the custom color
-	// useEffect(() => {
-    //     const player = playerRef.current;
+	useEffect(() => {
+        const player = playerRef.current;
 
-    //     if (player && color) {
-    //         const playerEl = player.el(); // Get the player's root DOM element
+        if (player && color) {
+            const playerEl = player.el(); // Get the player's root DOM element
 
-    //         // Function to safely apply style if element exists
-    //         const applyStyle = (selector, styleProp, value) => {
-    //             const element = playerEl.querySelector(selector);
-    //             if (element) {
-    //                 element.style[styleProp] = value;
-    //             }
-    //         };
+            // Function to safely apply style if element exists
+            const applyStyle = (selector, styleProp, value) => {
+                const element = playerEl.querySelector(selector);
+                if (element) {
+                    element.style[styleProp] = value;
+                }
+            };
 
-    //         // Main color (e.g., icons, progress bar)
-    //         applyStyle('.vjs-theme-forest.video-js', 'color', color); // For general icons/text
-    //         applyStyle('.vjs-theme-forest .vjs-play-progress', 'backgroundColor', color);
-    //         applyStyle('.vjs-theme-forest .vjs-slider.vjs-volume-level', 'backgroundColor', color);
-    //         applyStyle('.vjs-theme-forest .vjs-big-play-button', 'borderColor', color);
-    //         applyStyle('.vjs-theme-forest .vjs-big-play-button', 'backgroundColor', color + 'b3'); // Example with 70% opacity
+            // Main color (e.g., icons, progress bar)
+            applyStyle('.vjs-theme-sea.video-js', 'color', color); // For general icons/text
+            applyStyle('.vjs-theme-sea .vjs-play-progress', 'backgroundColor', color);
+            // applyStyle('.vjs-theme-forest .vjs-slider.vjs-volume-level', 'backgroundColor', color);
+            // applyStyle('.vjs-theme-forest .vjs-big-play-button', 'borderColor', color);
+            // applyStyle('.vjs-theme-forest .vjs-big-play-button', 'backgroundColor', color + 'b3'); // Example with 70% opacity
 
-    //         applyStyle('.vjs-theme-forest .vjs-control-bar', 'backgroundColor', '#ff0000');
-    //         applyStyle('.vjs-theme-forest .vjs-current-time', 'color', '#00ff00');
-    //         applyStyle('.vjs-theme-forest .vjs-duration', 'color', '#00ff00');
-    //     }
-    // }, [color]); // This effect depends only on the 'color' prop
-
-// Things to refactor
-// any "user"
-// The Styles applying useEffect()
+            // applyStyle('.vjs-theme-forest .vjs-control-bar', 'backgroundColor', '#ff0000');
+            // applyStyle('.vjs-theme-forest .vjs-current-time', 'color', '#00ff00');
+            // applyStyle('.vjs-theme-forest .vjs-duration', 'color', '#00ff00');
+        }
+    }, [color]); // This effect depends only on the 'color' prop
 
 	return (
 		// Add a class to the container div so we can target it for the playlist UI
 		<div data-vjs-player className='video-js-container'>
-			<div ref={videoRef} className='vjs-theme-forest'/>
+			<div ref={videoRef} className='vjs-theme-sea'/>
 		</div>
 	);
 }
@@ -98,10 +94,10 @@ export const videoJsOptions = {
 			seekStep: 5,
 			enableModifiersForNumbers: false,
 		},
-		seekButtons: {
-			forward: 10,
-			back: 10,
-		},
+		// seekButtons: {
+		// 	forward: 10,
+		// 	back: 10,
+		// },
 		mobileUi: {
 			fullscreen: {
 				enterOnRotate: true,
@@ -119,74 +115,3 @@ export const videoJsOptions = {
 		},
 	},
 };
-
-// --- Example usage in your parent component ---
-
-// Example for a single film
-// export const filmOptions = {
-// 	...videoJsOptions,
-// 	sources: [
-// 		{
-// 			src: 'path/to/your/film.mp4',
-// 			type: 'video/mp4',
-// 		},
-// 	],
-// };
-
-// Example for a series
-// export const seriesPlaylist = {
-// 	...videoJsOptions,
-// 	// This is the playlist array that the plugin will use
-// 	sources: [
-// 		{
-// 			src: 'path/to/series/episode1.mp4',
-// 			type: 'video/mp4',
-// 			title: 'Episode 1: The Beginning',
-// 			poster: 'path/to/poster1.jpg',
-// 		},
-// 		{
-// 			src: 'path/to/series/episode2.mp4',
-// 			type: 'video/mp4',
-// 			title: 'Episode 2: The Plot Thickens',
-// 			poster: 'path/to/poster2.jpg',
-// 		},
-// 		{
-// 			src: 'path/to/series/episode3.mp4',
-// 			type: 'video/mp4',
-// 			title: 'Episode 3: The Climax',
-// 			poster: 'path/to/poster3.jpg',
-// 		},
-// 	],
-// };
-
-// --- How you would use it in a parent component (e.g., App.jsx) ---
-/*
-import React, { useState } from 'react';
-import { VideoJS, filmOptions, seriesPlaylist } from './VideoJS';
-
-function App() {
-  const [isSeries, setIsSeries] = useState(false);
-  const playerRef = useRef(null);
-
-  const handlePlayerReady = (player) => {
-    playerRef.current = player;
-    // You can do more with the player here
-  };
-
-  const options = isSeries ? seriesPlaylist : filmOptions;
-
-  return (
-    <div>
-      <h1>My Video App</h1>
-      <button onClick={() => setIsSeries(!isSeries)}>
-        Switch to {isSeries ? 'Film' : 'Series'}
-      </button>
-      <VideoJS 
-        options={options} 
-        onReady={handlePlayerReady} 
-        isPlaylist={isSeries} 
-      />
-    </div>
-  );
-}
-*/

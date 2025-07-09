@@ -46,6 +46,7 @@ const useShowData = (showId) => {
 		if (!showId) return;
 		try {
 			const response = await axiosInstance.get(`shows/user/${showId}`);
+			console.log('fetchUserShowData ', response.data);
 			setUserShowData(response.data);
 			setInFavorites(response.data.in_favorites);
 			setInWatchlist(response.data.in_watchlist);
@@ -69,64 +70,93 @@ const useShowData = (showId) => {
 };
 
 // Custom hook for media player logic
+// Custom hook for media player logic
 const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 	const [open, setOpen] = useState(false);
 	const playerRef = useRef(null);
 	const [season, setSeason] = useState(1);
 	const [episode, setEpisode] = useState(1);
-	const [episodeError, setEpisodeError] = useState(null)
+	const [episodeChangeMessage, setEpisodeChangeMessage] = useState(null);
+	// Added state for the specific starting time for the current video playing
+	const [currentVideoStartTime, setCurrentVideoStartTime] = useState(0);
 
+	// Add a state for the player key to force remount
+	const [playerKey, setPlayerKey] = useState(0);
+
+	// Update season/episode refs (these are fine)
+	const seasonRef = useRef(season);
+	const episodeRef = useRef(episode);
+	useEffect(() => {
+		seasonRef.current = season;
+	}, [season]);
+	useEffect(() => {
+		episodeRef.current = episode;
+	}, [episode]);
+
+	// Initialize season/episode and starting time from userShowData on initial load
 	useEffect(() => {
 		if (userShowData) {
 			setSeason(userShowData.season_reached);
 			setEpisode(userShowData.episode_reached);
+			setCurrentVideoStartTime(userShowData.time_reached || 0); // Set initial time
 		}
 	}, [userShowData]);
 
-	const handleOpen = () => setOpen(true);
+	const handleOpen = () => {
+		setOpen(true);
+		// When opening the modal, ensure the currentVideoStartTime is set from userShowData
+		// for the initial play. This might be redundant with the above useEffect,
+		// but ensures consistency if modal opens/closes without page refresh.
+		if (userShowData) {
+			setCurrentVideoStartTime(userShowData.time_reached || 0);
+		}
+	};
 
 	const handleClose = () => {
 		setOpen(false);
-		fetchUserShowData(); // Refresh user show data after modal closes
+		fetchUserShowData(); // Fetch latest user data when closing
 	};
 
-	const sendTimeReached = useCallback(
-		async (currentShowId, timeReached) => {
-			try {
-				await axiosInstance.get(`shows/update_time_reached/${currentShowId}/${season || 0}/${episode || 0}/${Math.round(timeReached)}`);
-			} catch (error) {
-				console.error('Error updating time reached:', error);
-			}
-		},
-		[season, episode]
-	);
+	const sendTimeReached = useCallback(async (currentShowId, currentSeason, currentEpisode, timeReached) => {
+		try {
+			await axiosInstance.get(`shows/update_time_reached/${currentShowId}/${currentSeason || 0}/${currentEpisode || 0}/${Math.round(timeReached)}`);
+			console.log('sendTimeReached', `Updated time_reached for S${currentSeason}E${currentEpisode} to ${Math.round(timeReached)}`);
+		} catch (error) {
+			console.error('Error updating time reached:', error);
+		}
+	}, []); // Dependencies: none, since it uses current refs or passed args
 
+	// handlePlayerReady will now receive the currentVideoStartTime explicitly
 	const handlePlayerReady = useCallback(
 		(player) => {
 			playerRef.current = player;
 
-			player.on('loadedmetadata', () => {
-				player.currentTime(userShowData?.time_reached || 0);
-				player.play();
-			});
+			// Set the current time using the state that holds the latest starting time
+			player.currentTime(currentVideoStartTime);
+			player.play();
 
-			player.on(['pause', 'fullscreenchange', 'dispose'], () => {
-				sendTimeReached(show.id, player.currentTime());
+			player.on(['pause', 'fullscreenchange', 'seeked', 'dispose'], () => {
+				sendTimeReached(show.id, seasonRef.current, episodeRef.current, player.currentTime());
 			});
 			player.on('ended', () => {
-				sendTimeReached(show.id, 0);
+				sendTimeReached(show.id, seasonRef.current, episodeRef.current, 0);
 			});
+
+			return () => {
+				if (playerRef.current) {
+					playerRef.current.dispose();
+					playerRef.current = null;
+				}
+			};
 		},
-		[sendTimeReached, show, userShowData, season, episode]
+		[sendTimeReached, show, currentVideoStartTime] // IMPORTANT: currentVideoStartTime is a dependency now
 	);
 
-	// Determine video source and captions based on show kind
 	const getVideoDetails = useCallback(() => {
 		let videoSrc = '';
 		let captionsSrc = '';
 		const videoRoot = import.meta.env.VITE_VIDEOS_SOURCE_ROOT;
 
-		// Check for 'show' before accessing its properties
 		if (!show) {
 			return { videoSrc: '', captionsSrc: '' };
 		}
@@ -137,20 +167,19 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 				captionsSrc = `${videoRoot}/captions/${show.name}.vtt`;
 				break;
 			case 'series':
+				// This relies on the 'season' and 'episode' states
 				videoSrc = `${videoRoot}/videos/${show.name}/s${season}e${episode}.mp4`;
 				captionsSrc = `${videoRoot}/captions/${show.name}/s${season}e${episode}.vtt`;
 				break;
 			default:
 				console.error('Unknown show kind:', show?.kind);
-				// Consider a default video/caption source or handle this error more gracefully
 				break;
 		}
 		return { videoSrc, captionsSrc };
-	}, [show, season, episode]);
+	}, [show, season, episode]); // Still depends on season and episode to generate new paths
 
 	const { videoSrc, captionsSrc } = getVideoDetails();
 
-	// Ensure playerOptions are only built if show is available
 	const playerOptions = show
 		? {
 				...videoJsOptions,
@@ -168,46 +197,43 @@ const useMediaPlayer = (show, userShowData, fetchUserShowData) => {
 						  ]
 						: [],
 		  }
-		: {}; // Provide a default empty object or null if show is not ready
+		: {};
 
-	// Also guard accentColor
 	const accentColor = getAccentColor(show?.kind);
 
+	// Change the method to POST here (though your original uses GET, keep consistent for now)
+	const action_Episode = async (action) => {
+		try {
+			const response = await axiosInstance.get(`shows/${action}_episode/${show.id}/${seasonRef.current}/${episodeRef.current}/`);
+			if (response.data.changed === false) {
+				// Use strict equality
+				setEpisodeChangeMessage(response.data.message);
+			} else {
+				setSeason(response.data.new_season);
+				setEpisode(response.data.new_episode);
+				setCurrentVideoStartTime(response.data.starting_time); // Update the starting time state
+				setEpisodeChangeMessage(null); // Clear any previous message
+
+				// Increment the key to force remount of VideoJS with new options/startTime
+				setPlayerKey((prevKey) => prevKey + 1);
+
+				console.log('action_Episode success:', response.data);
+			}
+		} catch (error) {
+			setEpisodeChangeMessage(error.response.data || 'Error changing episode.');
+			console.error('Error in action_Episode:', error);
+		}
+	};
+
 	const perviousEpisode = () => {
-		axiosInstance
-			.get(`shows/previous_episode/${show.id}/${season}/${episode}/`)
-			.then((response) => {
-				console.log(response.data);
-				if (response.data.changed == false){
-					setEpisodeError(response.data.message)
-				}else{
-					setSeason(response.data.new_season)
-					setEpisode(response.data.new_episode)
-				}
-			})
-			.catch((error) => {
-				setEpisodeError(error.response.data)
-			});
+		action_Episode('previous');
 	};
 
 	const nextEpisode = () => {
-		axiosInstance
-			.get(`shows/next_episode/${show.id}/${season}/${episode}/`)
-			.then((response) => {
-				console.log(response.data);
-				if (response.data.changed == false){
-					setEpisodeError(response.data.message)
-				}else{
-					setSeason(response.data.new_season)
-					setEpisode(response.data.new_episode)
-				}
-			})
-			.catch((error) => {
-				setEpisodeError(error.response.data)
-			});
+		action_Episode('next');
 	};
 
-	return { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor, season, episode, perviousEpisode, nextEpisode, episodeError };
+	return { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor, season, episode, perviousEpisode, nextEpisode, episodeChangeMessage, playerKey };
 };
 
 // Helper to determine accent color
@@ -245,12 +271,16 @@ export default function ShowDetails() {
 	const { show_id } = useParams();
 	const [hoveredArtist, setHoveredArtist] = useState(null);
 
-	const { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, fetchUserShowData, episodeError } = useShowData(show_id);
+	const { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, fetchUserShowData, episodeChangeMessage } = useShowData(show_id);
 
 	const handleFavoritesToggle = useToggleApi(show?.id, inFavorites, setInFavorites, 'toggleFavorite', 'favorites');
 	const handleWatchlistToggle = useToggleApi(show?.id, inWatchlist, setInWatchlist, 'toggleWatchlist', 'watchlist');
 
-	const { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor, season, episode, perviousEpisode, nextEpisode } = useMediaPlayer(show, userShowData, fetchUserShowData);
+	const { open, handleOpen, handleClose, handlePlayerReady, playerOptions, accentColor, season, episode, perviousEpisode, nextEpisode, playerKey } = useMediaPlayer(
+		show,
+		userShowData,
+		fetchUserShowData
+	);
 
 	// Dynamic hover color based on accentColor
 	const hoverColor = accentColor === '#9A0606' ? '#B00707' : accentColor === '#5DD95D' ? '#79E679' : accentColor === '#54A9DE' ? '#6CB5E3' : '#6CB5E3'; // Default hover color
@@ -507,17 +537,16 @@ export default function ShowDetails() {
 						outline: 'none',
 					}}
 				>
-					{open && <VideoJS options={playerOptions} onReady={handlePlayerReady} color={accentColor} />}
-					{show.kind != 'film' && (
+					{/* Pass the playerKey here */}
+					{open && <VideoJS key={playerKey} options={playerOptions} onReady={handlePlayerReady} color={accentColor} />}
+					{show?.kind !== 'film' && ( // Added optional chaining for show
 						<div className='text-center text-light m-3'>
 							<FirstPageIcon /> <ArrowBackIosNewIcon onClick={perviousEpisode} />
 							<span className='mx-4'>
 								S{season}E{episode}
 							</span>
 							<ArrowForwardIosIcon onClick={nextEpisode} /> <LastPageIcon />
-							{episodeError && (
-								<p className='text-danger'>{episodeError}{console.log(episodeError)}</p>
-							)}
+							{episodeChangeMessage && <p className='text-danger'>{episodeChangeMessage}</p>}
 						</div>
 					)}
 				</Box>

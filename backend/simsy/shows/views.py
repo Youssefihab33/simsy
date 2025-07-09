@@ -74,6 +74,7 @@ class previousEpisode(APIView):
             'new_season': new_season,
             'new_episode': new_episode,
             'changed': changed,
+            'starting_time': request.user.time_reached[str(show.id)][str(new_season)].get(str(new_episode), 0),
         }, status=status.HTTP_200_OK)
 
 class nextEpisode(APIView):
@@ -104,12 +105,12 @@ class nextEpisode(APIView):
         request.user.episode_reached[str(show.id)]['s'] = new_season
         request.user.episode_reached[str(show.id)]['e'] = new_episode
         request.user.save()
-
         return Response({
             'message': message,
             'new_season': new_season,
             'new_episode': new_episode,
             'changed': changed,
+            'starting_time': request.user.time_reached[str(show.id)][str(new_season)].get(str(new_episode), 0),
         }, status=status.HTTP_200_OK)
 
 class FavoriteShowsView(viewsets.ModelViewSet):
