@@ -1,0 +1,39 @@
+/* VideoPlayer.css */
+
+/*
+   This rule targets ALL .vjs-control elements within the control bar.
+   It's good to ensure consistent flex behavior for all controls.
+*/
+.video-js .vjs-control-bar .vjs-control {
+    display: flex !important;         /* Ensure it's a flex item */
+    align-items: center !important;   /* Vertically center content */
+    justify-content: center !important; /* Horizontally center content (good for text) */
+    height: 100% !important;          /* Occupy full control bar height */
+    position: static !important;      /* Should be static for normal flex flow */
+    margin: 0 !important;             /* Reset margins */
+    padding: 0 5px !important;        /* Add horizontal padding, reset vertical */
+    box-sizing: border-box !important;/* Include padding in element's total size */
+    overflow: visible !important;     /* Prevent content from being cut off */
+    pointer-events: auto !important;  /* Make it interactive if desired */
+    /* Remove 'width: 4em' here if it was previously in your custom CSS.
+       Let the more specific rule below handle the width for the episode display. */
+}
+
+
+/* Specific overrides for your CurrentEpisodeDisplay component */
+.video-js .vjs-control-bar .vjs-current-episode-display-custom {
+    /* Crucial: Override the fixed 'width: 4em' from .vjs-control */
+    width: auto !important; /* Allow width to be determined by its content */
+    flex: 0 1 auto !important; /* Allow it to shrink if needed, but primarily auto-size */
+
+    /* Text styling */
+    color: #ffffff !important;
+    font-size: 0.9em !important; /* Adjust as needed */
+    line-height: 1 !important; /* Ensure tight line-height */
+    white-space: nowrap !important; /* Prevent text wrapping */
+    text-overflow: clip !important; /* Clip long text */
+
+    /* Debugging background - REMOVE AFTER FIX */
+    /* background-color: rgba(0, 255, 255, 0.4) !important; */
+    /* border: 1px solid purple !important; */
+}

@@ -57,7 +57,7 @@ class LanguageSerializer(serializers.ModelSerializer):
 
 class CountrySerializer(serializers.ModelSerializer):
     name = serializers.CharField(read_only=True)
-    languages = LanguageSerializer(many=True, read_only=True)
+    # languages = LanguageSerializer(many=True, read_only=True)
     flag = serializers.ImageField(allow_empty_file=True, read_only=True)
     image = serializers.ImageField(allow_empty_file=True, read_only=True)
     description = serializers.CharField(read_only=True)
@@ -159,17 +159,17 @@ class UserShowSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(f"Show with ID {show_id_str} not found.")
         return show
 
-    def _get_or_initialize_progress_value(self, obj, show_id, key_type, default_value=1):
+    def _get_or_initialize_progress_value(self, obj, show_id, key_type, default_value=0):
         """
         Retrieves the season/episode progress. If not found or None, initializes it
         to default_value (typically 1) and saves the user object.
         """
-        if show_id not in obj.episode_reached:
-            obj.episode_reached[show_id] = {}; obj.save()
+        if show_id not in obj.reached:
+            obj.reached[show_id] = {}; obj.save()
         try:
-            current_value = obj.episode_reached[show_id][key_type]
+            current_value = obj.reached[show_id][key_type]
         except KeyError:
-            obj.episode_reached[show_id][key_type] = default_value; obj.save()
+            obj.reached[show_id][key_type] = default_value; obj.save()
             return default_value
         return current_value
 
@@ -177,25 +177,25 @@ class UserShowSerializer(serializers.ModelSerializer):
         show = self._get_show()
         if show.kind == 'film':
             return None
-        return self._get_or_initialize_progress_value(obj, str(show.id), 's')
+        return self._get_or_initialize_progress_value(obj, str(show.id), 's', 1)
 
     def get_episode_reached(self, obj):
         show = self._get_show()
         if show.kind == 'film':
             return None
-        return self._get_or_initialize_progress_value(obj, str(show.id), 'e')
+        return self._get_or_initialize_progress_value(obj, str(show.id), 'e', 1)
 
     def get_time_reached(self, obj):
         show = self._get_show()
 
         if show.kind == 'film':
-            return obj.time_reached.get(str(show.id), 0)
+            return self._get_or_initialize_progress_value(obj, str(show.id), 't')
         else:
-            season = self._get_or_initialize_progress_value(obj, str(show.id), 's')
-            episode = self._get_or_initialize_progress_value(obj, str(show.id), 'e')
+            season = self._get_or_initialize_progress_value(obj, str(show.id), 's', 1)
+            episode = self._get_or_initialize_progress_value(obj, str(show.id), 'e', 1)
             # Safely access the nested dictionary
             # Convert keys to string if they are stored as such in time_reached
-            return obj.time_reached.get(str(show.id), {}).get(str(season), {}).get(str(episode), 0)
+            return obj.reached[str(show.id)].get('t', {}).get(str(season), {}).get(str(episode), 0)
     
     def get_in_favorites(self, obj):
         show = self._get_show()

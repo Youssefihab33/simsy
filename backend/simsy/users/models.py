@@ -32,9 +32,7 @@ class CustomUser(AbstractUser):
         'shows.Country', on_delete=models.CASCADE, blank=True, null=True)
 
     # shows related fields
-    episode_reached = models.JSONField(
-        encoder=None, decoder=None, default=dict, blank=True)
-    time_reached = models.JSONField(
+    reached = models.JSONField(
         encoder=None, decoder=None, default=dict, blank=True)
     history = models.JSONField(
         encoder=None, decoder=None, default=dict, blank=True)

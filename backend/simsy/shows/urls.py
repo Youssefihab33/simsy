@@ -22,8 +22,10 @@ urlpatterns = [
     path('toggleFavorite/<int:show_id>/', ToggleFavoriteView.as_view(), name='toggle-favorite'),
     path('toggleWatchlist/<int:show_id>/', ToggleWatchlistView.as_view(), name='toggle-watchlist'),
     path('update_time_reached/<int:show_id>/<int:season>/<int:episode>/<int:time_reached>/', UpdateTimeReached.as_view(), name='update-time-reached'),
+    path('first_episode/<int:show_id>/<int:current_season>/<int:current_episode>/', firstEpisode.as_view(), name='first-episode'),
     path('previous_episode/<int:show_id>/<int:current_season>/<int:current_episode>/', previousEpisode.as_view(), name='previous-episode'),
     path('next_episode/<int:show_id>/<int:current_season>/<int:current_episode>/', nextEpisode.as_view(), name='next-episode'),
+    path('last_episode/<int:show_id>/<int:current_season>/<int:current_episode>/', lastEpisode.as_view(), name='last-episode'),
 ]
 
 # Append the router's URLs to your custom URLs

@@ -8,6 +8,7 @@ from .serializers import *
 import random
 from collections import OrderedDict
 from datetime import datetime
+from .imports import saveNewReached
 from .models import Show
 from django.contrib.auth import get_user_model
 User = get_user_model()
@@ -40,6 +41,25 @@ class UserShowView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 
+class firstEpisode(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id, current_season, current_episode):
+        try:
+            show = Show.objects.get(id=show_id)
+        except Show.DoesNotExist:
+            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
+        message='First episode of the show!'
+        changed = True
+        new_season, new_episode, starting_time = saveNewReached(request.user, show_id, 1, 1)
+        return Response({
+            'message': message,
+            'new_season': new_season,
+            'new_episode': new_episode,
+            'changed': changed,
+            'starting_time': starting_time
+        }, status=status.HTTP_200_OK)
+
 class previousEpisode(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -65,16 +85,14 @@ class previousEpisode(APIView):
             new_episode = current_episode - 1
             changed = True
 
-        request.user.episode_reached[str(show.id)]['s'] = new_season
-        request.user.episode_reached[str(show.id)]['e'] = new_episode
-        request.user.save()
+        new_season, new_episode, starting_time = saveNewReached(request.user, show_id, new_season, new_episode)
 
         return Response({
             'message': message,
             'new_season': new_season,
             'new_episode': new_episode,
             'changed': changed,
-            'starting_time': request.user.time_reached[str(show.id)][str(new_season)].get(str(new_episode), 0),
+            'starting_time': starting_time
         }, status=status.HTTP_200_OK)
 
 class nextEpisode(APIView):
@@ -102,15 +120,32 @@ class nextEpisode(APIView):
             new_episode = current_episode + 1
             changed = True
 
-        request.user.episode_reached[str(show.id)]['s'] = new_season
-        request.user.episode_reached[str(show.id)]['e'] = new_episode
-        request.user.save()
+        new_season, new_episode, starting_time = saveNewReached(request.user, show_id, new_season, new_episode)
         return Response({
             'message': message,
             'new_season': new_season,
             'new_episode': new_episode,
             'changed': changed,
-            'starting_time': request.user.time_reached[str(show.id)][str(new_season)].get(str(new_episode), 0),
+            'starting_time': starting_time
+        }, status=status.HTTP_200_OK)
+
+class lastEpisode(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id, current_season, current_episode):
+        try:
+            show = Show.objects.get(id=show_id)
+        except Show.DoesNotExist:
+            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
+        message='Last episode of the show!'
+        changed = True
+        new_season, new_episode, starting_time = saveNewReached(request.user, show_id, len(show.episodes), show.episodes[str(len(show.episodes))])
+        return Response({
+            'message': message,
+            'new_season': new_season,
+            'new_episode': new_episode,
+            'changed': changed,
+            'starting_time': starting_time
         }, status=status.HTTP_200_OK)
 
 class FavoriteShowsView(viewsets.ModelViewSet):
@@ -262,22 +297,25 @@ class UpdateTimeReached(APIView):
         except Show.DoesNotExist:
             return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
 
-        if str(show.id) not in request.user.time_reached:
-            request.user.time_reached[str(show.id)] = {}
+        if str(show.id) not in request.user.reached:
+            request.user.reached[str(show.id)] = {}
+        if 't' not in request.user.reached[str(show.id)]:
+            request.user.reached[str(show.id)]['t'] = {}
+
+        reached = request.user.reached[str(show.id)]
 
         match show.kind:
             case 'film':
-                request.user.time_reached[str(show.id)] = time_reached
+                reached['t'] = time_reached
                 request.user.save()
                 message = f'Updated time_reached for the Film \'{show.name}\' to {time_reached}'
             case 'series' | 'program':
                 # Ensure the dictionary for the season exists within that show_id
-                if str(season) not in request.user.time_reached[str(show.id)]:
-                    request.user.time_reached[str(show.id)][str(season)] = {}
-                request.user.time_reached[str(show.id)][str(
-                    season)][str(episode)] = time_reached
+                if str(season) not in reached:
+                    reached[str(season)] = {}
+                reached[str(season)][str(episode)] = time_reached
                 request.user.save()
-                message = f'Updated time_reached for the {show.kind.title()} \'{show.name}\' Season {season} Episode {episode} to {time_reached}'
+                message = f'Updated time reached for the {show.kind.title()} \'{show.name}\' Season {season} Episode {episode} to {time_reached}'
             case _:
                 return Response({'detail': 'Unknown Show Type!'}, status=status.HTTP_417_EXPECTATION_FAILED)
 

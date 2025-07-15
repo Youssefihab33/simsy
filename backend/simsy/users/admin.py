@@ -22,7 +22,7 @@ class CustomUserAdmin(UserAdmin):
             "Advanced options",
             {
                 "classes": ["colapse"],
-                "fields": ['episode_reached', 'time_reached', 'history'],
+                "fields": ['reached', 'history'],
             },
         ),
         (
