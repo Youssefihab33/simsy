@@ -1,152 +1,20 @@
-from rest_framework import permissions, viewsets
+from .serializers import *
+from .models import Show
+from .imports import updateReached, changeEpisode
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import RetrieveAPIView
-from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
-from .serializers import *
+from rest_framework.views import APIView
+from rest_framework import status, permissions, viewsets
 import random
 from collections import OrderedDict
 from datetime import datetime
-from .imports import saveNewReached
-from .models import Show
+
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
-class ShowDetailView(RetrieveAPIView):
-    queryset = Show.objects.all()
-    serializer_class = ShowSerializer
-    lookup_field = 'pk'
-    lookup_url_kwarg = 'show_id'
 
-    def get_favorites_status(self, show):
-        if not self.request.user.is_authenticated:
-            return False
-        return show.favorites.filter(id=self.request.user.id).exists()
-
-    def get_watchlist_status(self, show):
-        if not self.request.user.is_authenticated:
-            return False
-        return show.watchlist.filter(id=self.request.user.id).exists()
-
-class UserShowView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-    def get(self, request, show_id):
-        try:
-            serializer = UserShowSerializer(
-                request.user, context={'request': request, 'show_id': show_id})
-            return Response(serializer.data, status=200)
-        except CustomUser.DoesNotExist:
-            return Response({'error': 'User not found'}, status=404)
-        except Exception as e:
-            return Response({'error': str(e)}, status=500)
-
-class firstEpisode(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, show_id, current_season, current_episode):
-        try:
-            show = Show.objects.get(id=show_id)
-        except Show.DoesNotExist:
-            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
-        message='First episode of the show!'
-        changed = True
-        new_season, new_episode, starting_time = saveNewReached(request.user, show_id, 1, 1)
-        return Response({
-            'message': message,
-            'new_season': new_season,
-            'new_episode': new_episode,
-            'changed': changed,
-            'starting_time': starting_time
-        }, status=status.HTTP_200_OK)
-
-class previousEpisode(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, show_id, current_season, current_episode):
-        try:
-            show = Show.objects.get(id=show_id)
-        except Show.DoesNotExist:
-            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
-
-        if current_season == 1 and current_episode == 1:
-            message='Already the first episode of first season!'
-            new_season = 1
-            new_episode = 1
-            changed = False
-        elif current_season != 1 and current_episode == 1:
-            message='Back to first episode of previous season.'
-            new_season = current_season - 1
-            new_episode = show.episodes[str(new_season)]
-            changed = True
-        else:
-            message='Back to previous episode'
-            new_season = current_season
-            new_episode = current_episode - 1
-            changed = True
-
-        new_season, new_episode, starting_time = saveNewReached(request.user, show_id, new_season, new_episode)
-
-        return Response({
-            'message': message,
-            'new_season': new_season,
-            'new_episode': new_episode,
-            'changed': changed,
-            'starting_time': starting_time
-        }, status=status.HTTP_200_OK)
-
-class nextEpisode(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, show_id, current_season, current_episode):
-        try:
-            show = Show.objects.get(id=show_id)
-        except Show.DoesNotExist:
-            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
-
-        if current_season == len(show.episodes) and current_episode == show.episodes[str(current_season)]:
-            message='Last episode of last season!'
-            new_season = current_season
-            new_episode = current_episode
-            changed = False
-        elif current_season != len(show.episodes) and current_episode == show.episodes[str(current_season)]:
-            message='First episode of the next season.'
-            new_season = current_season + 1
-            new_episode = 1
-            changed = True
-        else:
-            message = 'Next Episode'
-            new_season = current_season
-            new_episode = current_episode + 1
-            changed = True
-
-        new_season, new_episode, starting_time = saveNewReached(request.user, show_id, new_season, new_episode)
-        return Response({
-            'message': message,
-            'new_season': new_season,
-            'new_episode': new_episode,
-            'changed': changed,
-            'starting_time': starting_time
-        }, status=status.HTTP_200_OK)
-
-class lastEpisode(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, show_id, current_season, current_episode):
-        try:
-            show = Show.objects.get(id=show_id)
-        except Show.DoesNotExist:
-            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
-        message='Last episode of the show!'
-        changed = True
-        new_season, new_episode, starting_time = saveNewReached(request.user, show_id, len(show.episodes), show.episodes[str(len(show.episodes))])
-        return Response({
-            'message': message,
-            'new_season': new_season,
-            'new_episode': new_episode,
-            'changed': changed,
-            'starting_time': starting_time
-        }, status=status.HTTP_200_OK)
+# ------- Home Page Views -------
 
 class FavoriteShowsView(viewsets.ModelViewSet):
     serializer_class = ShowCardSerializer
@@ -157,6 +25,7 @@ class FavoriteShowsView(viewsets.ModelViewSet):
             raise PermissionDenied("Log in to view favorites.")
         return Show.objects.filter(favorites=self.request.user)
 
+
 class WatchlistShowsView(viewsets.ModelViewSet):
     serializer_class = ShowCardSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -166,10 +35,12 @@ class WatchlistShowsView(viewsets.ModelViewSet):
             raise PermissionDenied("Log in to view watchlist.")
         return Show.objects.filter(watchlist=self.request.user)
 
+
 class NewShowsView(viewsets.ModelViewSet):
     queryset = Show.objects.order_by('-updated')[:10]
     serializer_class = ShowCardSerializer
     permission_classes = [permissions.AllowAny]
+
 
 class HistoryShowsView(viewsets.ModelViewSet):
     # Empty queryset for now, as we don't have a model to track user history
@@ -232,6 +103,7 @@ class HistoryShowsView(viewsets.ModelViewSet):
 
         return ordered_shows
 
+
 class RandomShowsView(viewsets.ModelViewSet):
     serializer_class = ShowCardSerializer
     permission_classes = [permissions.AllowAny]
@@ -241,6 +113,121 @@ class RandomShowsView(viewsets.ModelViewSet):
         if all_shows.count() > 10:
             return random.sample(list(all_shows), 10)
         return all_shows
+
+# ------- Show Detail Views -------
+
+
+class ShowDetailView(RetrieveAPIView):
+    queryset = Show.objects.all()
+    serializer_class = ShowSerializer
+    lookup_field = 'pk'
+    lookup_url_kwarg = 'show_id'
+
+    def get_favorites_status(self, show):
+        if not self.request.user.is_authenticated:
+            return False
+        return show.favorites.filter(id=self.request.user.id).exists()
+
+    def get_watchlist_status(self, show):
+        if not self.request.user.is_authenticated:
+            return False
+        return show.watchlist.filter(id=self.request.user.id).exists()
+
+
+class UserShowView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id):
+        try:
+            serializer = UserShowSerializer(
+                request.user, context={'request': request, 'show_id': show_id})
+            return Response(serializer.data, status=200)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found'}, status=404)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
+# ------- Action Views -------
+
+## Changing Episodes ##
+
+
+class firstEpisode(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id, current_season, current_episode):
+        return changeEpisode(request.user, show_id, 1, 1, True, 'First Episode of the show!')
+
+
+class previousEpisode(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id, current_season, current_episode):
+        if current_season == 1 and current_episode == 1:
+            message = 'Already the first episode of first season!'
+            new_season = new_episode = 1
+            changed = False
+        elif current_season != 1 and current_episode == 1:
+            message = 'Back to first episode of previous season.'
+            new_season = current_season - 1
+            new_episode = Show.objects.get(
+                id=show_id).episodes[str(new_season)]
+            changed = True
+        else:
+            message = 'Previous episode...'
+            new_season = current_season
+            new_episode = current_episode - 1
+            changed = True
+        return changeEpisode(request.user, show_id, new_season, new_episode, changed, message)
+
+
+class nextEpisode(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id, current_season, current_episode):
+        show_episodes = Show.objects.get(id=show_id).episodes
+        if current_season == len(show_episodes) and current_episode == show_episodes[str(current_season)]:
+            message = 'Last episode of last season!'
+            new_season = current_season
+            new_episode = current_episode
+            changed = False
+        elif current_season != len(show_episodes) and current_episode == show_episodes[str(current_season)]:
+            message = 'First episode of the next season.'
+            new_season = current_season + 1
+            new_episode = 1
+            changed = True
+        else:
+            message = 'Next Episode...'
+            new_season = current_season
+            new_episode = current_episode + 1
+            changed = True
+        return changeEpisode(request.user, show_id, new_season, new_episode, changed, message)
+
+
+class lastEpisode(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id, current_season, current_episode):
+        show_episodes = Show.objects.get(id=show_id).episodes
+        return changeEpisode(request.user, show_id, len(show_episodes), show_episodes[str(len(show_episodes))], True, 'Last episode of the show!')
+
+
+## Updating Time Reached ##
+
+class UpdateTimeReached(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, show_id, season, episode, time_reached):
+        show = Show.objects.get(id=show_id)
+        updateReached(request.user, show_id, show.kind,
+                      season, episode, time_reached)
+        return Response({
+            'message': f'Updated time reached for the {show.kind.title()} \'{show.name}\' Season {season} Episode {episode} to {time_reached}',
+            'new_time_reached': time_reached
+        }, status=status.HTTP_200_OK)
+
+
+## Toggling Status ##
 
 class ToggleFavoriteView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -265,6 +252,7 @@ class ToggleFavoriteView(APIView):
             'in_favorites': current_status
         }, status=status.HTTP_200_OK)
 
+
 class ToggleWatchlistView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -286,40 +274,4 @@ class ToggleWatchlistView(APIView):
         return Response({
             'message': message,
             'in_watchlist': current_status
-        }, status=status.HTTP_200_OK)
-
-class UpdateTimeReached(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, show_id, season, episode, time_reached):
-        try:
-            show = Show.objects.get(id=show_id)
-        except Show.DoesNotExist:
-            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
-
-        if str(show.id) not in request.user.reached:
-            request.user.reached[str(show.id)] = {}
-        if 't' not in request.user.reached[str(show.id)]:
-            request.user.reached[str(show.id)]['t'] = {}
-
-        reached = request.user.reached[str(show.id)]
-
-        match show.kind:
-            case 'film':
-                reached['t'] = time_reached
-                request.user.save()
-                message = f'Updated time_reached for the Film \'{show.name}\' to {time_reached}'
-            case 'series' | 'program':
-                # Ensure the dictionary for the season exists within that show_id
-                if str(season) not in reached:
-                    reached[str(season)] = {}
-                reached[str(season)][str(episode)] = time_reached
-                request.user.save()
-                message = f'Updated time reached for the {show.kind.title()} \'{show.name}\' Season {season} Episode {episode} to {time_reached}'
-            case _:
-                return Response({'detail': 'Unknown Show Type!'}, status=status.HTTP_417_EXPECTATION_FAILED)
-
-        return Response({
-            'message': message,
-            'new_time_reached': time_reached
         }, status=status.HTTP_200_OK)

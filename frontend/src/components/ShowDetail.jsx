@@ -115,7 +115,6 @@ const useShowData = (showId) => {
 				setError(err);
 				setShowDetails(null); // Clear show details on error
 			} finally {
-				
 				// We'll set overall loading to false after both initial fetches are done.
 				// For now, assume user data fetch will handle the final loading state.
 			}
@@ -199,8 +198,8 @@ const useShowData = (showId) => {
  */
 const useMediaPlayer = (show, userShowData, refetchShowData) => {
 	const [modalOpen, setModalOpen] = useState(false);
-	const [season, setSeason] = useState(1);
-	const [episode, setEpisode] = useState(1);
+	const [season, setSeason] = useState(0);
+	const [episode, setEpisode] = useState(0);
 	const [episodeChangeMessage, setEpisodeChangeMessage] = useState(null);
 	const [currentVideoStartTime, setCurrentVideoStartTime] = useState(0);
 	const playerRef = useRef(null);
@@ -218,17 +217,15 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 	// This useEffect initializes season, episode, and starting time from user data
 	useEffect(() => {
 		if (userShowData) {
-			setSeason(userShowData.season_reached);
-			setEpisode(userShowData.episode_reached);
-			setCurrentVideoStartTime(userShowData.time_reached);
+			setSeason(userShowData.season_reached || 1);
+			setEpisode(userShowData.episode_reached || 1);
+			setCurrentVideoStartTime(userShowData.time_reached || 0);
 		}
 	}, [userShowData]);
 
 	const handleModalOpen = useCallback(() => {
 		setModalOpen(true);
 		refetchShowData();
-		// When opening the modal, ensure the currentVideoStartTime is up-to-date
-		// This is already handled by the useEffect above reacting to userShowData
 	}, [refetchShowData]);
 
 	const handleModalClose = useCallback(() => {
@@ -260,29 +257,24 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 			// DEBUG : 4
 			console.log('PlayerReady run');
 
-			// Only set currentTime here if it's the *initial* load for this player instance.
-			// Subsequent episode changes will be handled by the useEffect watching videoSrc.
-
-			// DEBUG : 4.5 THIS MAY NEED TO BE DELETED
-			player.currentTime(currentVideoStartTime); // Removed this line
-
 			// Save current time on various player events
-			player.on(['', 'fullscreenchange', 'seeked', 'dispose'], () => {
+			player.on(['fullscreenchange', 'seeked', 'dispose'], () => {
 				if (playerRef.current) {
 					sendTimeReached(show.id, seasonRef.current, episodeRef.current, playerRef.current.currentTime());
 				}
 			});
-			// When video ends, reset time reached to 0
+			// When video ends, reset time reached to 0 and advance episode if applicable
 			player.on('ended', () => {
 				sendTimeReached(show.id, seasonRef.current, episodeRef.current, 0);
+				// If it's a series, automatically go to the next episode
+				if (show.kind === 'series') {
+					actionEpisode('next'); // This will update season/episode and trigger re-render/source change
+				}
 				// DEBUG : 5
 				console.log('---VIDEO ENDED---');
 			});
-
-			// DEBUG : 6
-			console.log('started the player: ',playerRef.current.currentTime())
 		},
-		[sendTimeReached, show, currentVideoStartTime] // currentVideoStartTime removed as dependency here
+		[sendTimeReached, show] // Removed currentVideoStartTime from dependency
 	);
 
 	const getVideoDetails = useCallback(() => {
@@ -336,17 +328,26 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 				); // The 'true' argument ensures the track is loaded
 			}
 
-			playerRef.current.on('loadeddata', () => {
+			// This listener ensures currentTime is set AFTER the video is loaded
+			const handleLoadedData = () => {
 				if (playerRef.current) {
 					playerRef.current.currentTime(currentVideoStartTime);
-					// DEBUG : 7
+					// DEBUG : 6
 					console.log('set time on LOADEDDATA :', currentVideoStartTime);
 					playerRef.current.play(); // Auto-play the new episode
-					// playerRef.current.off('loadeddata', handleLoadedData); // Remove listener after use
+					playerRef.current.off('loadeddata', handleLoadedData); // Remove listener after use
 				}
-			});
+			};
+
+			playerRef.current.on('loadeddata', handleLoadedData);
 			playerRef.current.load(); // Load the new source
 		}
+		// Cleanup function for useEffect to remove the 'loadeddata' listener
+		return () => {
+			if (playerRef.current) {
+				playerRef.current.off('loadeddata');
+			}
+		};
 	}, [videoSrc, captionsSrc, show, currentVideoStartTime, userShowData]); // Added currentVideoStartTime to dependencies
 
 	const playerOptions = show
@@ -482,12 +483,14 @@ const ShowDetails = () => {
 						break;
 					case 'KeyJ': // J -> Previous Episode
 						if (show?.kind !== 'film') {
-							previousEpisode();
+							// Directly call actionEpisode with 'previous'
+							actionEpisode('previous');
 						}
 						break;
 					case 'KeyL': // L -> Next Episode
 						if (show?.kind !== 'film') {
-							nextEpisode();
+							// Directly call actionEpisode with 'next'
+							actionEpisode('next');
 						}
 						break;
 					case 'KeyF': // F -> Fullscreen (Video.js handles this natively, just focus)
