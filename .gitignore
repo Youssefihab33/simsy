@@ -1,6 +1,7 @@
 db.sqlite3
 /data/*
-
+package-lock.json
+supervisord.pid
 # Python cache
 __pycache__/
 *.py[cod]

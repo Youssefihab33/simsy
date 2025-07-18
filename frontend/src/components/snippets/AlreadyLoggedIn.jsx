@@ -5,7 +5,7 @@ export default function AlreadyLoggedIn() {
 	const navigate = useNavigate();
 	function logout() {
 		axiosInstance
-			.post('/api/auth/logout/')
+			.post('/auth/logout/')
 			.then((response) => {
 				alert('Logout successful!');
 				localStorage.removeItem('token');

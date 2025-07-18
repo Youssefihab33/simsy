@@ -9,8 +9,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('users.urls')),
     path('shows/', include('shows.urls')),
-    path('api/auth/', include('knox.urls')),
-    path('api/profile/', UserView.as_view(), name='user-profile'),
-    path('api/password_reset/',
+    path('auth/', include('knox.urls')),
+    path('profile/', UserView.as_view(), name='user-profile'),
+    path('password_reset/',
          include('django_rest_passwordreset.urls', namespace='password_reset')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

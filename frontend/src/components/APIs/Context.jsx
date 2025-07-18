@@ -11,7 +11,7 @@ export const UserProvider = ({ children }) => {
     useEffect(() => {
         const fetchUserData = async () => {
             try {
-                axiosInstance.get('/api/profile').then(res => setUserData(res.data));
+                axiosInstance.get('/profile/').then(res => setUserData(res.data));
             } catch (err) {
                 setError("Failed to fetch user data.");
                 console.error("Error fetching user data:", err);

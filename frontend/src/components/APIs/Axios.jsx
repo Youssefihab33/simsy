@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const backendBaseUrl = import.meta.env.VITE_APP_ENV === 'production'
+    ? '/api/' // For Dockerized production, Nginx will proxy /api/
+    : import.meta.env.VITE_BACKEND_URL; // For local development
+console.log('Using backend base URL:', import.meta.env.VITE_APP_ENV, backendBaseUrl);
 const axiosInstance = axios.create({
-	baseURL: import.meta.env.VITE_BACKEND_URL,
+	baseURL: backendBaseUrl,
 	timeout: 45000, // Set a timeout of n seconds
 	headers: {
 		'Content-Type': 'application/json',

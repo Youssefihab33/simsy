@@ -15,7 +15,7 @@ export default function ForgotPasswordConfirm() {
 		} else {
 			// When Submitted
 			axiosInstance
-				.post('/api/password_reset/confirm/', { password: data.password, token: token })
+				.post('/password_reset/confirm/', { password: data.password, token: token })
 				.then((response) => {
 					alert('Your password was changed successfully!');
 					navigate('/login/');

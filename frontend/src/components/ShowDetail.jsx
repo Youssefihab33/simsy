@@ -138,12 +138,14 @@ const useShowData = (showId) => {
 		setError(null);
 
 		try {
-			const response = await axiosInstance.get(`shows/user/${showId}`);
+			const response = await axiosInstance.get(`shows/user/${showId}/`);
 			setUserInteraction({
 				inFavorites: response.data.in_favorites,
 				inWatchlist: response.data.in_watchlist,
 				userShowData: response.data,
 			});
+			// DEBUG : 2
+			console.log('Fetched User-Show data: ', response);
 		} catch (err) {
 			console.error('Error fetching user interaction data:', err);
 			setError(err);
@@ -154,8 +156,6 @@ const useShowData = (showId) => {
 			});
 		} finally {
 			setLoading(false); // Always set loading to false after this fetch attempt
-			// DEBUG : 2
-			console.log('Fetched User-Show data: ', userInteraction);
 		}
 	}, [showId, showDetails]); // Added showDetails and userShowData for more precise loading state management
 
@@ -241,7 +241,7 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 	const sendTimeReached = useCallback(async (currentShowId, currentSeason, currentEpisode, timeReached) => {
 		try {
 			await axiosInstance
-				.get(`shows/update_time_reached/${currentShowId}/${currentSeason || 0}/${currentEpisode || 0}/${Math.round(timeReached)}`)
+				.get(`shows/update_time_reached/${currentShowId}/${currentSeason || 0}/${currentEpisode || 0}/${Math.round(timeReached)}/`)
 				// DEBUG : 3
 				.then((response) => {
 					console.log(response.data.message);

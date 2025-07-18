@@ -6,9 +6,9 @@ from users.models import CustomUser
 from users.serializers import UserSerializer
 User = get_user_model()
 
-def get_in_f_or_w(user, show, type):
+def get_in_f_or_w(user, show, change_type):
     if user.is_authenticated:
-        match type:
+        match change_type:
             case 'f':
                 return show.favorites.filter(id=user.id).exists()
             case 'w':

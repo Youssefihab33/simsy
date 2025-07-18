@@ -8,7 +8,7 @@ export default function ForgotPassword() {
 	const { handleSubmit, control } = useForm();
 	const submission = (data) => {
 		axiosInstance
-			.post('/api/password_reset/', { email: data.email })
+			.post('/password_reset/', { email: data.email })
 			.then((response) => {
                 // MISSING: Add a success message or redirect to another page
                 // For example, you can show an alert or navigate to a different page
