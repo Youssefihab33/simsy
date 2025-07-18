@@ -7,6 +7,7 @@ services:
       - ./backend/simsy:/usr/src/app/simsy
       - ./data/db.sqlite3:/usr/src/data/db.sqlite3
     env_file: "backend/simsy/.env"
+    restart: always
 
   frontend:
     build: ./frontend
@@ -15,6 +16,8 @@ services:
     volumes:
       - ./frontend:/app
       - ./data/media:/usr/src/data/media
+      - ./data/videos:/usr/src/data/videos
     env_file: "frontend/.env"
+    restart: always
     depends_on:
       - backend
