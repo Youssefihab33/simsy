@@ -89,38 +89,61 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 			const player = (playerRef.current = videojs(videoElement, options, () => {
 				onReady && onReady(player);
 			}));
-			if ('currentEpisode' in episodeControls) {
-				videojs.registerComponent('CustomIconButton', CustomIconButton);
-				const controlBar = playerRef.current.getChild('ControlBar');
-				if (controlBar) {
-					// --- Previous Episode Button ---
+
+			// Adding custom components to the player
+			videojs.registerComponent('CustomIconButton', CustomIconButton);
+			const controlBar = playerRef.current.getChild('ControlBar');
+			if (controlBar) {
+				// --- Previous Episode Button ---
+				if ('currentEpisode' in episodeControls) {
 					const previousEpisodeButtonOptions = {
 						controlText: 'Previous Episode',
 						clickHandler: () => {
 							episodeControls.actionEpisode('previous');
 						},
-						iconClass: 'bi-caret-left',
+						iconClass: 'vjs-icon-previous-item',
 					};
 					controlBar.addChild('CustomIconButton', previousEpisodeButtonOptions, 1);
+				}
 
-					// --- Current Episode Display ---
-					const currentEpisodeDisplayOptions = {
-						text: `S${episodeControls.currentSeason}E${episodeControls.currentEpisode}`, // Initial text
-					};
-					controlBar.addChild('CurrentEpisodeDisplay', currentEpisodeDisplayOptions, 2);
+				// --- Rewind Button ---
+				const rewindButtonOptions = {
+					controlText: 'Rewind',
+					clickHandler: () => {
+						player.currentTime(player.currentTime() - 5);
+					},
+					iconClass: 'vjs-icon-replay-5',
+				};
 
-					// --- Next Episode Button ---
+				controlBar.addChild('CustomIconButton', rewindButtonOptions, 2);
+				// // --- Current Episode Display ---
+				// const currentEpisodeDisplayOptions = {
+				// 	text: `S${episodeControls.currentSeason}E${episodeControls.currentEpisode}`, // Initial text
+				// };
+				// controlBar.addChild('CurrentEpisodeDisplay', currentEpisodeDisplayOptions, 3);
+
+				// --- Seek Button ---
+				const seekButtonOptions = {
+					controlText: 'Seek',
+					clickHandler: () => {
+						player.currentTime(player.currentTime() + 5);
+					},
+					iconClass: 'vjs-icon-forward-5',
+				};
+				controlBar.addChild('CustomIconButton', seekButtonOptions, 3);
+
+				// --- Next Episode Button ---
+				if ('currentEpisode' in episodeControls) {
 					const nextEpisodeButtonOptions = {
 						controlText: 'Next Episode',
 						clickHandler: () => {
 							episodeControls.actionEpisode('next');
 						},
-						iconClass: 'bi-caret-right',
+						iconClass: 'vjs-icon-next-item',
 					};
-					controlBar.addChild('CustomIconButton', nextEpisodeButtonOptions, 3);
+					controlBar.addChild('CustomIconButton', nextEpisodeButtonOptions, 4);
 				}
 			}
-
 			// // --- Share Button ---
 			// const shareButtonOptions = {
 			// 	controlText: 'Share Video',
