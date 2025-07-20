@@ -2,6 +2,7 @@ db.sqlite3
 /data/*
 package-lock.json
 supervisord.pid
+
 # Python cache
 __pycache__/
 *.py[cod]
@@ -35,6 +36,7 @@ lerna-debug.log*
 # Dependency directories
 node_modules
 dist
+build
 dist-ssr
 *.local
 
