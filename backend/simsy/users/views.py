@@ -7,8 +7,8 @@ from django.dispatch import receiver
 from rest_framework import viewsets, permissions
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from django_rest_passwordreset.signals import reset_password_token_created, post_password_reset # type: ignore
-from knox.models import AuthToken # type: ignore
+from django_rest_passwordreset.signals import reset_password_token_created, post_password_reset  # type: ignore
+from knox.models import AuthToken  # type: ignore
 from datetime import datetime
 from .serializers import *
 from .models import *
@@ -37,6 +37,8 @@ def send_email(subject, template, user, btnLink=""):
     message.send()
 
 # Create your views here.
+
+
 class LoginViewSet(viewsets.ViewSet):
     permission_classes = [permissions.AllowAny]
     serializer_class = LoginSerializer
@@ -54,7 +56,10 @@ class LoginViewSet(viewsets.ViewSet):
                 token = AuthToken.objects.create(user)[1]
                 return Response({'user': self.serializer_class(user).data, 'token': token})
             else:
-                return Response({'error': 'Invalid credentials'}, status=401)
+                if not User.objects.filter(username=username).exists():
+                    return Response({'username': ['User with this username does not exist.']}, status=400)
+                else:
+                    return Response({'password': ['Incorrect password.']}, status=400)
         else:
             return Response(serializer.errors, status=400)
 

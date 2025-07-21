@@ -1,4 +1,4 @@
-import { TextField, Button, Link, FormControlLabel, Checkbox } from '@mui/material';
+import { TextField, Button, Link } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import axiosInstance from './APIs/Axios.jsx';

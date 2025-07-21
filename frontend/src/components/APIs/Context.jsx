@@ -1,34 +1,38 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import LoadingSpinner from '../snippets/LoadingSpinner';
 import axiosInstance from './Axios';
 
 export const UserContext = createContext(null);
 
 export const UserProvider = ({ children }) => {
-    const [userData, setUserData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+	const [userData, setUserData] = useState(null);
+	const [loading, setLoading] = useState(true);
+	const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                axiosInstance.get('/profile/').then(res => setUserData(res.data));
-            } catch (err) {
-                setError("Failed to fetch user data.");
-                console.error("Error fetching user data:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
+	useEffect(() => {
+		const fetchUserData = async () => {
+			try {
+				const res = await axiosInstance.get('/profile/'); // Use await for the promise
+				setUserData(res.data);
+			} catch (err) {
+				if (err.response && err.response.status === 401) {
+					// Handle 401 Unauthorized specifically
+					console.warn('User not authenticated. Redirecting to login.');
+					// navigate('/login/');
+				} else {
+					// Handle other errors
+					console.error('Error fetching user data:', err);
+				}
+			} finally {
+				setLoading(false);
+			}
+		};
 
-        fetchUserData();
-    }, []);
+		fetchUserData();
+	}, [navigate]);
 
-    if (loading) return <div>Loading user data...</div>;
-    if (error) return <div>Error: {error}</div>;
+	if (loading) return <LoadingSpinner />;
 
-    return (
-        <UserContext.Provider value={userData}>
-            {children}
-        </UserContext.Provider>
-    );
+	return <UserContext.Provider value={userData}>{children}</UserContext.Provider>;
 };
