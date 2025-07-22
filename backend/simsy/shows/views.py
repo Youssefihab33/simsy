@@ -275,3 +275,44 @@ class ToggleWatchlistView(APIView):
             'message': message,
             'in_watchlist': current_status
         }, status=status.HTTP_200_OK)
+
+def searchView(request):
+    query = request.GET.get('q', '') # Get the search query from the 'q' URL parameter
+
+    if query:
+        # Example: Search for posts where title or content contains the query
+        # You'll need to adjust this based on what you want to search (e.g., users, products)
+        results = []
+
+        # Example for searching a 'Post' model (assuming it has 'title' and 'content' fields)
+        # from your_app.models import Post
+        # posts = Post.objects.filter(Q(title__icontains=query) | Q(content__icontains=query))
+        # for post in posts:
+        #     results.append({
+        #         'type': 'post',
+        #         'id': post.id,
+        #         'title': post.title,
+        #         'content_snippet': post.content[:100] + '...' if len(post.content) > 100 else post.content
+        #     })
+
+        # Example for searching a 'User' model (assuming it has 'first_name' and 'last_name' fields)
+        # from django.contrib.auth import get_user_model
+        # User = get_user_model()
+        # users = User.objects.filter(Q(first_name__icontains=query) | Q(last_name__icontains=query))
+        # for user in users:
+        #     results.append({
+        #         'type': 'user',
+        #         'id': user.id,
+        #         'full_name': f"{user.first_name} {user.last_name}",
+        #         'profile_picture': str(user.profile_picture.url) if user.profile_picture else None
+        #     })
+
+        # You'll need to replace the above with your actual search logic based on your models.
+        # For demonstration, let's just return a dummy response:
+        results = [
+            {'name': 'Result 1 for ' + query},
+            {'name': 'Result 2 for ' + query}
+        ]
+        return JsonResponse({'query': query, 'results': results})
+    else:
+        return JsonResponse({'message': 'No search query provided'}, status=400)
