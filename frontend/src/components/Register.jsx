@@ -353,7 +353,15 @@ export default function Register() {
 						</Grid>
 					</Grid>
 
-					<Button type='submit' color='secondary' fullWidth variant='outlined' sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }} disabled={isSubmitting} startIcon={<i className='bi-person-add'></i>}>
+					<Button
+						type='submit'
+						color='secondary'
+						fullWidth
+						variant='outlined'
+						sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }}
+						disabled={isSubmitting}
+						startIcon={<i className='bi-person-add'></i>}
+					>
 						{isSubmitting ? 'Registering...' : 'Register'}
 					</Button>
 
