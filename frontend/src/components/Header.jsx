@@ -266,7 +266,7 @@ export default function Header() {
 												<Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
 													<CircularProgress size={20} sx={{ color: 'white' }} />
 												</Box>
-											) : searchResults.length > 0 ? (
+											) : searchResults && searchResults.length > 0 ? (
 												searchResults.map((result) => (
 													<MenuItem
 														key={result.id}
