@@ -1,12 +1,31 @@
-import { useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useContext } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 
-import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Container, Avatar, Button, Tooltip, MenuItem, TextField, InputAdornment } from '@mui/material'; // Import InputAdornment
+import {
+	AppBar,
+	Box,
+	Toolbar,
+	IconButton,
+	Typography,
+	Menu,
+	Container,
+	Avatar,
+	Button,
+	Tooltip,
+	MenuItem,
+	TextField,
+	InputAdornment,
+	Popper,
+	Paper,
+	ClickAwayListener,
+	CircularProgress,
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import FiberNewIcon from '@mui/icons-material/FiberNew';
 
 import { UserContext } from './APIs/Context';
+import axiosInstance from './APIs/Axios';
 
 const pages = [
 	{ name: 'Home', path: '/' },
@@ -22,9 +41,52 @@ export default function Header() {
 	const userData = useContext(UserContext);
 	const [anchorElNav, setAnchorElNav] = useState(null);
 	const [anchorElUser, setAnchorElUser] = useState(null);
+	const [anchorElDropdown, setAnchorElDropdown] = useState(null);
 	const [searchTerm, setSearchTerm] = useState('');
-
+	const [searchResults, setSearchResults] = useState([]);
+	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const navigate = useNavigate();
 	const { first_name, last_name, profile_picture } = userData || {};
+
+	// Debounce search effect
+	useEffect(() => {
+		if (searchTerm === '') {
+			setIsDropdownOpen(false);
+			setSearchResults([]);
+			return;
+		} else if (searchTerm.length < 3) {
+			setIsDropdownOpen(true);
+			setSearchResults([]);
+			return;
+		}
+
+		// Set a timer to wait for the user to stop typing
+		const delayDebounceFn = setTimeout(() => {
+			setIsLoading(true);
+			axiosInstance
+				.get(`shows/search?q=${encodeURIComponent(searchTerm)}`)
+				.then((response) => {
+					if (response.status != 200) {
+						throw new Error('Network response was not Successful');
+					}
+					return response.data;
+				})
+				.then((data) => {
+					setSearchResults(data.results);
+					setIsDropdownOpen(true);
+					setIsLoading(false);
+				})
+				.catch((error) => {
+					console.error('There was a problem with the search fetch operation:', error);
+					setSearchResults([]);
+					setIsLoading(false);
+				});
+		}, 500);
+
+		// Cleanup function to clear the timer
+		return () => clearTimeout(delayDebounceFn);
+	}, [searchTerm]);
 
 	const handleOpenNavMenu = (event) => {
 		setAnchorElNav(event.currentTarget);
@@ -40,19 +102,23 @@ export default function Header() {
 	const handleCloseUserMenu = () => {
 		setAnchorElUser(null);
 	};
-
 	const handleSearchChange = (event) => {
-		setSearchTerm(event.target.value);
+		const newSearchTerm = event.target.value;
+		setSearchTerm(newSearchTerm);
+		if (newSearchTerm) {
+			setAnchorElDropdown(event.currentTarget);
+		}
 	};
 
-	const handleSearchSubmit = (event) => {
-    if (event.key === 'Enter') {
-        console.log('Searching for:', searchTerm);
-        // Here you would typically navigate to a search results page
-        // or trigger a search API call.
-        // Example: navigate('/search?q=' + searchTerm);
-    }
-};
+	const handleDropdownClickAway = () => {
+		setIsDropdownOpen(false);
+	};
+
+	const handleResultClick = (result) => {
+		setIsDropdownOpen(false);
+		setSearchTerm('');
+		navigate(`/show/${result.id}`);
+	};
 
 	return (
 		<>
@@ -135,22 +201,19 @@ export default function Header() {
 						<Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
 							{pages.map((page) => (
 								<Button key={page.name} onClick={handleCloseNavMenu} sx={{ my: 2, color: 'white', display: 'block' }} component={Link} to={page.path}>
-									{' '}
-									{/* Modified */}
 									{page.name}
 								</Button>
 							))}
 						</Box>
 
-						{/* Search Bar */}
-						<Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+						{/* Search Bar with Debounced Search */}
+						<Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', position: 'relative' }}>
 							<TextField
 								variant='outlined'
 								size='small'
 								placeholder='Search...'
 								value={searchTerm}
 								onChange={handleSearchChange}
-								onKeyDown={handleSearchSubmit}
 								color='tertiary'
 								sx={{
 									minWidth: '200px',
@@ -181,6 +244,63 @@ export default function Header() {
 									),
 								}}
 							/>
+							<Popper open={isDropdownOpen} anchorEl={anchorElDropdown} placement='bottom-start' style={{ width: 400, zIndex: 1300 }}>
+								<Paper
+									sx={{
+										mt: 1,
+										backgroundColor: 'rgba(255, 255, 255, 0.1)',
+										backdropFilter: 'blur(10px)',
+										borderRadius: '5px',
+										color: 'white',
+										overflow: 'hidden',
+									}}
+								>
+									<ClickAwayListener onClickAway={handleDropdownClickAway}>
+										<Box
+											sx={{
+												maxHeight: '300px',
+												overflowY: 'auto',
+											}}
+										>
+											{isLoading ? (
+												<Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+													<CircularProgress size={20} sx={{ color: 'white' }} />
+												</Box>
+											) : searchResults.length > 0 ? (
+												searchResults.map((result) => (
+													<MenuItem
+														key={result.id}
+														onClick={() => handleResultClick(result)}
+														sx={{
+															'&:hover': {
+																backgroundColor: 'rgba(255, 255, 255, 0.2)',
+															},
+															display: 'block',
+														}}
+													>
+														<Box>
+															<Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>
+																{result.name}
+															</Typography>
+															<Typography variant='body2' color='text.secondary' noWrap sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+																{result.description}
+															</Typography>
+														</Box>
+													</MenuItem>
+												))
+											) : searchTerm.length < 3 ? (
+												<MenuItem>
+													<Typography sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>Keep Typing...</Typography>
+												</MenuItem>
+											) : (
+												<MenuItem>
+													<Typography sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>No results found</Typography>
+												</MenuItem>
+											)}
+										</Box>
+									</ClickAwayListener>
+								</Paper>
+							</Popper>
 						</Box>
 
 						<Box sx={{ flexGrow: 0 }}>
