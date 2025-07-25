@@ -10,32 +10,19 @@ import '../modules/VideoJS.module.css';
 class CustomIconButton extends videojs.getComponent('Button') {
 	constructor(player, options) {
 		super(player, options);
-
-		// Ensure options.iconClass is provided
-		if (!options.iconClass) {
-			videojs.log.warn('CustomIconButton: "iconClass" option is required.');
-		}
-
-		// Add the specific icon class provided in options
-		if (options.iconClass) {
-			const iconElement = this.el().querySelector('.vjs-icon-placeholder');
-			if (iconElement) {
-				iconElement.classList.add(...options.iconClass.split(' '));
-			}
-		}
-
-		// Set ARIA label for accessibility using controlText
+		this.currentIconClass = null;
+		this.applyIcon(options.iconClass);
 		this.el().setAttribute('aria-label', this.localize(options.controlText || 'Custom Button'));
 	}
 
 	createEl() {
 		const el = super.createEl('button');
 
-		// Create the element that will hold our icon classes
-		const iconPlaceholder = videojs.dom.createEl('div');
-		el.appendChild(iconPlaceholder);
+		const iconDiv = videojs.dom.createEl('div', {
+			className: 'vjs-icon-placeholder',
+		});
+		el.appendChild(iconDiv);
 
-		// Add the control text element for accessibility (can be hidden visually)
 		const controlTextEl = videojs.dom.createEl('span', {
 			className: 'vjs-control-text',
 			textContent: this.options_.controlText || 'Custom Button',
@@ -44,7 +31,23 @@ class CustomIconButton extends videojs.getComponent('Button') {
 
 		return el;
 	}
+
+	applyIcon(newIconClass) {
+		const iconElement = this.el().querySelector('.vjs-icon-placeholder');
+		if (!iconElement) {
+			videojs.log.warn('CustomIconButton: Could not find .vjs-icon-placeholder to update icon.');
+			return;
+		}
+		if (this.currentIconClass) {
+			iconElement.classList.remove(...this.currentIconClass.split(' '));
+		}
+		if (newIconClass) {
+			iconElement.classList.add(...newIconClass.split(' '));
+		}
+		this.currentIconClass = newIconClass;
+	}
 }
+
 class CurrentEpisodeDisplay extends videojs.getComponent('Component') {
 	constructor(player, options) {
 		super(player, options);
@@ -143,17 +146,34 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 					};
 					controlBar.addChild('CustomIconButton', nextEpisodeButtonOptions, 4);
 				}
+				// --- Download Button ---
+				const downloadButtonOptions = {
+					controlText: 'Download Video',
+					clickHandler: function () {
+						const buttonInstance = this;
+						buttonInstance.applyIcon('vjs-icon-downloading');
+						const videoUrl = options.sources[0].src;
+						const fileName = !options.show_name
+							? 'SIMSY.mp4'
+							: 'currentEpisode' in episodeControls
+							? `${options.show_name} - s${episodeControls.currentSeason}e${episodeControls.currentEpisode} - SIMSY.mp4`
+							: `${options.show_name} - SIMSY.mp4`;
+
+						const a = document.createElement('a');
+						a.style.display = 'none';
+						a.href = videoUrl;
+						a.download = fileName;
+
+						document.body.appendChild(a);
+						a.click();
+						document.body.removeChild(a);
+
+						setTimeout(() => buttonInstance.applyIcon('vjs-icon-file-download-done'), 3000);
+					},
+					iconClass: 'vjs-icon-file-download',
+				};
+				controlBar.addChild('CustomIconButton', downloadButtonOptions, controlBar.children().length - 1);
 			}
-			// // --- Share Button ---
-			// const shareButtonOptions = {
-			// 	controlText: 'Share Video',
-			// 	clickHandler: () => {
-			// 		alert('Share Video');
-			// 		// Implement your sharing logic here
-			// 	},
-			// 	iconClass: 'bi-share', // Font Awesome class for a share icon
-			// };
-			// controlBar.addChild('CustomIconButton', shareButtonOptions, controlBar.children().length - 1); // Add before fullscreen button
 		} else {
 			// This block is for updating an existing player.
 			// When updating, we need to handle the playlist logic as well.

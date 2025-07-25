@@ -353,6 +353,7 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 	const playerOptions = show
 		? {
 				...videoJsOptions,
+				show_name: show.name,
 				sources: [{ src: videoSrc, type: 'video/mp4' }],
 				tracks:
 					show.captions && captionsSrc
