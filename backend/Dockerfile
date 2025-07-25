@@ -12,6 +12,8 @@ COPY ./simsy/ .
 
 RUN python manage.py collectstatic --noinput
 
+
+
 FROM debian:bookworm-slim
 
 RUN apt-get update \

@@ -33,7 +33,13 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = json.loads(os.getenv('ALLOWED_HOSTS'))
+CORS_ALLOWED_ORIGINS = json.loads(os.getenv('ALLOWED_HOSTS'))
+CSRF_TRUSTED_ORIGINS = json.loads(os.getenv('ALLOWED_HOSTS'))
 
+CSRF_COOKIE_SECURE = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
+#SECURE_SSL_REDIRECT = True
 
 # Application definition
 
@@ -61,10 +67,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]
-
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',
 ]
 
 AUTH_USER_MODEL = 'users.CustomUser'
@@ -164,6 +166,8 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR.parent.parent, 'data/static')

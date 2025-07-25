@@ -306,7 +306,7 @@ export default function Header() {
 						<Box sx={{ flexGrow: 0 }}>
 							<Tooltip title='Open settings'>
 								<IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-									{userData ? <Avatar alt={`${first_name} ${last_name}`} src={import.meta.env.VITE_BACKEND_URL + profile_picture} /> : <Avatar alt='Loading...' />}
+									{userData ? <Avatar alt={`${first_name} ${last_name}`} src={profile_picture} /> : <Avatar alt='Loading...' />}
 								</IconButton>
 							</Tooltip>
 							<Menu
