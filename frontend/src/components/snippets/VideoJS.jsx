@@ -55,8 +55,8 @@ class CurrentEpisodeDisplay extends videojs.getComponent('Component') {
 		// Add your custom classes here.
 		this.el().classList.add('vjs-control', 'vjs-current-episode-display-custom');
 
-		if (options.text) {
-			this.updateText(options.text);
+		if (options.season && options.episode) {
+			this.updateText(`S${options.season}\nE${options.episode}`);
 		}
 	}
 
@@ -97,6 +97,13 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 			videojs.registerComponent('CustomIconButton', CustomIconButton);
 			const controlBar = playerRef.current.getChild('ControlBar');
 			if (controlBar) {
+				// Remove existing custom buttons before re-adding them to avoid duplicates
+				controlBar.removeChild('previousEpisodeButton');
+				controlBar.removeChild('rewindButton');
+				controlBar.removeChild('seekButton');
+				controlBar.removeChild('nextEpisodeButton');
+				controlBar.removeChild('downloadButton');
+
 				// --- Previous Episode Button ---
 				if ('currentEpisode' in episodeControls) {
 					const previousEpisodeButtonOptions = {
@@ -106,7 +113,7 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 						},
 						iconClass: 'vjs-icon-previous-item',
 					};
-					controlBar.addChild('CustomIconButton', previousEpisodeButtonOptions, 1);
+					controlBar.addChild('CustomIconButton', previousEpisodeButtonOptions, 1, 'previousEpisodeButton');
 				}
 
 				// --- Rewind Button ---
@@ -118,12 +125,13 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 					iconClass: 'vjs-icon-replay-5',
 				};
 
-				controlBar.addChild('CustomIconButton', rewindButtonOptions, 2);
-				// // --- Current Episode Display ---
-				// const currentEpisodeDisplayOptions = {
-				// 	text: `S${episodeControls.currentSeason}E${episodeControls.currentEpisode}`, // Initial text
-				// };
-				// controlBar.addChild('CurrentEpisodeDisplay', currentEpisodeDisplayOptions, 3);
+				controlBar.addChild('CustomIconButton', rewindButtonOptions, 2, 'rewindButton');
+				// --- Current Episode Display ---
+				const currentEpisodeDisplayOptions = {
+					season: episodeControls.currentSeason,
+					episode: episodeControls.currentEpisode,
+				};
+				controlBar.addChild('CurrentEpisodeDisplay', currentEpisodeDisplayOptions, 3);
 
 				// --- Seek Button ---
 				const seekButtonOptions = {
@@ -133,7 +141,7 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 					},
 					iconClass: 'vjs-icon-forward-5',
 				};
-				controlBar.addChild('CustomIconButton', seekButtonOptions, 3);
+				controlBar.addChild('CustomIconButton', seekButtonOptions, 4, 'seekButton');
 
 				// --- Next Episode Button ---
 				if ('currentEpisode' in episodeControls) {
@@ -144,7 +152,7 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 						},
 						iconClass: 'vjs-icon-next-item',
 					};
-					controlBar.addChild('CustomIconButton', nextEpisodeButtonOptions, 4);
+					controlBar.addChild('CustomIconButton', nextEpisodeButtonOptions, 5, 'nextEpisodeButton');
 				}
 				// --- Download Button ---
 				const downloadButtonOptions = {
@@ -153,11 +161,10 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 						const buttonInstance = this;
 						buttonInstance.applyIcon('vjs-icon-downloading');
 						const videoUrl = options.sources[0].src;
-						const fileName = !options.show_name
-							? 'SIMSY.mp4'
-							: 'currentEpisode' in episodeControls
-							? `${options.show_name} - s${episodeControls.currentSeason}e${episodeControls.currentEpisode} - SIMSY.mp4`
-							: `${options.show_name} - SIMSY.mp4`;
+						const fileName =
+							'currentEpisode' in episodeControls
+								? `${options.show_name} -s${episodeControls.currentSeason}e${episodeControls.currentEpisode}- SIMSY.mp4`
+								: `${options.show_name} - SIMSY.mp4`;
 
 						const a = document.createElement('a');
 						a.style.display = 'none';
@@ -172,7 +179,7 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 					},
 					iconClass: 'vjs-icon-file-download',
 				};
-				controlBar.addChild('CustomIconButton', downloadButtonOptions, controlBar.children().length - 1);
+				controlBar.addChild('CustomIconButton', downloadButtonOptions, controlBar.children().length - 1, 'downloadButton');
 			}
 		} else {
 			// This block is for updating an existing player.
@@ -182,8 +189,14 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 			// Update player options (ADD THE REST OF THE OPTIONS HERE)
 			player.autoplay(options.autoplay);
 			player.src(options.sources);
+
+			// To update CurrentEpisodeDisplay text
+			const currentEpisodeDisplay = player.getChild('ControlBar')?.getChild('CurrentEpisodeDisplay');
+			if (currentEpisodeDisplay && 'currentEpisode' in episodeControls) {
+				currentEpisodeDisplay.updateText(`S${episodeControls.currentSeason}E${episodeControls.currentEpisode}`);
+			}
 		}
-	}, [options, videoRef, onReady]);
+	}, [options, videoRef, onReady, episodeControls]);
 
 	// Dispose the Video.js player when the functional component unmounts
 	useEffect(() => {
