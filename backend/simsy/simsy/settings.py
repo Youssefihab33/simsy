@@ -33,12 +33,13 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG')
 
 ALLOWED_HOSTS = json.loads(os.getenv('ALLOWED_HOSTS'))
-CORS_ALLOWED_ORIGINS = json.loads(os.getenv('ALLOWED_HOSTS'))
-CSRF_TRUSTED_ORIGINS = json.loads(os.getenv('ALLOWED_HOSTS'))
+CORS_ALLOWED_ORIGINS = json.loads(os.getenv('CORS_ALLOWED_ORIGINS'))
+CSRF_TRUSTED_ORIGINS = json.loads(os.getenv('CSRF_TRUSTED_ORIGINS'))
 
+CORS_ALLOW_CREDENTIALS = True
 CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_HTTPONLY = False
+SESSION_COOKIE_SECURE = False
 #SECURE_SSL_REDIRECT = True
 
 # Application definition
