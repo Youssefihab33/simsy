@@ -65,7 +65,7 @@ export default function Header() {
 		const delayDebounceFn = setTimeout(() => {
 			setIsLoading(true);
 			axiosInstance
-				.get(`shows/search?q=${encodeURIComponent(searchTerm)}`)
+				.get(`shows/search/${encodeURIComponent(searchTerm)}/`)
 				.then((response) => {
 					if (response.status != 200) {
 						throw new Error('Network response was not Successful');

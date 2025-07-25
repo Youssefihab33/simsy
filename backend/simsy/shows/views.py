@@ -278,8 +278,7 @@ class ToggleWatchlistView(APIView):
             'in_watchlist': current_status
         }, status=status.HTTP_200_OK)
 
-def searchView(request):
-    query = request.GET.get('q', '')
+def searchView(request, query):
     if query:
         results = []
         for show in Show.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)):

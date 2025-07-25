@@ -15,10 +15,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      - ./frontend:/app
       - ./frontend/nginx.conf:/etc/nginx/conf.d/nginx.conf
       - ./data/certbot/conf:/etc/letsencrypt              # Mount Certbot configs and certificates
       - ./data/certbot/www:/var/www/certbot               # Mount webroot for Certbot challenges
-      - ./frontend:/app
       - ./data/media:/usr/src/data/media:ro
       - ./data/videos:/usr/src/data/videos:ro
       - ./backend/simsy/staticfiles:/usr/src/app/simsy/staticfiles:ro
