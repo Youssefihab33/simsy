@@ -46,6 +46,12 @@ class CustomIconButton extends videojs.getComponent('Button') {
 		}
 		this.currentIconClass = newIconClass;
 	}
+
+	updateClickHandler(newHandler) {
+		this.off('click', this.options_.clickHandler);
+		this.options_.clickHandler = newHandler;
+		this.on('click', newHandler);
+	}
 }
 
 class CurrentEpisodeDisplay extends videojs.getComponent('Component') {
@@ -97,13 +103,6 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 			videojs.registerComponent('CustomIconButton', CustomIconButton);
 			const controlBar = playerRef.current.getChild('ControlBar');
 			if (controlBar) {
-				// Remove existing custom buttons before re-adding them to avoid duplicates
-				controlBar.removeChild('previousEpisodeButton');
-				controlBar.removeChild('rewindButton');
-				controlBar.removeChild('seekButton');
-				controlBar.removeChild('nextEpisodeButton');
-				controlBar.removeChild('downloadButton');
-
 				// --- Previous Episode Button ---
 				if ('currentEpisode' in episodeControls) {
 					const previousEpisodeButtonOptions = {
@@ -126,12 +125,15 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 				};
 
 				controlBar.addChild('CustomIconButton', rewindButtonOptions, 2, 'rewindButton');
-				// --- Current Episode Display ---
-				const currentEpisodeDisplayOptions = {
-					season: episodeControls.currentSeason,
-					episode: episodeControls.currentEpisode,
-				};
-				controlBar.addChild('CurrentEpisodeDisplay', currentEpisodeDisplayOptions, 3);
+
+				if ('currentEpisode' in episodeControls) {
+					// --- Current Episode Display ---
+					const currentEpisodeDisplayOptions = {
+						season: episodeControls.currentSeason,
+						episode: episodeControls.currentEpisode,
+					};
+					controlBar.addChild('CurrentEpisodeDisplay', currentEpisodeDisplayOptions, 3);
+				}
 
 				// --- Seek Button ---
 				const seekButtonOptions = {
@@ -158,24 +160,20 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 				const downloadButtonOptions = {
 					controlText: 'Download Video',
 					clickHandler: function () {
-						const buttonInstance = this;
-						buttonInstance.applyIcon('vjs-icon-downloading');
-						const videoUrl = options.sources[0].src;
-						const fileName =
+						this.applyIcon('vjs-icon-downloading');
+						const downloadFileName =
 							'currentEpisode' in episodeControls
 								? `${options.show_name} -s${episodeControls.currentSeason}e${episodeControls.currentEpisode}- SIMSY.mp4`
 								: `${options.show_name} - SIMSY.mp4`;
-
 						const a = document.createElement('a');
 						a.style.display = 'none';
-						a.href = videoUrl;
-						a.download = fileName;
-
+						a.download = downloadFileName;
 						document.body.appendChild(a);
+						a.href = options.sources[0].src;
 						a.click();
+						a.removeAttribute('href');
 						document.body.removeChild(a);
-
-						setTimeout(() => buttonInstance.applyIcon('vjs-icon-file-download-done'), 3000);
+						setTimeout(() => this.applyIcon('vjs-icon-file-download-done'), 3000);
 					},
 					iconClass: 'vjs-icon-file-download',
 				};
@@ -194,6 +192,28 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 			const currentEpisodeDisplay = player.getChild('ControlBar')?.getChild('CurrentEpisodeDisplay');
 			if (currentEpisodeDisplay && 'currentEpisode' in episodeControls) {
 				currentEpisodeDisplay.updateText(`S${episodeControls.currentSeason}E${episodeControls.currentEpisode}`);
+			}
+			// Update the download button clickHandler
+			const downloadButton = player.getChild('ControlBar')?.getChild('CustomIconButton', 'downloadButton');
+			// Restore Icon
+			downloadButton.applyIcon('vjs-icon-file-download');
+			if (downloadButton && 'currentEpisode' in episodeControls) {
+				downloadButton.updateClickHandler(() => {
+					downloadButton.applyIcon('vjs-icon-downloading');
+					const downloadFileName =
+						'currentEpisode' in episodeControls
+							? `${options.show_name} -s${episodeControls.currentSeason}e${episodeControls.currentEpisode}- SIMSY.mp4`
+							: `${options.show_name} - SIMSY.mp4`;
+					const a = document.createElement('a');
+					a.style.display = 'none';
+					a.download = downloadFileName;
+					document.body.appendChild(a);
+					a.href = options.sources[0].src;
+					a.click();
+					a.removeAttribute('href');
+					document.body.removeChild(a);
+					setTimeout(() => downloadButton.applyIcon('vjs-icon-file-download-done'), 3000);
+				});
 			}
 		}
 	}, [options, videoRef, onReady, episodeControls]);
