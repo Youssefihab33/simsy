@@ -1,6 +1,5 @@
 import { useContext } from 'react';
 import { Container } from "@mui/material";
-import { logout } from '../APIs/AuthRequests.jsx';
 import { UserContext } from "../APIs/Context.jsx";
 
 export default function AlreadyLoggedIn() {
@@ -16,9 +15,9 @@ export default function AlreadyLoggedIn() {
 					<i className='bi-house'></i> Go to homepage
 				</a>
 				<br />
-				<button className='btn btn-link text-decoration-none text-danger' onClick={logout} style={{ fontSize: '1rem' }}>
+				<a className='btn btn-link text-decoration-none text-danger' href='/logout' style={{ fontSize: '1rem' }}>
 					<i className='bi-person-dash'></i> Logout
-				</button>
+				</a>
 			</div>
 		</Container>
 	);
