@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useLocalStorage } from 'react-use';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -26,18 +27,19 @@ const registerFormSchema = yup.object({
 export default function Register() {
 	const [alert, setAlert] = useState(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [token, setToken] = useLocalStorage('auth_token', null, { raw: true });
 	const { handleSubmit, control, setError } = useForm({
 		resolver: yupResolver(registerFormSchema),
 	});
 	const navigate = useNavigate();
 	// Check if already logged in early
-	if (localStorage.getItem('token')) {
+	if (token) {
 		return <AlreadyLoggedIn />;
 	}
 
 	// If user actually needs to register
 	const handleLoginSuccess = (token) => {
-		localStorage.setItem('token', token);
+		setToken(token);
 		navigate('/');
 	};
 

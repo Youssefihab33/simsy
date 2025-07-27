@@ -22,7 +22,6 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
-import PageviewIcon from '@mui/icons-material/Pageview';
 import VideoStableIcon from '@mui/icons-material/VideoStable';
 
 import { UserContext } from './APIs/Context';
@@ -328,13 +327,11 @@ export default function Header() {
 						</Typography>
 
 						{/* Search Icon for small screens */}
-						{userData && (
-							<Box sx={{ display: { xs: 'flex', md: 'none' }, ml: 'auto', mr: 1 }}>
-								<IconButton size='large' aria-label='search' color='inherit' onClick={handleToggleMobileSearch}>
-									<SearchIcon />
-								</IconButton>
-							</Box>
-						)}
+						<Box sx={{ display: { xs: 'flex', md: 'none' }, ml: 'auto', mr: 1 }}>
+							<IconButton size='large' aria-label='search' color='inherit' onClick={handleToggleMobileSearch}>
+								<SearchIcon />
+							</IconButton>
+						</Box>
 
 						{/* Common (User Settings) */}
 						{userData && (
@@ -370,106 +367,103 @@ export default function Header() {
 						)}
 					</Toolbar>
 					{/* Search Bar for Small Screens (conditionally rendered) */}
-					{userData && (
-						<Box sx={{ display: { xs: isMobileSearchOpen ? 'flex' : 'none', md: 'none' }, justifyContent: 'center', pb: 1 }}>
-							<TextField
-								variant='outlined'
-								size='small'
-								placeholder='Search...'
-								value={searchTerm}
-								onChange={handleSearchChange}
-								color='tertiary'
+					<Box sx={{ display: { xs: isMobileSearchOpen ? 'flex' : 'none', md: 'none' }, justifyContent: 'center', pb: 1 }}>
+						<TextField
+							variant='outlined'
+							size='small'
+							placeholder='Search...'
+							value={searchTerm}
+							onChange={handleSearchChange}
+							color='tertiary'
+							sx={{
+								minWidth: '200px',
+								width: '100%', // Make it full width on small screens
+								backgroundColor: 'rgba(255, 255, 255, 0.1)',
+								borderRadius: '5px',
+								'& .MuiOutlinedInput-root': {
+									'& fieldset': {
+										borderColor: 'transparent',
+									},
+									'&:hover fieldset': {
+										borderColor: 'rgba(255, 255, 255, 0.5)',
+									},
+									'&.Mui-focused fieldset': {
+										borderColor: 'tertiary',
+									},
+									color: 'white',
+								},
+								'& .MuiInputBase-input::placeholder': {
+									color: 'rgba(255, 255, 255, 0.7)',
+									opacity: 1,
+								},
+							}}
+							InputProps={{
+								startAdornment: (
+									<InputAdornment position='start'>
+										<SearchIcon sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
+									</InputAdornment>
+								),
+							}}
+						/>
+						<Popper open={isDropdownOpen} anchorEl={anchorElDropdown} placement='bottom-start' style={{ width: 400, zIndex: 1300 }}>
+							{/* Adjust width */}
+							<Paper
 								sx={{
-									minWidth: '200px',
-									width: '100%', // Make it full width on small screens
+									mt: 1,
 									backgroundColor: 'rgba(255, 255, 255, 0.1)',
+									backdropFilter: 'blur(10px)',
 									borderRadius: '5px',
-									'& .MuiOutlinedInput-root': {
-										'& fieldset': {
-											borderColor: 'transparent',
-										},
-										'&:hover fieldset': {
-											borderColor: 'rgba(255, 255, 255, 0.5)',
-										},
-										'&.Mui-focused fieldset': {
-											borderColor: 'tertiary',
-										},
-										color: 'white',
-									},
-									'& .MuiInputBase-input::placeholder': {
-										color: 'rgba(255, 255, 255, 0.7)',
-										opacity: 1,
-									},
+									color: 'white',
+									overflow: 'hidden',
 								}}
-								InputProps={{
-									startAdornment: (
-										<InputAdornment position='start'>
-											<SearchIcon sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
-										</InputAdornment>
-									),
-								}}
-							/>
-							<Popper open={isDropdownOpen} anchorEl={anchorElDropdown} placement='bottom-start' style={{ width: 'calc(100% - 32px)', zIndex: 1300 }}>
-								{' '}
-								{/* Adjust width */}
-								<Paper
-									sx={{
-										mt: 1,
-										backgroundColor: 'rgba(255, 255, 255, 0.1)',
-										backdropFilter: 'blur(10px)',
-										borderRadius: '5px',
-										color: 'white',
-										overflow: 'hidden',
-									}}
-								>
-									<ClickAwayListener onClickAway={handleDropdownClickAway}>
-										<Box
-											sx={{
-												maxHeight: '300px',
-												overflowY: 'auto',
-											}}
-										>
-											{isLoading ? (
-												<Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-													<CircularProgress size={20} sx={{ color: 'white' }} />
-												</Box>
-											) : searchResults && searchResults.length > 0 ? (
-												searchResults.map((result) => (
-													<MenuItem
-														key={result.id}
-														onClick={() => handleResultClick(result)}
-														sx={{
-															'&:hover': {
-																backgroundColor: 'rgba(255, 255, 255, 0.2)',
-															},
-															display: 'block',
-														}}
-													>
-														<Box>
-															<Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>
-																{result.name}
-															</Typography>
-															<Typography variant='body2' color='text.secondary' noWrap sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-																{result.description}
-															</Typography>
-														</Box>
-													</MenuItem>
-												))
-											) : searchTerm.length < 3 ? (
-												<MenuItem>
-													<Typography sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>Keep Typing...</Typography>
+							>
+								<ClickAwayListener onClickAway={handleDropdownClickAway}>
+									<Box
+										sx={{
+											maxHeight: '300px',
+											overflowY: 'auto',
+										}}
+									>
+										{isLoading ? (
+											<Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+												<CircularProgress size={20} sx={{ color: 'white' }} />
+											</Box>
+										) : searchResults && searchResults.length > 0 ? (
+											searchResults.map((result) => (
+												<MenuItem
+													key={result.id}
+													onClick={() => handleResultClick(result)}
+													sx={{
+														'&:hover': {
+															backgroundColor: 'rgba(255, 255, 255, 0.2)',
+														},
+														display: 'block',
+													}}
+												>
+													<Box>
+														<Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>
+															{result.name}
+														</Typography>
+														<Typography variant='body2' color='text.secondary' noWrap sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+															{result.description}
+														</Typography>
+													</Box>
 												</MenuItem>
-											) : (
-												<MenuItem>
-													<Typography sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>No results found</Typography>
-												</MenuItem>
-											)}
-										</Box>
-									</ClickAwayListener>
-								</Paper>
-							</Popper>
-						</Box>
-					)}
+											))
+										) : searchTerm.length < 3 ? (
+											<MenuItem>
+												<Typography sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>Keep Typing...</Typography>
+											</MenuItem>
+										) : (
+											<MenuItem>
+												<Typography sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>No results found</Typography>
+											</MenuItem>
+										)}
+									</Box>
+								</ClickAwayListener>
+							</Paper>
+						</Popper>
+					</Box>
 				</Container>
 			</AppBar>
 		</>

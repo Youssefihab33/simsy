@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { useState } from 'react';
+import { useLocalStorage } from 'react-use';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -20,18 +21,19 @@ const loginFormSchema = yup
 export default function Login() {
 	const [alert, setAlert] = useState(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [token, setToken] = useLocalStorage('auth_token', null, { raw: true });
 	const { handleSubmit, control, setError, clearErrors } = useForm({
 		resolver: yupResolver(loginFormSchema),
 	});
 	const navigate = useNavigate();
 	// Check if already logged in early
-	if (localStorage.getItem('token')) {
+	if (token) {
 		return <AlreadyLoggedIn />;
 	}
 
 	// If user actually needs to log in
 	const handleLoginSuccess = (token) => {
-		localStorage.setItem('token', token);
+		setToken(token);
 		navigate('/');
 	};
 
@@ -178,14 +180,22 @@ export default function Login() {
 							/>
 						</Grid>
 					</Grid>
-					<Button type='submit' color='secondary' fullWidth variant='outlined' sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }} disabled={isSubmitting} startIcon={<i className='bi-box-arrow-in-right'></i>}>
+					<Button
+						type='submit'
+						color='secondary'
+						fullWidth
+						variant='outlined'
+						sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }}
+						disabled={isSubmitting}
+						startIcon={<i className='bi-box-arrow-in-right'></i>}
+					>
 						{isSubmitting ? 'Logging In...' : 'Log In'}
 					</Button>
 					<Link href='/forgot-password/' sx={{ mt: 1, display: 'block' }}>
 						Forgot password?
 					</Link>
 					<Link href='/register/' sx={{ mt: 1, display: 'block' }}>
-						Create a new Account    ?
+						Create a new Account ?
 					</Link>
 				</form>
 			</Box>

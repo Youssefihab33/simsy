@@ -61,44 +61,42 @@ export default function ForgotPassword() {
 				<h1 className='fw-bold primaryColor my-3'>
 					<i className='bi-key'></i>&nbsp;Forgot Password
 				</h1>
-				{!localStorage.getItem('token') && (
-					<form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
-						<Grid container spacing={1}>
-							<Grid item xs={12}>
-								<Controller
-									name='email'
-									control={control}
-									rules={{ required: 'Email is required to restore your account!' }}
-									render={({ field, fieldState: { error } }) => (
-										<TextField
-											{...field}
-											label='Enter your Email'
-											variant='outlined'
-											error={!!error}
-											helperText={error ? error.message : ''}
-											margin='normal'
-											required
-											fullWidth
-											autoComplete='email'
-											autoFocus
-											color='tertiary'
-											disabled={isSubmitting}
-										/>
-									)}
-								/>
-							</Grid>
+				<form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
+					<Grid container spacing={1}>
+						<Grid item xs={12}>
+							<Controller
+								name='email'
+								control={control}
+								rules={{ required: 'Email is required to restore your account!' }}
+								render={({ field, fieldState: { error } }) => (
+									<TextField
+										{...field}
+										label='Enter your Email'
+										variant='outlined'
+										error={!!error}
+										helperText={error ? error.message : ''}
+										margin='normal'
+										required
+										fullWidth
+										autoComplete='email'
+										autoFocus
+										color='tertiary'
+										disabled={isSubmitting}
+									/>
+								)}
+							/>
 						</Grid>
-						<Button type='submit' fullWidth variant='outlined' sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }} startIcon={<i className='bi-key'></i>} disabled={isSubmitting}>
-							Get Reset Link
-						</Button>
-						<Link href='/login/' color='secondary' sx={{ mt: 1, display: 'block' }}>
-							Did you remember your password?
-						</Link>
-						<Link href='/register/' color='secondary' sx={{ mt: 1, display: 'block' }}>
-							Create a new Account?
-						</Link>
-					</form>
-				)}
+					</Grid>
+					<Button type='submit' fullWidth variant='outlined' sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }} startIcon={<i className='bi-key'></i>} disabled={isSubmitting}>
+						Get Reset Link
+					</Button>
+					<Link href='/login/' color='secondary' sx={{ mt: 1, display: 'block' }}>
+						Did you remember your password?
+					</Link>
+					<Link href='/register/' color='secondary' sx={{ mt: 1, display: 'block' }}>
+						Create a new Account?
+					</Link>
+				</form>
 			</Box>
 		</Container>
 	);

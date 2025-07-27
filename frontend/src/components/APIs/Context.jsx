@@ -1,5 +1,7 @@
-import { createContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { createContext, useState, useEffect } from 'react';
+import { useLocalStorage } from 'react-use';
+
 import LoadingSpinner from '../snippets/LoadingSpinner';
 import axiosInstance from './Axios';
 
@@ -13,25 +15,23 @@ export const UserProvider = ({ children }) => {
 	useEffect(() => {
 		const fetchUserData = async () => {
 			try {
-				await axiosInstance.get('/profile/').then((response) => {
-					return response.data;
-				});
-				
+				const res = await axiosInstance.get('/profile/'); // Use await for the promise
+				setUserData(res.data);
 			} catch (err) {
 				if (err.response && err.response.status === 401) {
 					// Handle 401 Unauthorized specifically
 					console.warn('User not authenticated. Redirecting to login.');
-					return;
+					// navigate('/login/');
 				} else {
 					// Handle other errors
 					console.error('Error fetching user data:', err);
-					return;
 				}
 			} finally {
 				setLoading(false);
 			}
 		};
-		setUserData(fetchUserData());
+
+		fetchUserData();
 	}, [navigate]);
 
 	if (loading) return <LoadingSpinner />;
