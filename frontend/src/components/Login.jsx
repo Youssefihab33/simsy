@@ -120,7 +120,7 @@ export default function Login() {
 			)}
 
 			<Box
-				className='d-flex flex-column glassy align-items-center text-center p-4 px-0 px-sm-5'
+				className='d-flex flex-column glassy align-items-center text-center p-4 px-5'
 				sx={{
 					boxShadow: 3,
 					p: 4,

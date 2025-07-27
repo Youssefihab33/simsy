@@ -22,7 +22,8 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
-import FiberNewIcon from '@mui/icons-material/FiberNew';
+import PageviewIcon from '@mui/icons-material/Pageview';
+import VideoStableIcon from '@mui/icons-material/VideoStable';
 
 import { UserContext } from './APIs/Context';
 import axiosInstance from './APIs/Axios';
@@ -46,6 +47,7 @@ export default function Header() {
 	const [searchResults, setSearchResults] = useState([]);
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 	const navigate = useNavigate();
 	const { first_name, last_name, profile_picture } = userData || {};
 
@@ -120,16 +122,27 @@ export default function Header() {
 		navigate(`/show/${result.id}`);
 	};
 
+	// New handler for toggling mobile search
+	const handleToggleMobileSearch = () => {
+		setIsMobileSearchOpen(!isMobileSearchOpen);
+		if (isMobileSearchOpen) {
+			setSearchTerm('');
+			setIsDropdownOpen(false);
+		}
+	};
+
 	return (
 		<>
 			<AppBar position='sticky'>
 				<Container maxWidth='xl' className='glassy rounded-0'>
 					<Toolbar disableGutters>
-						<FiberNewIcon sx={{ color: 'var(--color1)', opacity: '50%', display: { xs: 'none', md: 'flex' }, mr: 1 }} />
+						{/* For Large Screens */}
+						<VideoStableIcon sx={{ color: 'var(--color1)', opacity: '50%', display: { xs: 'none', md: 'flex' }, mr: 1 }} />
 						<Typography
 							variant='h6'
 							noWrap
 							component='a'
+							href='/'
 							sx={{
 								backgroundcolor: 'primary',
 								backgroundImage: `linear-gradient(90deg, var(--color1), var(--color2), var(--color3))`,
@@ -151,7 +164,113 @@ export default function Header() {
 						>
 							SIMSY
 						</Typography>
+						<Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
+							{pages.map((page) => (
+								<Button key={page.name} onClick={handleCloseNavMenu} sx={{ my: 2, color: 'white', display: 'block' }} component={Link} to={page.path}>
+									{page.name}
+								</Button>
+							))}
+						</Box>
+						{/* Search Bar with Debounced Search (Large Screens) */}
+						{userData && (
+							<Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 'auto', mr: 3 }}>
+								<TextField
+									variant='outlined'
+									size='small'
+									placeholder='Search...'
+									value={searchTerm}
+									onChange={handleSearchChange}
+									color='tertiary'
+									sx={{
+										minWidth: '200px',
+										backgroundColor: 'rgba(255, 255, 255, 0.1)',
+										borderRadius: '5px',
+										'& .MuiOutlinedInput-root': {
+											'& fieldset': {
+												borderColor: 'transparent',
+											},
+											'&:hover fieldset': {
+												borderColor: 'rgba(255, 255, 255, 0.5)',
+											},
+											'&.Mui-focused fieldset': {
+												borderColor: 'tertiary',
+											},
+											color: 'white',
+										},
+										'& .MuiInputBase-input::placeholder': {
+											color: 'rgba(255, 255, 255, 0.7)',
+											opacity: 1,
+										},
+									}}
+									InputProps={{
+										startAdornment: (
+											<InputAdornment position='start'>
+												<SearchIcon sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
+											</InputAdornment>
+										),
+									}}
+								/>
 
+								<Popper open={isDropdownOpen} anchorEl={anchorElDropdown} placement='bottom-start' style={{ width: 400, zIndex: 1300 }}>
+									<Paper
+										sx={{
+											mt: 1,
+											backgroundColor: 'rgba(255, 255, 255, 0.1)',
+											backdropFilter: 'blur(10px)',
+											borderRadius: '5px',
+											color: 'white',
+											overflow: 'hidden',
+										}}
+									>
+										<ClickAwayListener onClickAway={handleDropdownClickAway}>
+											<Box
+												sx={{
+													maxHeight: '300px',
+													overflowY: 'auto',
+												}}
+											>
+												{isLoading ? (
+													<Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+														<CircularProgress size={20} sx={{ color: 'white' }} />
+													</Box>
+												) : searchResults && searchResults.length > 0 ? (
+													searchResults.map((result) => (
+														<MenuItem
+															key={result.id}
+															onClick={() => handleResultClick(result)}
+															sx={{
+																'&:hover': {
+																	backgroundColor: 'rgba(255, 255, 255, 0.2)',
+																},
+																display: 'block',
+															}}
+														>
+															<Box>
+																<Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>
+																	{result.name}
+																</Typography>
+																<Typography variant='body2' color='text.secondary' noWrap sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+																	{result.description}
+																</Typography>
+															</Box>
+														</MenuItem>
+													))
+												) : searchTerm.length < 3 ? (
+													<MenuItem>
+														<Typography sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>Keep Typing...</Typography>
+													</MenuItem>
+												) : (
+													<MenuItem>
+														<Typography sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>No results found</Typography>
+													</MenuItem>
+												)}
+											</Box>
+										</ClickAwayListener>
+									</Paper>
+								</Popper>
+							</Box>
+						)}
+						{/* For Small Screens */}
 						<Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
 							<IconButton size='large' aria-label='account of current user' aria-controls='menu-appbar' aria-haspopup='true' onClick={handleOpenNavMenu} color='inherit'>
 								<MenuIcon />
@@ -179,35 +298,80 @@ export default function Header() {
 								))}
 							</Menu>
 						</Box>
-						<FiberNewIcon sx={{ color: 'primary', display: { xs: 'flex', md: 'none' }, mr: 1 }} />
+						<VideoStableIcon sx={{ color: 'var(--color1)', display: { xs: 'flex', md: 'none' }, mr: 1 }} />
 						<Typography
 							variant='h5'
 							noWrap
 							component='a'
 							href='/'
 							sx={{
+								backgroundcolor: 'primary',
+								backgroundImage: `linear-gradient(90deg, var(--color1), var(--color2), var(--color3))`,
+								backgroundSize: '100%',
+								backgroundRepeat: 'repeat',
+								backgroundClip: 'text',
+								WebkitBackgroundClip: 'text',
+								WebkitTextFillColor: 'transparent',
 								mr: 2,
 								display: { xs: 'flex', md: 'none' },
 								flexGrow: 1,
 								fontFamily: 'monospace',
 								fontWeight: 700,
+								fontStyle: 'italic',
 								letterSpacing: '.3rem',
 								color: 'inherit',
 								textDecoration: 'none',
+								userSelect: 'none',
 							}}
 						>
 							SIMSY
 						</Typography>
-						<Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-							{pages.map((page) => (
-								<Button key={page.name} onClick={handleCloseNavMenu} sx={{ my: 2, color: 'white', display: 'block' }} component={Link} to={page.path}>
-									{page.name}
-								</Button>
-							))}
-						</Box>
 
-						{/* Search Bar with Debounced Search */}
-						<Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', position: 'relative' }}>
+						{/* Search Icon for small screens */}
+						{userData && (
+							<Box sx={{ display: { xs: 'flex', md: 'none' }, ml: 'auto', mr: 1 }}>
+								<IconButton size='large' aria-label='search' color='inherit' onClick={handleToggleMobileSearch}>
+									<SearchIcon />
+								</IconButton>
+							</Box>
+						)}
+
+						{/* Common (User Settings) */}
+						{userData && (
+							<Box sx={{ flexGrow: 0 }}>
+								<Tooltip title='Open settings'>
+									<IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+										{userData ? <Avatar alt={`${first_name} ${last_name}`} src={profile_picture} /> : <Avatar alt='Loading...' />}
+									</IconButton>
+								</Tooltip>
+								<Menu
+									sx={{ mt: '45px' }}
+									id='menu-appbar'
+									anchorEl={anchorElUser}
+									anchorOrigin={{
+										vertical: 'top',
+										horizontal: 'right',
+									}}
+									keepMounted
+									transformOrigin={{
+										vertical: 'top',
+										horizontal: 'right',
+									}}
+									open={Boolean(anchorElUser)}
+									onClose={handleCloseUserMenu}
+								>
+									{settings.map((setting) => (
+										<MenuItem key={setting.name} onClick={handleCloseUserMenu} component={Link} to={setting.path}>
+											<Typography sx={{ textAlign: 'center' }}>{setting.name}</Typography>
+										</MenuItem>
+									))}
+								</Menu>
+							</Box>
+						)}
+					</Toolbar>
+					{/* Search Bar for Small Screens (conditionally rendered) */}
+					{userData && (
+						<Box sx={{ display: { xs: isMobileSearchOpen ? 'flex' : 'none', md: 'none' }, justifyContent: 'center', pb: 1 }}>
 							<TextField
 								variant='outlined'
 								size='small'
@@ -217,6 +381,7 @@ export default function Header() {
 								color='tertiary'
 								sx={{
 									minWidth: '200px',
+									width: '100%', // Make it full width on small screens
 									backgroundColor: 'rgba(255, 255, 255, 0.1)',
 									borderRadius: '5px',
 									'& .MuiOutlinedInput-root': {
@@ -244,7 +409,9 @@ export default function Header() {
 									),
 								}}
 							/>
-							<Popper open={isDropdownOpen} anchorEl={anchorElDropdown} placement='bottom-start' style={{ width: 400, zIndex: 1300 }}>
+							<Popper open={isDropdownOpen} anchorEl={anchorElDropdown} placement='bottom-start' style={{ width: 'calc(100% - 32px)', zIndex: 1300 }}>
+								{' '}
+								{/* Adjust width */}
 								<Paper
 									sx={{
 										mt: 1,
@@ -302,37 +469,7 @@ export default function Header() {
 								</Paper>
 							</Popper>
 						</Box>
-
-						<Box sx={{ flexGrow: 0 }}>
-							<Tooltip title='Open settings'>
-								<IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-									{userData ? <Avatar alt={`${first_name} ${last_name}`} src={profile_picture} /> : <Avatar alt='Loading...' />}
-								</IconButton>
-							</Tooltip>
-							<Menu
-								sx={{ mt: '45px' }}
-								id='menu-appbar'
-								anchorEl={anchorElUser}
-								anchorOrigin={{
-									vertical: 'top',
-									horizontal: 'right',
-								}}
-								keepMounted
-								transformOrigin={{
-									vertical: 'top',
-									horizontal: 'right',
-								}}
-								open={Boolean(anchorElUser)}
-								onClose={handleCloseUserMenu}
-							>
-								{settings.map((setting) => (
-									<MenuItem key={setting.name} onClick={handleCloseUserMenu} component={Link} to={setting.path}>
-										<Typography sx={{ textAlign: 'center' }}>{setting.name}</Typography>
-									</MenuItem>
-								))}
-							</Menu>
-						</Box>
-					</Toolbar>
+					)}
 				</Container>
 			</AppBar>
 		</>

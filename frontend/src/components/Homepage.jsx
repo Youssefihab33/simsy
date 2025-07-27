@@ -107,7 +107,11 @@ export default function Homepage() {
 				<Tabs activeKey={activeTab} onSelect={handleTabSelect} id='homepageTabs' className='mb-3' justify>
 					<Tab eventKey='favorites' title={<span className='homeNav text-warning bi-star-fill'> Favorites{tabData.favorites.length > 0 && `(${tabData.favorites.length})`}</span>}>
 						{tabData.favorites.length > 0 ? (
-							tabData.favorites.map((show) => <ShowCard key={show.id} show={show} />)
+							<div className='d-flex flex-wrap justify-content-center'>
+								{tabData.favorites.map((show) => (
+									<ShowCard key={show.id} show={show} />
+								))}
+							</div>
 						) : (
 							<div className='text-center text-warning mt-5'>
 								{loadingTabs.favorites ? (
@@ -122,7 +126,11 @@ export default function Homepage() {
 					</Tab>
 					<Tab eventKey='watchlist' title={<span className='homeNav text-info bi-list-columns'> Watchlist{tabData.watchlist.length > 0 && `(${tabData.watchlist.length})`}</span>}>
 						{tabData.watchlist.length > 0 ? (
-							tabData.watchlist.map((show) => <ShowCard key={show.id} show={show} />)
+							<div className='d-flex flex-wrap justify-content-center'>
+								{tabData.watchlist.map((show) => (
+									<ShowCard key={show.id} show={show} />
+								))}
+							</div>
 						) : (
 							<div className='text-center text-info mt-5'>
 								{loadingTabs.watchlist ? (
@@ -137,7 +145,11 @@ export default function Homepage() {
 					</Tab>
 					<Tab eventKey='new' title={<span className='homeNav primaryColor bi-fire'> New</span>}>
 						{tabData.new.length > 0 ? (
-							tabData.new.map((show) => <ShowCard key={show.id} show={show} />)
+							<div className='d-flex flex-wrap justify-content-center'>
+								{tabData.new.map((show) => (
+									<ShowCard key={show.id} show={show} />
+								))}
+							</div>
 						) : (
 							<div className='text-center primaryColor mt-5'>
 								{loadingTabs.new ? (
@@ -152,7 +164,11 @@ export default function Homepage() {
 					</Tab>
 					<Tab eventKey='history' title={<span className='homeNav tertiaryColor bi-clock-history'> History</span>}>
 						{tabData.history.length > 0 ? (
-							tabData.history.map((show) => <ShowCard key={show.id} show={show} />)
+							<div className='d-flex flex-wrap justify-content-center'>
+								{tabData.history.map((show) => (
+									<ShowCard key={show.id} show={show} />
+								))}
+							</div>
 						) : (
 							<div className='text-center tertiaryColor mt-5'>
 								{loadingTabs.history ? (
@@ -166,10 +182,16 @@ export default function Homepage() {
 						)}
 					</Tab>
 					<Tab eventKey='random' title={<span className='homeNav secondaryColor bi-magic'> For you</span>}>
-						<button type="button" className="btn btn-success d-flex secondary-color mx-auto my-2" onClick={() => fetchData('random')}><span className='secondaryColor bi-arrow-repeat'>&nbsp;Refresh Shows</span></button>
-                        
+						<button type='button' className='btn btn-success d-flex secondary-color mx-auto my-2' onClick={() => fetchData('random')}>
+							<span className='secondaryColor bi-arrow-repeat'>&nbsp;Refresh Shows</span>
+						</button>
+
 						{tabData.random.length > 0 ? (
-							tabData.random.map((show) => <ShowCard key={show.id} show={show} />)
+							<div className='d-flex flex-wrap justify-content-center'>
+								{tabData.random.map((show) => (
+									<ShowCard key={show.id} show={show} />
+								))}
+							</div>
 						) : (
 							<div className='text-center secondaryColor mt-5'>
 								{loadingTabs.random ? (
@@ -184,7 +206,7 @@ export default function Homepage() {
 					</Tab>
 				</Tabs>
 				<div className='text-end mt-3 me-5'>
-					<a className='text-info text-decoration-none' href="{% url 'explore' %}">
+					<a className='text-info text-decoration-none' href="/explore">
 						Discover <strong>NEW</strong> Content?
 						<br />
 						Go to &nbsp;

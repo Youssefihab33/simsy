@@ -13,23 +13,25 @@ export const UserProvider = ({ children }) => {
 	useEffect(() => {
 		const fetchUserData = async () => {
 			try {
-				const res = await axiosInstance.get('/profile/'); // Use await for the promise
-				setUserData(res.data);
+				await axiosInstance.get('/profile/').then((response) => {
+					return response.data;
+				});
+				
 			} catch (err) {
 				if (err.response && err.response.status === 401) {
 					// Handle 401 Unauthorized specifically
 					console.warn('User not authenticated. Redirecting to login.');
-					// navigate('/login/');
+					return;
 				} else {
 					// Handle other errors
 					console.error('Error fetching user data:', err);
+					return;
 				}
 			} finally {
 				setLoading(false);
 			}
 		};
-
-		fetchUserData();
+		setUserData(fetchUserData());
 	}, [navigate]);
 
 	if (loading) return <LoadingSpinner />;
