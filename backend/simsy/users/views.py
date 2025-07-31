@@ -4,7 +4,7 @@ from django.utils.html import strip_tags
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.decorators import login_required
 from django.dispatch import receiver
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django_rest_passwordreset.signals import reset_password_token_created, post_password_reset  # type: ignore
@@ -78,7 +78,7 @@ class RegisterViewSet(viewsets.ViewSet):
             return Response(serializer.errors, status=400)
 
 
-class UserView(APIView):
+class UserInfoView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
@@ -86,9 +86,27 @@ class UserView(APIView):
             serializer = UserSerializer(request.user)
             return Response(serializer.data, status=200)
         except CustomUser.DoesNotExist:
-            # Handle the case where a profile doesn't exist (optional)
-            return Response({'error': 'Profile not found'}, status=404)
+            return Response({'error': 'User not found!'}, status=404)
 
+class ProfileView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        try:
+            serializer = ProfileSerializer(request.user)
+            return Response(serializer.data, status=200)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found!'}, status=404)
+
+class UpdateUserData(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def put(self, request):
+        serializer = ProfileSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @receiver(reset_password_token_created)
 def password_reset_token_created(reset_password_token, *args, **kwargs):

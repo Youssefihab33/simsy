@@ -15,7 +15,7 @@ export const UserProvider = ({ children }) => {
 	useEffect(() => {
 		const fetchUserData = async () => {
 			try {
-				const res = await axiosInstance.get('/profile/'); // Use await for the promise
+				const res = await axiosInstance.get('/users/user_info/');
 				setUserData(res.data);
 			} catch (err) {
 				if (err.response && err.response.status === 401) {

@@ -98,7 +98,7 @@ export default function Register() {
 		setIsSubmitting(true);
 
 		axiosInstance
-			.post('/register/', {
+			.post('/users/register/', {
 				username: data.username,
 				email: data.email,
 				password: data.password,
@@ -110,7 +110,7 @@ export default function Register() {
 			})
 			.then((response) => {
 				axiosInstance
-					.post('/login/', { username: data.username, password: data.password })
+					.post('/users/login/', { username: data.username, password: data.password })
 					.then((response) => {
 						handleLoginSuccess(response.data.token);
 					})

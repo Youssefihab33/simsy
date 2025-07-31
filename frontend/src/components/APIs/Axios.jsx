@@ -1,14 +1,9 @@
 // This file is not using the useLocalStorage hook because it does not contain any function to summon the hook in...
 import axios from 'axios';
 
-const backendBaseUrl =
-	import.meta.env.VITE_APP_ENV === 'production'
-		? '/api/' // For Dockerized production, Nginx will proxy /api/
-		: import.meta.env.VITE_BACKEND_URL; // For local development
-
 const axiosInstance = axios.create({
-	baseURL: backendBaseUrl,
-	timeout: 45000, // Set a timeout of n seconds
+	baseURL: import.meta.env.VITE_BACKEND_URL,
+	timeout: 10000,
 	headers: {
 		'Content-Type': 'application/json',
 		Accept: 'application/json',

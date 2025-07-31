@@ -87,7 +87,7 @@ export default function Login() {
 		setIsSubmitting(true);
 
 		try {
-			const response = await axiosInstance.post('/login/', data);
+			const response = await axiosInstance.post('/users/login/', data);
 			if (response.status === 200) {
 				handleLoginSuccess(response.data.token);
 			} else {

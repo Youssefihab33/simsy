@@ -41,6 +41,11 @@ class Country(models.Model):
 
     def __str__(self):
         return self.name
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "id": self.id,
+        }
     class Meta:
         ordering = ['name']
 
