@@ -56,15 +56,9 @@ class LanguageSerializer(serializers.ModelSerializer):
 
 
 class CountrySerializer(serializers.ModelSerializer):
-    name = serializers.CharField(read_only=True)
-    # languages = LanguageSerializer(many=True, read_only=True)
-    flag = serializers.ImageField(allow_empty_file=True, read_only=True)
-    image = serializers.ImageField(allow_empty_file=True, read_only=True)
-    description = serializers.CharField(read_only=True)
-
     class Meta:
         model = Country
-        fields = '__all__'
+        fields = ['id', 'name']
 
 
 class ArtistSerializer(serializers.ModelSerializer):

@@ -1,4 +1,3 @@
-import { useLocalStorage } from 'react-use';
 import axiosInstance from './Axios';
 
 export async function logout(removeToken) {

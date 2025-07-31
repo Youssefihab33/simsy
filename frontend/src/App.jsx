@@ -9,6 +9,7 @@ import Login from './components/Login';
 import Logout from './components/Logout';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Profile from './components/Profile';
 import Homepage from './components/Homepage';
 import ShowDetail from './components/ShowDetail';
 
@@ -37,6 +38,7 @@ export default function App() {
 					<Route path='/forgot-password/' element={<ForgotPassword />} />
 					<Route path='/reset-password/:token' element={<ResetPassword />} />
 					<Route element={<ProtectedRoutes />}>
+						<Route path='/profile' element={<Profile />} />
 						<Route path='/' element={<Homepage />} />
 						<Route path='/show/:show_id' element={<ShowDetail />} />
 						{/* <Route path='/about' element={<About />} /> */}

@@ -41,9 +41,13 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
-
     class Meta:
         model = CustomUser
         fields = ['username', 'email', 'profile_picture', 'first_name', 'last_name']
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'first_name', 'last_name', 'email', 'nickname', 'birthday', 'profile_picture', 'bio', 'nationality', 'time_autosave',
+                  'autoplay', 'view_captions', 'remember_home_tab', 'home_tab', 'last_login', 'date_joined', 'is_active', 'is_staff', 'is_superuser']

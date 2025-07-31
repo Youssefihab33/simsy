@@ -17,6 +17,14 @@ User = get_user_model()
 
 
 # ------- Home Page Views -------
+class ListCountriesView(APIView):
+    serializer_class = CountrySerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        countries_data = [country.to_dict() for country in Country.objects.all()]
+        return Response(countries_data, status=200)
+
 
 class FavoriteShowsView(viewsets.ModelViewSet):
     serializer_class = ShowCardSerializer
