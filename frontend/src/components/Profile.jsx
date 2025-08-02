@@ -237,7 +237,7 @@ export default function Profile() {
 					<Grid item md={4} className='pe-5'>
 						<Avatar
 							alt={userData.username}
-							src={import.meta.env.VITE_BACKEND_URL + userData.profile_picture}
+							src={userData.profile_picture}
 							sx={{
 								width: '100%',
 								height: 'auto',

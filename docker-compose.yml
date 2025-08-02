@@ -17,12 +17,13 @@ services:
     volumes:
       - ./frontend:/app
       - ./frontend/nginx.conf:/etc/nginx/conf.d/nginx.conf
-      - ./data/certbot/conf:/etc/letsencrypt              # Mount Certbot configs and certificates
-      - ./data/certbot/www:/var/www/certbot               # Mount webroot for Certbot challenges
+      - ./data/certbot/conf:/etc/letsencrypt              # Certbot configs and certificates
+      - ./data/certbot/www:/var/www/certbot               # webroot for Certbot challenges
+      - ./backend/simsy/staticfiles:/usr/src/app/simsy/staticfiles:ro
       - ./data/media:/usr/src/data/media:ro
       - ./data/videos:/usr/src/data/videos:ro
-      - ./backend/simsy/staticfiles:/usr/src/app/simsy/staticfiles:ro
-    env_file: "frontend/.env"
+      - ./data/captions:/usr/src/data/captions:ro
+    env_file: "frontend/.env.production"
     restart: always
     depends_on:
       - backend

@@ -287,12 +287,12 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 
 		switch (show.kind) {
 			case 'film':
-				videoSrc = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT + show.name}.mp4`;
-				captionsSrc = `${import.meta.env.VITE_CAPTIONS_SOURCE_ROOT + show.name}.vtt`;
+				videoSrc = `${import.meta.env.VITE_VC_SOURCE + 'videos/' + show.name}.mp4`;
+				captionsSrc = `${import.meta.env.VITE_VC_SOURCE + 'captions/' + show.name}.vtt`;
 				break;
 			case 'series':
-				videoSrc = `${import.meta.env.VITE_VIDEOS_SOURCE_ROOT + show.name}/s${season}e${episode}.mp4`;
-				captionsSrc = `${import.meta.env.VITE_CAPTIONS_SOURCE_ROOT + show.name}/s${season}e${episode}.vtt`;
+				videoSrc = `${import.meta.env.VITE_VC_SOURCE + 'videos/' + show.name}/s${season}e${episode}.mp4`;
+				captionsSrc = `${import.meta.env.VITE_VC_SOURCE + 'captions/' + show.name}/s${season}e${episode}.vtt`;
 				break;
 			default:
 				console.error('Unknown show kind:', show.kind);
