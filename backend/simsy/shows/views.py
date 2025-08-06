@@ -22,7 +22,8 @@ class ListCountriesView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        countries_data = [country.to_dict() for country in Country.objects.all()]
+        countries_data = [country.to_dict()
+                          for country in Country.objects.all()]
         return Response(countries_data, status=200)
 
 
@@ -156,6 +157,18 @@ class UserShowView(APIView):
             return Response({'error': 'User not found'}, status=404)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
+
+class ArtistView(RetrieveAPIView):
+    queryset = Artist.objects.all()
+    serializer_class = ArtistSerializer
+    lookup_field = 'pk'
+    lookup_url_kwarg = 'artist_id'
+
+class CountryView(RetrieveAPIView):
+    queryset = Country.objects.all()
+    serializer_class = CountrySerializer
+    lookup_field = 'pk'
+    lookup_url_kwarg = 'country_id'
 
 # ------- Action Views -------
 

@@ -20,6 +20,7 @@ import {
 // My modules
 import axiosInstance from './APIs/Axios.jsx';
 import LoadingSpinner from './snippets/LoadingSpinner';
+import ArtistCard from './snippets/ArtistCard.jsx';
 import styles from './modules/ShowDetails.module.css';
 import { VideoJS, videoJsOptions } from './snippets/VideoJS.jsx';
 
@@ -436,7 +437,6 @@ const useToggleApi = (showId, setInState, endpoint, name) => {
 
 const ShowDetails = () => {
 	const { show_id } = useParams();
-	const [hoveredArtist, setHoveredArtist] = useState(null);
 	const searchbarRef = useRef(null); // Assuming a searchbar exists elsewhere that might steal focus // DEBUG : FIX THIS
 
 	const { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, refetchShowData } = useShowData(show_id);
@@ -542,11 +542,19 @@ const ShowDetails = () => {
 	};
 
 	// Modified render function for chips
-	const renderChipGroup = (items) => (
+	const renderChipGroup = (items, kind) => (
 		<>
 			{items.map((item) => (
 				<Tooltip key={item.id} title={item.description} placement='top'>
-					<Chip label={item.name} avatar={<Avatar src={item.image || item.flag} />} {...commonChipProps} />
+					<Chip
+						label={item.name}
+						variant='outlined'
+						component='a'
+						href={`/${kind}/${item.id}`}
+						avatar={<Avatar alt={item.name} src={item.image || item.flag} className='ms-2 text-light' clickable='true' />}
+						{...commonChipProps}
+						clickable
+					/>
 				</Tooltip>
 			))}
 		</>
@@ -689,9 +697,9 @@ const ShowDetails = () => {
 								Countries & Languages
 							</Typography>
 							<div className='d-flex flex-wrap'>
-								{renderChipGroup(show.countries)}
+								{renderChipGroup(show.countries, 'country')}
 								{show.countries.length > 0 && show.languages.length > 0 && <h3 style={{ margin: '4px 8px', color: 'white' }}>|</h3>}
-								{renderChipGroup(show.languages)}
+								{renderChipGroup(show.languages, 'language')}
 							</div>
 						</div>
 
@@ -701,9 +709,9 @@ const ShowDetails = () => {
 								Genres & Labels
 							</Typography>
 							<div className='d-flex flex-wrap'>
-								{renderChipGroup(show.genres)}
+								{renderChipGroup(show.genres, 'genre')}
 								{show.genres.length > 0 && show.labels.length > 0 && <h3 style={{ margin: '4px 8px', color: 'white' }}>|</h3>}
-								{renderChipGroup(show.labels)}
+								{renderChipGroup(show.labels, 'label')}
 							</div>
 						</div>
 					</Col>
@@ -716,24 +724,8 @@ const ShowDetails = () => {
 							</Typography>
 							<div className={styles.castContainer}>
 								<Row xs={2} className='g-2'>
-									{show.artists.map((artist) => (
-										<Col key={artist.id}>
-											<Card className={styles.artistCard} onMouseEnter={() => setHoveredArtist(artist)} onMouseLeave={() => setHoveredArtist(null)}>
-												<Avatar src={artist.image} alt={artist.name} className={styles.artistImage} />
-												<Typography variant='subtitle1' className='fw-bold text-light'>
-													{artist.name}
-												</Typography>
-												{hoveredArtist?.id === artist.id && (
-													<div className={styles.artistInfoHover}>
-														<Typography variant='body2' sx={{ mt: 1 }}>
-															{artist.birthYear} | {artist.nationality?.name}
-															<br />
-															{artist.birthYear ? `${new Date().getFullYear() - artist.birthYear} Years old` : ''}
-														</Typography>
-													</div>
-												)}
-											</Card>
-										</Col>
+									{show.artists.map((artist, index) => (
+										<ArtistCard key={index} artist={artist} />
 									))}
 								</Row>
 							</div>

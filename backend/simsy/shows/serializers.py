@@ -1,5 +1,6 @@
 # from django.contrib.auth.models import User
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import serializers
 from .models import *
 from users.models import CustomUser
@@ -14,6 +15,24 @@ def get_in_f_or_w(user, show, change_type):
             case 'w':
                 return show.watchlist.filter(id=user.id).exists()
     return False
+
+class ShowCardSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(read_only=True)
+    sample = serializers.BooleanField(read_only=True)
+    captions = serializers.BooleanField(read_only=True)
+    image = serializers.ImageField(allow_empty_file=True, read_only=True)
+    in_favorites = serializers.SerializerMethodField()
+    in_watchlist = serializers.SerializerMethodField()
+
+    def get_in_favorites(self, obj):
+        return get_in_f_or_w(self.context['request'].user, obj, 'f')
+
+    def get_in_watchlist(self, obj):
+        return get_in_f_or_w(self.context['request'].user, obj, 'w')
+
+    class Meta:
+        model = Show
+        fields = ['id', 'name', 'sample', 'captions', 'image', 'in_favorites', 'in_watchlist']
 
 class GenreSerializer(serializers.ModelSerializer):
     name = serializers.CharField(read_only=True)
@@ -56,41 +75,35 @@ class LanguageSerializer(serializers.ModelSerializer):
 
 
 class CountrySerializer(serializers.ModelSerializer):
+    languages = LanguageSerializer(many=True, read_only=True)
     class Meta:
         model = Country
-        fields = ['id', 'name']
+        fields = ['id', 'name', 'languages', 'flag']
 
 
 class ArtistSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(read_only=True)
-    birthYear = serializers.IntegerField(read_only=True)
     nationality = CountrySerializer(read_only=True)
     image = serializers.ImageField(allow_empty_file=True, read_only=True)
-    description = serializers.CharField(read_only=True)
+    shows = ShowCardSerializer(many=True, read_only=True)
+    age = serializers.SerializerMethodField()
+
+    def get_age(self, obj):
+        age = timezone.now().date().year - obj.birthYear
+        return age
 
     class Meta:
         model = Artist
-        fields = '__all__'
+        fields = ['id', 'name', 'birthYear', 'age', 'nationality', 'image', 'description', 'shows']
 
-
-class ShowCardSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(read_only=True)
-    sample = serializers.BooleanField(read_only=True)
-    captions = serializers.BooleanField(read_only=True)
-    image = serializers.ImageField(allow_empty_file=True, read_only=True)
-    in_favorites = serializers.SerializerMethodField()
-    in_watchlist = serializers.SerializerMethodField()
-
-    def get_in_favorites(self, obj):
-        return get_in_f_or_w(self.context['request'].user, obj, 'f')
-
-    def get_in_watchlist(self, obj):
-        return get_in_f_or_w(self.context['request'].user, obj, 'w')
+class CountrySerializer(serializers.ModelSerializer):
+    flag = serializers.ImageField(allow_empty_file=True, read_only=True)
+    languages = LanguageSerializer(many=True, read_only=True)
+    artists = ArtistSerializer(many=True, read_only=True)
+    shows = ShowCardSerializer(many=True, read_only=True)
 
     class Meta:
-        model = Show
-        fields = ['id', 'name', 'sample', 'captions', 'image', 'in_favorites', 'in_watchlist']
-
+        model = Country
+        fields = ['id', 'name', 'flag', 'languages', 'image', 'description', 'artists', 'shows']
 
 class ShowSerializer(serializers.ModelSerializer):
     name = serializers.CharField(read_only=True)

@@ -12,6 +12,8 @@ import Footer from './components/Footer';
 import Profile from './components/Profile';
 import Homepage from './components/Homepage';
 import ShowDetail from './components/ShowDetail';
+import Artist from './components/Artist'
+import Country from './components/Country';
 
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import './app.css';
@@ -41,6 +43,8 @@ export default function App() {
 						<Route path='/profile' element={<Profile />} />
 						<Route path='/' element={<Homepage />} />
 						<Route path='/show/:show_id' element={<ShowDetail />} />
+						<Route path='/artist/:artist_id' element={<Artist />} />
+						<Route path='/country/:country_id' element={<Country />} />
 						{/* <Route path='/about' element={<About />} /> */}
 					</Route>
 				</Routes>

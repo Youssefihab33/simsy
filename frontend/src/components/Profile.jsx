@@ -214,7 +214,6 @@ export default function Profile() {
 			<Container
 				className='my-4'
 				sx={{
-					boxShadow: 3,
 					p: { xs: 3, sm: 6 },
 					mx: 'auto',
 					color: '#E0E0E0',
