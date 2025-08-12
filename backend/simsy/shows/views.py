@@ -5,8 +5,10 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import RetrieveAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Case, When, Value, IntegerField
 from rest_framework import status, permissions, viewsets
 import random
+import json
 from collections import OrderedDict
 from datetime import datetime
 from django.http import JsonResponse
@@ -54,65 +56,42 @@ class NewShowsView(viewsets.ModelViewSet):
 
 
 class HistoryShowsView(viewsets.ModelViewSet):
-    # Empty queryset for now, as we don't have a model to track user history
-    # Placeholder, will be replaced with actual history tracking
     serializer_class = ShowCardSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        if not self.request.user.is_authenticated:
-            raise PermissionDenied("Log in to view history.")
-
         user = self.request.user
-
         if not user.history:
             return Show.objects.none()
+        all_show_timestamps = []
+        for date, times in user.history.items():
+            for time, show_id in times.items():
+                all_show_timestamps.append((f"{date} {time}", show_id))
 
-        # List to store (datetime_object, show_id) tuples for sorting
-        timestamped_shows = []
+        # Sort the list of (timestamp, show_id) tuples in reverse chronological order
+        all_show_timestamps.sort(key=lambda x: x[0], reverse=True)
 
-        # Iterate through the history data to extract all show IDs with their exact timestamps
-        for date_str, time_data in user.history.items():
-            for time_str, show_id in time_data.items():
-                try:
-                    # Combine date and time strings and parse into a datetime object
-                    full_datetime_str = f"{date_str} {time_str}"
-                    dt_object = datetime.strptime(
-                        full_datetime_str, "%Y-%m-%d %H:%M:%S")
-                    timestamped_shows.append((dt_object, show_id))
-                except ValueError:
-                    # Log a warning if a datetime string cannot be parsed, but continue processing
-                    print(
-                        f"Warning: Could not parse datetime from history: {full_datetime_str}")
-                    continue
+        last_shows_ids = []
+        seen_show_ids = set()
 
-        # Sort the list by datetime object in descending order (latest show first)
-        timestamped_shows.sort(key=lambda x: x[0], reverse=True)
-
-        # Extract unique show IDs while preserving their order of appearance (latest first)
-        # Using OrderedDict to maintain insertion order and ensure uniqueness
-        unique_show_ids_ordered = OrderedDict()
-        for _, show_id in timestamped_shows:
-            # The value doesn't matter, only the key's presence
-            unique_show_ids_ordered[show_id] = None
-
-        # Get the list of the latest 10 unique show IDs
-        latest_unique_show_ids = list(unique_show_ids_ordered.keys())[:10]
-
-        # Fetch the Show objects corresponding to these IDs
-        # Note: Querying with id__in does not guarantee the order.
-        shows = Show.objects.filter(id__in=latest_unique_show_ids)
-
-        # Create a dictionary for quick lookup of fetched shows by their ID
-        shows_by_id = {show.id: show for show in shows}
-
-        # Reorder the fetched shows to match the desired order of the latest unique show IDs
-        # This ensures the API response reflects the most recently watched shows first
-        ordered_shows = [shows_by_id[show_id]
-                         for show_id in latest_unique_show_ids
-                         if show_id in shows_by_id]  # Ensure the show actually exists
-
-        return ordered_shows
+        for _, show_id in all_show_timestamps:
+            # Add the show_id to our list if it hasn't been seen before
+            if show_id not in seen_show_ids:
+                last_shows_ids.append(show_id)
+                seen_show_ids.add(show_id)
+            # Stop once we have 10 unique shows
+            if len(last_shows_ids) >= 10:
+                break
+        # If no shows were found, return an empty queryset
+        if not last_shows_ids:
+            return Show.objects.none()
+        # Fetch the Show objects from the database using the collected IDs.
+        # We also use `F('id')` and `last_shows_ids` to preserve the original order.
+        preserved = Case(*[When(id=pk, then=pos)
+                         for pos, pk in enumerate(last_shows_ids)])
+        queryset = Show.objects.filter(
+            id__in=last_shows_ids).order_by(preserved)
+        return queryset
 
 
 class RandomShowsView(viewsets.ModelViewSet):
@@ -144,6 +123,20 @@ class ShowDetailView(RetrieveAPIView):
             return False
         return show.watchlist.filter(id=self.request.user.id).exists()
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        show_id = instance.pk
+        # Log into user's history data
+        if request.user.is_authenticated:
+            if datetime.now().strftime('%Y-%m-%d') not in request.user.history:
+                request.user.history[datetime.now().strftime('%Y-%m-%d')] = {}
+            request.user.history[datetime.now().strftime('%Y-%m-%d')][datetime.now().strftime('%H:%M:%S')] = show_id
+            request.user.save()
+
+        # Standard serialization and response
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
 
 class UserShowView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -158,11 +151,13 @@ class UserShowView(APIView):
         except Exception as e:
             return Response({'error': str(e)}, status=500)
 
+
 class ArtistView(RetrieveAPIView):
     queryset = Artist.objects.all()
     serializer_class = ArtistSerializer
     lookup_field = 'pk'
     lookup_url_kwarg = 'artist_id'
+
 
 class CountryView(RetrieveAPIView):
     queryset = Country.objects.all()
@@ -298,6 +293,7 @@ class ToggleWatchlistView(APIView):
             'message': message,
             'in_watchlist': current_status
         }, status=status.HTTP_200_OK)
+
 
 def searchView(request, query):
     if query:
