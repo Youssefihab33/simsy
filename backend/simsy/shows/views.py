@@ -1,20 +1,17 @@
-from .serializers import *
-from .models import Show
-from .imports import updateReached, changeEpisode
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.generics import RetrieveAPIView
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from django.db.models import Case, When, Value, IntegerField
-from rest_framework import status, permissions, viewsets
 import random
-import json
-from collections import OrderedDict
 from datetime import datetime
-from django.http import JsonResponse
-from django.db.models import Q
+from .imports import updateReached, changeEpisode
+from .models import Show
+from .serializers import *
 
+from rest_framework import status, permissions, viewsets
+from rest_framework.generics import RetrieveAPIView
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
+from django.http import JsonResponse
 from django.contrib.auth import get_user_model
+from django.db.models import Case, When, Q
 User = get_user_model()
 
 
@@ -130,7 +127,8 @@ class ShowDetailView(RetrieveAPIView):
         if request.user.is_authenticated:
             if datetime.now().strftime('%Y-%m-%d') not in request.user.history:
                 request.user.history[datetime.now().strftime('%Y-%m-%d')] = {}
-            request.user.history[datetime.now().strftime('%Y-%m-%d')][datetime.now().strftime('%H:%M:%S')] = show_id
+            request.user.history[datetime.now().strftime(
+                '%Y-%m-%d')][datetime.now().strftime('%H:%M:%S')] = show_id
             request.user.save()
 
         # Standard serialization and response
@@ -298,13 +296,58 @@ class ToggleWatchlistView(APIView):
 def searchView(request, query):
     if query:
         results = []
+        for country in Country.objects.filter(name__icontains=query):
+            results.append({
+                'result_type': 'country',
+                'id': country.id,
+                'name': country.name,
+                # 'image': country.flag if country.flag else None,
+                'description': country.description[:100] + '...' if len(country.description) > 100 else country.description
+            })
+        for language in Language.objects.filter(name__icontains=query):
+            results.append({
+                'result_type': 'language',
+                'id': language.id,
+                'name': language.name,
+                'description': language.description[:100] + '...' if len(language.description) > 100 else language.description
+            })
+        for genre in Genre.objects.filter(name__icontains=query):
+            results.append({
+                'result_type': 'genre',
+                'id': genre.id,
+                'name': genre.name,
+                'description': genre.description[:100] + '...' if len(genre.description) > 100 else genre.description
+            })
+        for label in Label.objects.filter(name__icontains=query):
+            results.append({
+                'result_type': 'label',
+                'id': label.id,
+                'name': label.name,
+                'description': label.description[:100] + '...' if len(label.description) > 100 else label.description
+            })
+        for user in User.objects.filter(username__icontains=query):
+            results.append({
+                'result_type': 'user',
+                'id': user.id,
+                'name': user.username,
+                'description': user.email if user.email else 'No email provided'
+            })
         for show in Show.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)):
             results.append({
+                'result_type': 'show',
                 'kind': show.kind,
                 'id': show.id,
                 'name': show.name,
                 'description': show.description[:100] + '...' if len(show.description) > 100 else show.description
             })
+        for artist in Artist.objects.filter(name__icontains=query):
+            results.append({
+                'result_type': 'artist',
+                'id': artist.id,
+                'name': artist.name,
+                'description': artist.description[:100] + '...' if len(artist.description) > 100 else artist.description
+            })
+
         return JsonResponse({'message': 'Search Complete', 'query': query, 'results': results}, status=200)
     else:
         return JsonResponse({'message': 'No search query provided'}, status=400)
