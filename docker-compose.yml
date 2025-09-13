@@ -23,6 +23,7 @@ services:
       - ./backend/simsy/staticfiles:/usr/src/app/simsy/staticfiles:ro
       - ./data/media:/usr/src/data/media:ro
       - ./data/videos:/usr/src/data/videos:ro
+      - ./data/videos2:/usr/src/data/videos2:ro
       - ./data/captions:/usr/src/data/captions:ro
     env_file: "frontend/.env.production"
     restart: always

@@ -280,35 +280,38 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 
 	const getVideoDetails = useCallback(() => {
 		let videoSrc = '';
+		let videoSrc2 = '';
 		let captionsSrc = '';
 
 		if (!show) {
-			return { videoSrc: '', captionsSrc: '' };
+			return { videoSrc: '', videoSrc2: '', captionsSrc: '' };
 		}
 
 		switch (show.kind) {
 			case 'film':
 				videoSrc = `${import.meta.env.VITE_VC_SOURCE + 'videos/' + show.name}.mp4`;
+				videoSrc2 = `${import.meta.env.VITE_VC_SOURCE + 'videos2/' + show.name}.mp4`;
 				captionsSrc = `${import.meta.env.VITE_VC_SOURCE + 'captions/' + show.name}.vtt`;
 				break;
 			case 'series':
 				videoSrc = `${import.meta.env.VITE_VC_SOURCE + 'videos/' + show.name}/s${season}e${episode}.mp4`;
+				videoSrc2 = `${import.meta.env.VITE_VC_SOURCE + 'videos2/' + show.name}/s${season}e${episode}.mp4`;
 				captionsSrc = `${import.meta.env.VITE_VC_SOURCE + 'captions/' + show.name}/s${season}e${episode}.vtt`;
 				break;
 			default:
 				console.error('Unknown show kind:', show.kind);
 				break;
 		}
-		return { videoSrc, captionsSrc };
+		return { videoSrc, videoSrc2, captionsSrc };
 	}, [show, season, episode]); // Dependency on season and episode is crucial here
 
-	const { videoSrc, captionsSrc } = getVideoDetails();
+	const { videoSrc, videoSrc2, captionsSrc } = getVideoDetails();
 
 	// Effect to update player source when videoSrc or captionsSrc changes
 	// and also apply the currentVideoStartTime
 	useEffect(() => {
 		if (playerRef.current && show) {
-			playerRef.current.src({ src: videoSrc, type: 'video/mp4' });
+			playerRef.current.src([{ src: videoSrc, type: 'video/mp4' },{ src: videoSrc2, type: 'video/mp4' }]);
 
 			if (show.captions && captionsSrc) {
 				// Remove existing tracks and add the new one
@@ -348,13 +351,13 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 				playerRef.current.off('loadeddata');
 			}
 		};
-	}, [videoSrc, captionsSrc, show, currentVideoStartTime, userShowData]); // Added currentVideoStartTime to dependencies
+	}, [videoSrc, videoSrc2, captionsSrc, show, currentVideoStartTime, userShowData]); // Added currentVideoStartTime to dependencies
 
 	const playerOptions = show
 		? {
 				...videoJsOptions,
 				show_name: show.name,
-				sources: [{ src: videoSrc, type: 'video/mp4' }],
+				sources: [{ src: videoSrc, type: 'video/mp4' }, { src: videoSrc2, type: 'video/mp4' }],
 				tracks:
 					show.captions && captionsSrc
 						? [
