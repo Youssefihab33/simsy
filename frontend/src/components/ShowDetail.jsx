@@ -279,39 +279,41 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 	);
 
 	const getVideoDetails = useCallback(() => {
-		let videoSrc = '';
-		let videoSrc2 = '';
+		let filmsSrc = '';
+		let seriesSrc = '';
 		let captionsSrc = '';
 
 		if (!show) {
-			return { videoSrc: '', videoSrc2: '', captionsSrc: '' };
+			return { filmsSrc: '', seriesSrc: '', captionsSrc: '' };
 		}
 
 		switch (show.kind) {
+			// The strange part below is to make the films and series paths work with both films and series
+			// Making the rule less strict
 			case 'film':
-				videoSrc = `${import.meta.env.VITE_VC_SOURCE + 'videos/' + show.name}.mp4`;
-				videoSrc2 = `${import.meta.env.VITE_VC_SOURCE + 'videos2/' + show.name}.mp4`;
+				filmsSrc = `${import.meta.env.VITE_VC_SOURCE + 'films/' + show.name}.mp4`;
+				seriesSrc = `${import.meta.env.VITE_VC_SOURCE + 'series/' + show.name}.mp4`;
 				captionsSrc = `${import.meta.env.VITE_VC_SOURCE + 'captions/' + show.name}.vtt`;
 				break;
 			case 'series':
-				videoSrc = `${import.meta.env.VITE_VC_SOURCE + 'videos/' + show.name}/s${season}e${episode}.mp4`;
-				videoSrc2 = `${import.meta.env.VITE_VC_SOURCE + 'videos2/' + show.name}/s${season}e${episode}.mp4`;
+				filmsSrc = `${import.meta.env.VITE_VC_SOURCE + 'films/' + show.name}/s${season}e${episode}.mp4`;
+				seriesSrc = `${import.meta.env.VITE_VC_SOURCE + 'series/' + show.name}/s${season}e${episode}.mp4`;
 				captionsSrc = `${import.meta.env.VITE_VC_SOURCE + 'captions/' + show.name}/s${season}e${episode}.vtt`;
 				break;
 			default:
 				console.error('Unknown show kind:', show.kind);
 				break;
 		}
-		return { videoSrc, videoSrc2, captionsSrc };
+		return { filmsSrc, seriesSrc, captionsSrc };
 	}, [show, season, episode]); // Dependency on season and episode is crucial here
 
-	const { videoSrc, videoSrc2, captionsSrc } = getVideoDetails();
+	const { filmsSrc, seriesSrc, captionsSrc } = getVideoDetails();
 
-	// Effect to update player source when videoSrc or captionsSrc changes
+	// Effect to update player source when filmsSrc or captionsSrc changes
 	// and also apply the currentVideoStartTime
 	useEffect(() => {
 		if (playerRef.current && show) {
-			playerRef.current.src([{ src: videoSrc, type: 'video/mp4' },{ src: videoSrc2, type: 'video/mp4' }]);
+			playerRef.current.src([{ src: filmsSrc, type: 'video/mp4' },{ src: seriesSrc, type: 'video/mp4' }]);
 
 			if (show.captions && captionsSrc) {
 				// Remove existing tracks and add the new one
@@ -351,13 +353,13 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 				playerRef.current.off('loadeddata');
 			}
 		};
-	}, [videoSrc, videoSrc2, captionsSrc, show, currentVideoStartTime, userShowData]); // Added currentVideoStartTime to dependencies
+	}, [filmsSrc, seriesSrc, captionsSrc, show, currentVideoStartTime, userShowData]); // Added currentVideoStartTime to dependencies
 
 	const playerOptions = show
 		? {
 				...videoJsOptions,
 				show_name: show.name,
-				sources: [{ src: videoSrc, type: 'video/mp4' }, { src: videoSrc2, type: 'video/mp4' }],
+				sources: [{ src: filmsSrc, type: 'video/mp4' }, { src: seriesSrc, type: 'video/mp4' }],
 				tracks:
 					show.captions && captionsSrc
 						? [
