@@ -1,41 +1,29 @@
-FROM python:3.13-slim AS django_build
-
+FROM nginx:1.25.3-alpine
 WORKDIR /usr/src/app/simsy
 
+# Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-COPY ./simsy/requirements.txt ./
-RUN pip install --no-cache-dir -r ./requirements.txt gunicorn
+COPY ./simsy/ ./
 
-COPY ./simsy/ .
+# Install dependencies in a single layer to reduce image size
+RUN apk update && \
+    apk add --no-cache python3 supervisor ca-certificates && \
+    python3 -m ensurepip && \
+    pip3 install --no-cache-dir -r requirements.txt gunicorn && \
+    rm -rf /var/cache/apk/* && \
+    rm -rf /root/.cache/pip
 
+# Collect static files
 RUN python manage.py collectstatic --noinput
 
-
-
-FROM debian:bookworm-slim
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        nginx \
-        supervisor \
-        ca-certificates \
-    && update-ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-COPY --from=django_build /usr/local /usr/local
-
-COPY --from=django_build /usr/src/app/simsy /usr/src/app/simsy
-
-WORKDIR /usr/src/app/simsy
-
-RUN rm -f /etc/nginx/sites-enabled/default
-COPY ./nginx.conf /etc/nginx/sites-available/simsy.conf
-RUN ln -s /etc/nginx/sites-available/simsy.conf /etc/nginx/sites-enabled/simsy.conf
-
+# Configure Nginx and Supervisor
+RUN rm -f /etc/nginx/sites-enabled/default && mkdir -p /var/log/supervisor
+# COPY ./nginx.conf /etc/nginx/sites-available/simsy.conf
 COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 EXPOSE 80
 
+# Start Supervisor
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

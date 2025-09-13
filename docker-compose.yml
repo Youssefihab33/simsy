@@ -5,6 +5,7 @@ services:
       - "8000:80"
     volumes:
       - ./backend/simsy:/usr/src/app/simsy
+      - ./backend/nginx.conf:/etc/nginx/conf.d/default.conf
       - ./data/db.sqlite3:/usr/src/data/db.sqlite3
     env_file: "backend/simsy/.env"
     restart: always

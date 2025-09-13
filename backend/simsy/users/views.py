@@ -110,7 +110,7 @@ class UpdateUserData(APIView):
 
 @receiver(reset_password_token_created)
 def password_reset_token_created(reset_password_token, *args, **kwargs):
-    token_url = f'{os.getenv('FRONTEND_DOMAIN')}reset-password/{reset_password_token.key}'
+    token_url = f'{os.getenv("FRONTEND_DOMAIN")}reset-password/{reset_password_token.key}'
     send_email("Forgot your Password? - SIMSY",
                'email/forgot_password.html', reset_password_token.user, token_url)
 
