@@ -19,9 +19,8 @@ RUN apk update && \
 RUN python manage.py collectstatic --noinput
 
 # Configure Nginx and Supervisor
-RUN rm -f /etc/nginx/sites-enabled/default && mkdir -p /var/log/supervisor
-# COPY ./nginx.conf /etc/nginx/sites-available/simsy.conf
 COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN rm -f /etc/nginx/sites-enabled/default && mkdir -p /var/log/supervisor
 
 EXPOSE 80
 

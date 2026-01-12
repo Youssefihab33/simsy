@@ -17,7 +17,7 @@ services:
       - "443:443"
     volumes:
       - ./frontend:/app
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/nginx.conf
+      - ./frontend/conf/:/etc/nginx/conf.d/
       - ./data/certbot/conf:/etc/letsencrypt              # Certbot configs and certificates
       - ./data/certbot/www:/var/www/certbot:ro            # webroot for Certbot challenges
       - ./backend/simsy/staticfiles:/usr/src/app/simsy/staticfiles:ro
@@ -25,6 +25,7 @@ services:
       - ./data/films:/usr/src/data/films:ro
       - ./data/series:/usr/src/data/series:ro
       - ./data/captions:/usr/src/data/captions:ro
+      - /home/youssef/data/:/usr/share/nginx/study/:ro # For the studying tab
     env_file: "frontend/.env.production"
     restart: always
     depends_on:
