@@ -177,7 +177,7 @@ const SearchComponent = ({ sx = {}, width = '100%' }) => {
 					),
 				}}
 			/>
-			<Popper open={isDropdownOpen} anchorEl={anchorEl} placement='bottom-start' style={{ width: width, zIndex: 1300 }}>
+			<Popper open={isDropdownOpen} anchorEl={anchorEl} placement='bottom-start' style={{ maxWidth: '90vw', minWidth: 500, zIndex: 1300 }}>
 				<Paper
 					sx={{
 						mt: 1,
