@@ -41,7 +41,7 @@ class CustomUser(AbstractUser):
     autoplay = models.BooleanField(default=True)
     view_captions = models.BooleanField(default=True)
     remember_home_tab = models.BooleanField(default=True)
-    home_tab = models.IntegerField(default=3)
+    home_tab = models.CharField(default='new', max_length=10)
 
     # Specify the required fields for user creation
     REQUIRED_FIELDS = ['email', 'password']

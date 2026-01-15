@@ -14,7 +14,10 @@ export default function Homepage() {
 		random: false,
 	});
 	const [error, setError] = useState(null);
-	const [activeTab, setActiveTab] = useState('new');
+
+	const [activeTab, setActiveTab] = useState(null);
+	const [isConfiguring, setIsConfiguring] = useState(true);
+
 	const [tabData, setTabData] = useState({
 		favorites: [],
 		watchlist: [],
@@ -28,16 +31,42 @@ export default function Homepage() {
 		tabDataRef.current = tabData;
 	}, [tabData]);
 
+	useEffect(() => {
+		const fetchUserConfig = async () => {
+			try {
+				const response = await axiosInstance.get('/users/user_home_tab/');
+				const preferredTab = response.data.home_tab;
+
+				// Validate that the returned tab name exists in our allowed list
+				const validTabs = ['favorites', 'watchlist', 'new', 'history', 'random'];
+				if (validTabs.includes(preferredTab)) {
+					setActiveTab(preferredTab);
+				} else {
+					setActiveTab('new'); // Fallback if backend sends something weird
+				}
+			} catch (err) {
+				console.error('Failed to fetch user tab preference:', err);
+				setActiveTab('new'); // Fallback on error
+			} finally {
+				setIsConfiguring(false);
+			}
+		};
+
+		fetchUserConfig();
+	}, []);
+
 	const fetchData = useCallback(async (tabName) => {
+		// Safety check: don't fetch if tabName isn't set yet
+		if (!tabName) return;
+
 		const currentTabData = tabDataRef.current;
 
-		// Only fetch if data for this tab is not already loaded AND it's not the 'random' tab
 		if (currentTabData[tabName].length > 0 && tabName !== 'random') {
-			setLoadingTabs((prev) => ({ ...prev, [tabName]: false })); // Ensure this tab is marked as not loading
+			setLoadingTabs((prev) => ({ ...prev, [tabName]: false }));
 			return;
 		}
 
-		setLoadingTabs((prev) => ({ ...prev, [tabName]: true })); // Set this specific tab to loading
+		setLoadingTabs((prev) => ({ ...prev, [tabName]: true }));
 		setError(null);
 		let endpoint = '';
 
@@ -65,33 +94,38 @@ export default function Homepage() {
 
 		try {
 			const response = await axiosInstance.get(endpoint);
-			setTabData((prevData) => {
-				const newData = {
-					...prevData,
-					[tabName]: response.data,
-				};
-				return newData;
-			});
+			setTabData((prevData) => ({
+				...prevData,
+				[tabName]: response.data,
+			}));
 		} catch (error) {
 			console.error(`Error fetching '${tabName}' data:`, error);
-			setError(error.response?.data || `A Timeout error occurred while fetching '${tabName}' data.\nDidn't receive a valid response from the server in time.`);
+			setError(error.response?.data || `A Timeout error occurred while fetching '${tabName}' data.`);
 		} finally {
-			// Only set this specific tab to not loading
 			setLoadingTabs((prev) => ({ ...prev, [tabName]: false }));
 		}
 	}, []);
 
-	// Initial fetch for the default active tab and subsequent fetches only if data is not present
+	// This effect runs whenever activeTab is updated (either by initial config or user click)
 	useEffect(() => {
-		fetchData(activeTab);
+		if (activeTab) {
+			fetchData(activeTab);
+		}
 	}, [activeTab, fetchData]);
-
-	// Derived state to check if any tab is currently loading
-	const overallLoading = Object.values(loadingTabs).some((isLoading) => isLoading);
 
 	const handleTabSelect = (tabKey) => {
 		setActiveTab(tabKey);
 	};
+
+	// Show a loading state while we figure out which tab to open
+	if (isConfiguring) {
+		return (
+			<div className='text-center text-light mt-5'>
+				<LoadingSpinner />
+				<h3 className='mt-3'>Loading...</h3>
+			</div>
+		);
+	}
 
 	if (error) {
 		return (
@@ -124,6 +158,7 @@ export default function Homepage() {
 							</div>
 						)}
 					</Tab>
+
 					<Tab eventKey='watchlist' title={<span className='homeNav text-info bi-list-columns'> Watchlist{tabData.watchlist.length > 0 && `(${tabData.watchlist.length})`}</span>}>
 						{tabData.watchlist.length > 0 ? (
 							<div className='d-flex flex-wrap justify-content-center'>
@@ -143,6 +178,7 @@ export default function Homepage() {
 							</div>
 						)}
 					</Tab>
+
 					<Tab eventKey='new' title={<span className='homeNav primaryColor bi-fire'> New</span>}>
 						{tabData.new.length > 0 ? (
 							<div className='d-flex flex-wrap justify-content-center'>
@@ -162,6 +198,7 @@ export default function Homepage() {
 							</div>
 						)}
 					</Tab>
+
 					<Tab eventKey='history' title={<span className='homeNav tertiaryColor bi-clock-history'> History</span>}>
 						{tabData.history.length > 0 ? (
 							<div className='d-flex flex-wrap justify-content-center'>
@@ -181,6 +218,7 @@ export default function Homepage() {
 							</div>
 						)}
 					</Tab>
+
 					<Tab eventKey='random' title={<span className='homeNav secondaryColor bi-magic'> For you</span>}>
 						<button type='button' className='btn btn-success d-flex secondary-color mx-auto my-2' onClick={() => fetchData('random')}>
 							<span className='secondaryColor bi-arrow-repeat'>&nbsp;Refresh Shows</span>
@@ -205,8 +243,9 @@ export default function Homepage() {
 						)}
 					</Tab>
 				</Tabs>
+
 				<div className='text-end mt-3 me-5'>
-					<a className='text-info text-decoration-none' href="/explore">
+					<a className='text-info text-decoration-none' href='/explore'>
 						Discover <strong>NEW</strong> Content?
 						<br />
 						Go to &nbsp;

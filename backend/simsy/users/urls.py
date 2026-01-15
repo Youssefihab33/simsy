@@ -7,6 +7,7 @@ router.register('register', RegisterViewSet, basename='register')
 router.register('login', LoginViewSet, basename='login')
 urlpatterns = [
     path('user_info/', UserInfoView.as_view(), name='user_info'),
+    path('user_home_tab/', UserHomeTabView.as_view(), name='user_home_tab'),
     path('profile/', ProfileView.as_view(), name='profile'),
     path('update_user_data/', UpdateUserData.as_view(), name='update_user_data'),
 ]

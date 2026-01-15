@@ -33,6 +33,8 @@ class FavoriteShowsView(viewsets.ModelViewSet):
     def get_queryset(self):
         if not self.request.user.is_authenticated:
             raise PermissionDenied("Log in to view favorites.")
+        if self.request.user.remember_home_tab:
+            self.request.user.home_tab = 'favorites'; self.request.user.save()
         return Show.objects.filter(favorites=self.request.user)
 
 
@@ -43,14 +45,20 @@ class WatchlistShowsView(viewsets.ModelViewSet):
     def get_queryset(self):
         if not self.request.user.is_authenticated:
             raise PermissionDenied("Log in to view watchlist.")
+        if self.request.user.remember_home_tab:
+            self.request.user.home_tab = 'watchlist'; self.request.user.save()
         return Show.objects.filter(watchlist=self.request.user)
 
 
 class NewShowsView(viewsets.ModelViewSet):
-    queryset = Show.objects.order_by('-updated')[:10]
     serializer_class = ShowCardSerializer
     permission_classes = [permissions.AllowAny]
 
+    def get_queryset(self):
+        if self.request.user.remember_home_tab:
+            self.request.user.home_tab = 'new'; self.request.user.save()
+        return Show.objects.order_by('-updated')[:10]
+    
 
 class HistoryShowsView(viewsets.ModelViewSet):
     serializer_class = ShowCardSerializer
@@ -58,6 +66,8 @@ class HistoryShowsView(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        if user.remember_home_tab:
+            user.home_tab = 'history'; self.request.user.save()
         if not user.history:
             return Show.objects.none()
         all_show_timestamps = []
@@ -96,6 +106,8 @@ class RandomShowsView(viewsets.ModelViewSet):
     permission_classes = [permissions.AllowAny]
 
     def get_queryset(self):
+        if self.request.user.remember_home_tab:
+            self.request.user.home_tab = 'random'; self.request.user.save()
         all_shows = Show.objects.all()
         if all_shows.count() > 10:
             return random.sample(list(all_shows), 10)
