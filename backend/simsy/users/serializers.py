@@ -47,7 +47,7 @@ class UserHomeTabSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'profile_picture', 'first_name', 'last_name']
+        fields = ['username', 'email', 'profile_picture', 'first_name', 'last_name', 'nickname', 'birthday', 'nationality', 'last_login', 'date_joined']
 
 
 class ProfileSerializer(serializers.ModelSerializer):
