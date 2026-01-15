@@ -313,7 +313,10 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 	// and also apply the currentVideoStartTime
 	useEffect(() => {
 		if (playerRef.current && show) {
-			playerRef.current.src([{ src: filmsSrc, type: 'video/mp4' },{ src: seriesSrc, type: 'video/mp4' }]);
+			playerRef.current.src([
+				{ src: filmsSrc, type: 'video/mp4' },
+				{ src: seriesSrc, type: 'video/mp4' },
+			]);
 
 			if (show.captions && captionsSrc) {
 				// Remove existing tracks and add the new one
@@ -359,7 +362,10 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 		? {
 				...videoJsOptions,
 				show_name: show.name,
-				sources: [{ src: filmsSrc, type: 'video/mp4' }, { src: seriesSrc, type: 'video/mp4' }],
+				sources: [
+					{ src: filmsSrc, type: 'video/mp4' },
+					{ src: seriesSrc, type: 'video/mp4' },
+				],
 				tracks:
 					show.captions && captionsSrc
 						? [
@@ -719,6 +725,21 @@ const ShowDetails = () => {
 								{renderChipGroup(show.labels, 'label')}
 							</div>
 						</div>
+						{/* Additional Info */}
+						<Row>
+							<Typography variant='h6' component='h4' gutterBottom className='text-light'>
+								Additional Info
+							</Typography>
+							<Typography variant='body2' className='text-light'>
+								<b>Finalized:</b> {show.finalized ? 'Yes' : 'No'}
+							</Typography>
+							<Typography variant='body2' className='text-light'>
+								<b>Created:</b> {new Date(show.created).toLocaleString()}
+							</Typography>
+							<Typography variant='body2' className='text-light'>
+								<b>Updated:</b> {new Date(show.updated).toLocaleString()}
+							</Typography>
+						</Row>
 					</Col>
 
 					{/* Cast Section */}
@@ -738,25 +759,6 @@ const ShowDetails = () => {
 					</Col>
 				</Row>
 
-				<hr style={{ borderColor: 'rgba(255, 255, 255, 0.2)' }} />
-
-				{/* Additional Info */}
-				<Row className='mt-5'>
-					<Col>
-						<Typography variant='h6' component='h4' gutterBottom className='text-light'>
-							Additional Info
-						</Typography>
-						<Typography variant='body2' className='text-light'>
-							<b>Finalized:</b> {show.finalized ? 'Yes' : 'No'}
-						</Typography>
-						<Typography variant='body2' className='text-light'>
-							<b>Created:</b> {new Date(show.created).toLocaleString()}
-						</Typography>
-						<Typography variant='body2' className='text-light'>
-							<b>Updated:</b> {new Date(show.updated).toLocaleString()}
-						</Typography>
-					</Col>
-				</Row>
 			</Container>
 
 			{/* --- Video Player Modal --- */}
