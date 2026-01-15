@@ -3,7 +3,8 @@ import Tabs from 'react-bootstrap/Tabs';
 import axiosInstance from './APIs/Axios';
 import ShowCard from './snippets/ShowCard';
 import LoadingSpinner from './snippets/LoadingSpinner';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { UserContext } from './APIs/Context';
+import { useState, useEffect, useCallback, useContext, useRef } from 'react';
 
 export default function Homepage() {
 	const [loadingTabs, setLoadingTabs] = useState({
@@ -14,6 +15,8 @@ export default function Homepage() {
 		random: false,
 	});
 	const [error, setError] = useState(null);
+
+	const user = useContext(UserContext);
 
 	const [activeTab, setActiveTab] = useState(null);
 	const [isConfiguring, setIsConfiguring] = useState(true);
@@ -32,27 +35,14 @@ export default function Homepage() {
 	}, [tabData]);
 
 	useEffect(() => {
-		const fetchUserConfig = async () => {
-			try {
-				const response = await axiosInstance.get('/users/user_home_tab/');
-				const preferredTab = response.data.home_tab;
-
-				// Validate that the returned tab name exists in our allowed list
-				const validTabs = ['favorites', 'watchlist', 'new', 'history', 'random'];
-				if (validTabs.includes(preferredTab)) {
-					setActiveTab(preferredTab);
-				} else {
-					setActiveTab('new'); // Fallback if backend sends something weird
-				}
-			} catch (err) {
-				console.error('Failed to fetch user tab preference:', err);
-				setActiveTab('new'); // Fallback on error
-			} finally {
-				setIsConfiguring(false);
-			}
-		};
-
-		fetchUserConfig();
+		// Validate that the returned tab name exists in our allowed list
+		const validTabs = ['favorites', 'watchlist', 'new', 'history', 'random'];
+		if (validTabs.includes(user.home_tab)) {
+			setActiveTab(user.home_tab);
+		} else {
+			setActiveTab('new'); // Fallback if backend sends something weird
+		}
+		setIsConfiguring(false);
 	}, []);
 
 	const fetchData = useCallback(async (tabName) => {

@@ -77,16 +77,6 @@ class RegisterViewSet(viewsets.ViewSet):
         else:
             return Response(serializer.errors, status=400)
 
-class UserHomeTabView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        try:
-            serializer = UserHomeTabSerializer(request.user)
-            return Response(serializer.data, status=200)
-        except CustomUser.DoesNotExist:
-            return Response({'error': 'User not found!'}, status=404)
-
 class UserInfoView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

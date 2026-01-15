@@ -39,15 +39,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
-class UserHomeTabSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomUser
-        fields = ['username', 'home_tab']
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'profile_picture', 'first_name', 'last_name', 'nickname', 'birthday', 'nationality', 'last_login', 'date_joined']
+        fields = ['username', 'email', 'profile_picture', 'first_name', 'last_name', 'nickname',
+                  'birthday', 'nationality', 'last_login', 'date_joined', 'remember_home_tab', 'home_tab']
 
 
 class ProfileSerializer(serializers.ModelSerializer):
