@@ -57,7 +57,7 @@ class NewShowsView(viewsets.ModelViewSet):
     def get_queryset(self):
         if self.request.user.remember_home_tab:
             self.request.user.home_tab = 'new'; self.request.user.save()
-        return Show.objects.order_by('-updated')[:10]
+        return Show.objects.order_by('-updated')[:25]
     
 
 class HistoryShowsView(viewsets.ModelViewSet):

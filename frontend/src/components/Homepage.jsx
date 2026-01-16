@@ -1,250 +1,196 @@
-import Tab from 'react-bootstrap/Tab';
-import Tabs from 'react-bootstrap/Tabs';
+import { useState, useEffect, useCallback, useContext, useMemo } from 'react';
+import { Box, Tabs, Tab, Pagination, Stack } from '@mui/material';
 import axiosInstance from './APIs/Axios';
+import { UserContext } from './APIs/Context';
 import ShowCard from './snippets/ShowCard';
 import LoadingSpinner from './snippets/LoadingSpinner';
-import { UserContext } from './APIs/Context';
-import { useState, useEffect, useCallback, useContext, useRef } from 'react';
+
+// 1. Configuration: Add or remove tabs here without touching the JSX logic
+const TABS_CONFIG = {
+	favorites: { label: 'Favorites', icon: 'bi-star-fill', color: 'text-warning', endpoint: '/shows/favoriteShows/', empty: 'No favorites yet!' },
+	watchlist: { label: 'Watchlist', icon: 'bi-list-columns', color: 'text-info', endpoint: '/shows/watchlistShows/', empty: 'No watchlist items yet!' },
+	new: { label: 'New', icon: 'bi-fire', color: 'primaryColor', endpoint: '/shows/newShows/', empty: 'No new shows available.' },
+	history: { label: 'History', icon: 'bi-clock-history', color: 'tertiaryColor', endpoint: '/shows/historyShows/', empty: 'No history items yet!' },
+	random: { label: 'For You', icon: 'bi-magic', color: 'secondaryColor', endpoint: '/shows/randomShows/', empty: 'No random shows available.', refreshable: true },
+};
+
+const ITEMS_PER_PAGE = 5;
+
+const TabPanel = ({ children, value, index }) => (
+	<div role='tabpanel' hidden={value !== index}>
+		{value === index && <Box sx={{ py: 2 }}>{children}</Box>}
+	</div>
+);
 
 export default function Homepage() {
-	const [loadingTabs, setLoadingTabs] = useState({
-		favorites: false,
-		watchlist: false,
-		new: false,
-		history: false,
-		random: false,
-	});
-	const [error, setError] = useState(null);
-
 	const user = useContext(UserContext);
-
-	const [activeTab, setActiveTab] = useState(null);
+	const [activeTab, setActiveTab] = useState('new');
+	const [page, setPage] = useState(1);
 	const [isConfiguring, setIsConfiguring] = useState(true);
 
-	const [tabData, setTabData] = useState({
-		favorites: [],
-		watchlist: [],
-		new: [],
-		history: [],
-		random: [],
+	// Consolidated State
+	const [state, setState] = useState({
+		data: { favorites: [], watchlist: [], new: [], history: [], random: [] },
+		loading: {},
+		error: null,
 	});
-	const tabDataRef = useRef(tabData);
 
+	// Initialize Active Tab from User Context
 	useEffect(() => {
-		tabDataRef.current = tabData;
-	}, [tabData]);
-
-	useEffect(() => {
-		// Validate that the returned tab name exists in our allowed list
-		const validTabs = ['favorites', 'watchlist', 'new', 'history', 'random'];
-		if (validTabs.includes(user.home_tab)) {
+		if (TABS_CONFIG[user.home_tab]) {
 			setActiveTab(user.home_tab);
-		} else {
-			setActiveTab('new'); // Fallback if backend sends something weird
 		}
 		setIsConfiguring(false);
-	}, []);
+	}, [user.home_tab]);
 
-	const fetchData = useCallback(async (tabName) => {
-		// Safety check: don't fetch if tabName isn't set yet
-		if (!tabName) return;
-
-		const currentTabData = tabDataRef.current;
-
-		if (currentTabData[tabName].length > 0 && tabName !== 'random') {
-			setLoadingTabs((prev) => ({ ...prev, [tabName]: false }));
-			return;
-		}
-
-		setLoadingTabs((prev) => ({ ...prev, [tabName]: true }));
-		setError(null);
-		let endpoint = '';
-
-		switch (tabName) {
-			case 'favorites':
-				endpoint = '/shows/favoriteShows/';
-				break;
-			case 'watchlist':
-				endpoint = '/shows/watchlistShows/';
-				break;
-			case 'new':
-				endpoint = '/shows/newShows/';
-				break;
-			case 'history':
-				endpoint = '/shows/historyShows/';
-				break;
-			case 'random':
-				endpoint = '/shows/randomShows/';
-				break;
-			default:
-				console.warn('Unknown tab:', tabName);
-				setLoadingTabs((prev) => ({ ...prev, [tabName]: false }));
-				return;
-		}
+	/**
+	 * Fetch Data Logic
+	 * Functional updates are used inside setState to keep the function stable (empty dependency array).
+	 * This prevents the infinite "random" refresh loop.
+	 */
+	const fetchData = useCallback(async (tabKey, force = false) => {
+		setState((prev) => ({
+			...prev,
+			loading: { ...prev.loading, [tabKey]: true },
+			error: null,
+		}));
 
 		try {
-			const response = await axiosInstance.get(endpoint);
-			setTabData((prevData) => ({
-				...prevData,
-				[tabName]: response.data,
+			const { data } = await axiosInstance.get(TABS_CONFIG[tabKey].endpoint);
+			setState((prev) => ({
+				...prev,
+				data: { ...prev.data, [tabKey]: data },
+				loading: { ...prev.loading, [tabKey]: false },
 			}));
-		} catch (error) {
-			console.error(`Error fetching '${tabName}' data:`, error);
-			setError(error.response?.data || `A Timeout error occurred while fetching '${tabName}' data.`);
-		} finally {
-			setLoadingTabs((prev) => ({ ...prev, [tabName]: false }));
+		} catch (err) {
+			setState((prev) => ({
+				...prev,
+				error: err.response?.data || `Error fetching ${tabKey}`,
+				loading: { ...prev.loading, [tabKey]: false },
+			}));
 		}
 	}, []);
 
-	// This effect runs whenever activeTab is updated (either by initial config or user click)
+	// Trigger fetch on tab change only if data doesn't exist
 	useEffect(() => {
-		if (activeTab) {
-			fetchData(activeTab);
+		if (!isConfiguring && activeTab) {
+			const hasData = state.data[activeTab]?.length > 0;
+			if (!hasData) {
+				fetchData(activeTab);
+			}
 		}
-	}, [activeTab, fetchData]);
+	}, [activeTab, isConfiguring, fetchData, state.data]);
 
-	const handleTabSelect = (tabKey) => {
-		setActiveTab(tabKey);
+	// Handle Page/Tab changes
+	const handleTabChange = (_, newValue) => {
+		setActiveTab(newValue);
+		setPage(1);
 	};
 
-	// Show a loading state while we figure out which tab to open
-	if (isConfiguring) {
+	const handlePageChange = (_, value) => {
+		setPage(value);
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	};
+
+	/**
+	 * Pagination Logic
+	 * Wrapped in useMemo so it only recalculates when data, page, or tab changes.
+	 */
+	const { paginatedData, totalPages } = useMemo(() => {
+		const currentData = state.data[activeTab] || [];
+		const total = Math.ceil(currentData.length / ITEMS_PER_PAGE);
+		const sliced = currentData.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+		return { paginatedData: sliced, totalPages: total };
+	}, [state.data, activeTab, page]);
+
+	// UI Conditionals
+	if (isConfiguring)
 		return (
 			<div className='text-center text-light mt-5'>
-				<LoadingSpinner />
-				<h3 className='mt-3'>Loading...</h3>
+				<LoadingSpinner /> <h3>Loading...</h3>
 			</div>
 		);
-	}
 
-	if (error) {
+	if (state.error)
 		return (
 			<div className='text-center text-light mt-5'>
-				<h3 className='text-danger'>Error loading shows. Please contact an admin!</h3>
-				<h4 className='mt-5'>Error Details:</h4>
-				<p id='error_details'>{error}</p>
+				<h3 className='text-danger'>Error loading shows!</h3>
+				<p>{state.error}</p>
 			</div>
 		);
-	} else {
-		return (
-			<section className='container my-5'>
-				<Tabs activeKey={activeTab} onSelect={handleTabSelect} id='homepageTabs' className='mb-3' justify>
-					<Tab eventKey='favorites' title={<span className='homeNav text-warning bi-star-fill'> Favorites{tabData.favorites.length > 0 && `(${tabData.favorites.length})`}</span>}>
-						{tabData.favorites.length > 0 ? (
-							<div className='d-flex flex-wrap justify-content-center'>
-								{tabData.favorites.map((show) => (
-									<ShowCard key={show.id} show={show} />
-								))}
-							</div>
-						) : (
-							<div className='text-center text-warning mt-5'>
-								{loadingTabs.favorites ? (
-									<h3>
-										<LoadingSpinner /> Loading Favorites...
-									</h3>
-								) : (
-									<h3>No favorites yet!</h3>
-								)}
-							</div>
-						)}
-					</Tab>
 
-					<Tab eventKey='watchlist' title={<span className='homeNav text-info bi-list-columns'> Watchlist{tabData.watchlist.length > 0 && `(${tabData.watchlist.length})`}</span>}>
-						{tabData.watchlist.length > 0 ? (
-							<div className='d-flex flex-wrap justify-content-center'>
-								{tabData.watchlist.map((show) => (
-									<ShowCard key={show.id} show={show} />
-								))}
-							</div>
-						) : (
-							<div className='text-center text-info mt-5'>
-								{loadingTabs.watchlist ? (
-									<h3>
-										<LoadingSpinner /> Loading Watchlist...
-									</h3>
-								) : (
-									<h3>No watchlist items yet!</h3>
-								)}
-							</div>
-						)}
-					</Tab>
+	const config = TABS_CONFIG[activeTab];
+	const isLoading = state.loading[activeTab];
 
-					<Tab eventKey='new' title={<span className='homeNav primaryColor bi-fire'> New</span>}>
-						{tabData.new.length > 0 ? (
-							<div className='d-flex flex-wrap justify-content-center'>
-								{tabData.new.map((show) => (
-									<ShowCard key={show.id} show={show} />
-								))}
-							</div>
-						) : (
-							<div className='text-center primaryColor mt-5'>
-								{loadingTabs.new ? (
-									<h3>
-										<LoadingSpinner /> Loading New Shows...
-									</h3>
-								) : (
-									<h3>No new shows available.</h3>
-								)}
-							</div>
-						)}
-					</Tab>
-
-					<Tab eventKey='history' title={<span className='homeNav tertiaryColor bi-clock-history'> History</span>}>
-						{tabData.history.length > 0 ? (
-							<div className='d-flex flex-wrap justify-content-center'>
-								{tabData.history.map((show) => (
-									<ShowCard key={show.id} show={show} />
-								))}
-							</div>
-						) : (
-							<div className='text-center tertiaryColor mt-5'>
-								{loadingTabs.history ? (
-									<h3>
-										<LoadingSpinner /> Loading History...
-									</h3>
-								) : (
-									<h3>No history items yet!</h3>
-								)}
-							</div>
-						)}
-					</Tab>
-
-					<Tab eventKey='random' title={<span className='homeNav secondaryColor bi-magic'> For you</span>}>
-						<button type='button' className='btn btn-success d-flex secondary-color mx-auto my-2' onClick={() => fetchData('random')}>
-							<span className='secondaryColor bi-arrow-repeat'>&nbsp;Refresh Shows</span>
-						</button>
-
-						{tabData.random.length > 0 ? (
-							<div className='d-flex flex-wrap justify-content-center'>
-								{tabData.random.map((show) => (
-									<ShowCard key={show.id} show={show} />
-								))}
-							</div>
-						) : (
-							<div className='text-center secondaryColor mt-5'>
-								{loadingTabs.random ? (
-									<h3>
-										<LoadingSpinner /> Loading Random Shows...
-									</h3>
-								) : (
-									<h3>No random shows available.</h3>
-								)}
-							</div>
-						)}
-					</Tab>
+	return (
+		<section className='container my-5'>
+			<Box sx={{ width: '100%', borderBottom: 1, borderColor: 'divider' }}>
+				<Tabs
+					value={activeTab}
+					onChange={handleTabChange}
+					variant='fullWidth'
+					textColor='inherit'
+					indicatorColor='primary'
+					sx={{
+						'& .MuiTab-root': { color: '#aaa', minHeight: '64px' },
+						'& .Mui-selected': { color: '#fff' },
+					}}
+				>
+					{Object.entries(TABS_CONFIG).map(([key, item]) => (
+						<Tab
+							key={key}
+							value={key}
+							label={
+								<span>
+									<i className={`${item.icon} ${item.color.startsWith('text-') ? item.color : ''}`} style={!item.color.startsWith('text-') ? { color: item.color } : {}}></i>{' '}
+									{item.label}
+								</span>
+							}
+						/>
+					))}
 				</Tabs>
+			</Box>
 
-				<div className='text-end mt-3 me-5'>
-					<a className='text-info text-decoration-none' href='/explore'>
-						Discover <strong>NEW</strong> Content?
-						<br />
-						Go to &nbsp;
-						<strong>
-							<i className='bi-search-heart'></i> Explore
-						</strong>
-					</a>
-				</div>
-			</section>
-		);
-	}
+			<TabPanel value={activeTab} index={activeTab}>
+				{config.refreshable && (
+					<button type='button' className='btn btn-success d-flex mx-auto mb-3' onClick={() => fetchData(activeTab, true)}>
+						<span className='bi-arrow-repeat'>&nbsp;Refresh Shows</span>
+					</button>
+				)}
+
+				{isLoading ? (
+					<div className='text-center mt-5'>
+						<h3>
+							<LoadingSpinner /> Loading...
+						</h3>
+					</div>
+				) : paginatedData.length > 0 ? (
+					<>
+						<div className='d-flex flex-wrap justify-content-center'>
+							{paginatedData.map((show) => (
+								<ShowCard key={show.id} show={show} />
+							))}
+						</div>
+						{totalPages > 1 && (
+							<Stack spacing={2} className='mt-4' alignItems='center'>
+								<Pagination count={totalPages} page={page} onChange={handlePageChange} color='primary' sx={{ '& .MuiPaginationItem-root': { color: '#fff' } }} />
+							</Stack>
+						)}
+					</>
+				) : (
+					<h3 className={`text-center mt-5 ${config.color.startsWith('text-') ? config.color : ''}`}>{config.empty}</h3>
+				)}
+			</TabPanel>
+
+			<div className='text-end mt-3 me-5'>
+				<a className='text-info text-decoration-none' href='/explore'>
+					Discover <strong>NEW</strong> Content? <br />
+					Go to &nbsp;
+					<strong>
+						<i className='bi-search-heart'></i> Explore
+					</strong>
+				</a>
+			</div>
+		</section>
+	);
 }
