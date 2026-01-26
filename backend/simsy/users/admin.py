@@ -21,15 +21,8 @@ class CustomUserAdmin(UserAdmin):
         (
             "Advanced options",
             {
-                "classes": ["colapse"],
-                "fields": ['reached', 'history'],
-            },
-        ),
-        (
-            "Toggles",
-            {
                 "classes": ["collapse"],
-                "fields": ['time_autosave', 'autoplay', 'view_captions', 'remember_home_tab', 'home_tab'],
+                "fields": ['time_autosave', 'autoplay', 'view_captions', 'remember_home_tab', 'home_tab', 'shows_per_page', 'reached', 'history'],
             },
         ),
     ) + UserAdmin.fieldsets

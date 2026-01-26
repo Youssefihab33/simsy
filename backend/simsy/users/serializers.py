@@ -4,7 +4,6 @@ from rest_framework import serializers
 from .models import *
 User = get_user_model()
 
-
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     password = serializers.CharField(required=True, write_only=True)
@@ -16,16 +15,15 @@ class LoginSerializer(serializers.Serializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name',
-                  'last_name', 'is_active', 'is_staff')
-        read_only_fields = ('id', 'is_active', 'is_staff')
-
+        fields = ['id', 'username', 'email', 'first_name',
+                  'last_name', 'is_active', 'is_staff']
+        read_only_fields = ['id', 'is_active', 'is_staff']
 
 class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'password', 'email', 'first_name',
-                  'last_name', 'nickname', 'birthday', 'bio')
+        fields = ['id', 'username', 'password', 'email', 'first_name',
+                  'last_name', 'nickname', 'birthday', 'bio']
         extra_kwargs = {
             'password': {'write_only': True},
             'first_name': {'required': False, 'allow_blank': True},
@@ -39,16 +37,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(**validated_data)
         return user
 
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'profile_picture', 'first_name', 'last_name', 'nickname',
-                  'birthday', 'nationality', 'last_login', 'date_joined', 'remember_home_tab', 'home_tab']
-
-
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CustomUser
-        fields = ['username', 'first_name', 'last_name', 'email', 'nickname', 'birthday', 'profile_picture', 'bio', 'nationality', 'time_autosave',
-                  'autoplay', 'view_captions', 'remember_home_tab', 'home_tab', 'last_login', 'date_joined', 'is_active', 'is_staff', 'is_superuser']
+        exclude = ['password', 'groups',
+                   'user_permissions', 'history', 'reached']
+        read_only_fields = ['id', 'date_joined', 'is_active',
+                            'is_staff', 'is_superuser', 'last_login']

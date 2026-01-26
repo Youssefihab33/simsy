@@ -42,6 +42,7 @@ class CustomUser(AbstractUser):
     view_captions = models.BooleanField(default=True)
     remember_home_tab = models.BooleanField(default=True)
     home_tab = models.CharField(default='new', max_length=10)
+    shows_per_page = models.IntegerField(default='5')
 
     # Specify the required fields for user creation
     REQUIRED_FIELDS = ['email', 'password']

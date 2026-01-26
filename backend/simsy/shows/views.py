@@ -1,77 +1,93 @@
 import random
-from datetime import datetime
 from .imports import updateReached, changeEpisode
-from .models import Show
-from .serializers import *
+from .models import Artist, Language, Country, Genre, Rating, Label, Show
+from .serializers import ArtistSerializer, LanguageSerializer, CountrySerializer, GenreSerializer, RatingSerializer, LabelSerializer, ShowSerializer, ShowLiteSerializer
 
-from rest_framework import status, permissions, viewsets
-from rest_framework.generics import RetrieveAPIView
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.decorators import action
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
 from django.db.models import Case, When, Q
 User = get_user_model()
 
 
-# ------- Home Page Views -------
-class ListCountriesView(APIView):
+# ------- Basic ViewSets -------
+class ArtistsViewSet(ModelViewSet):
+    queryset = Artist.objects.all()
+    serializer_class = ArtistSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+
+class LanguagesViewSet(ModelViewSet):
+    queryset = Language.objects.all()
+    serializer_class = LanguageSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+
+class CountriesViewSet(ModelViewSet):
+    queryset = Country.objects.all()
     serializer_class = CountrySerializer
-    permission_classes = [permissions.AllowAny]
-
-    def get(self, request):
-        countries_data = [country.to_dict()
-                          for country in Country.objects.all()]
-        return Response(countries_data, status=200)
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
-class FavoriteShowsView(viewsets.ModelViewSet):
-    serializer_class = ShowCardSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        if not self.request.user.is_authenticated:
-            raise PermissionDenied("Log in to view favorites.")
-        if self.request.user.remember_home_tab:
-            self.request.user.home_tab = 'favorites'; self.request.user.save()
-        return Show.objects.filter(favorites=self.request.user)
+class GenresViewSet(ModelViewSet):
+    queryset = Genre.objects.all()
+    serializer_class = GenreSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
-class WatchlistShowsView(viewsets.ModelViewSet):
-    serializer_class = ShowCardSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        if not self.request.user.is_authenticated:
-            raise PermissionDenied("Log in to view watchlist.")
-        if self.request.user.remember_home_tab:
-            self.request.user.home_tab = 'watchlist'; self.request.user.save()
-        return Show.objects.filter(watchlist=self.request.user)
+class RatingsViewSet(ModelViewSet):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
-class NewShowsView(viewsets.ModelViewSet):
-    serializer_class = ShowCardSerializer
-    permission_classes = [permissions.AllowAny]
+class LabelsViewSet(ModelViewSet):
+    queryset = Label.objects.all()
+    serializer_class = LabelSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def get_queryset(self):
-        if self.request.user.remember_home_tab:
-            self.request.user.home_tab = 'new'; self.request.user.save()
-        return Show.objects.order_by('-updated')[:25]
-    
 
-class HistoryShowsView(viewsets.ModelViewSet):
-    serializer_class = ShowCardSerializer
-    permission_classes = [permissions.IsAuthenticated]
+class ShowsViewSet(ModelViewSet):
+    queryset = Show.objects.all()
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.remember_home_tab:
-            user.home_tab = 'history'; self.request.user.save()
-        if not user.history:
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ShowSerializer
+        return ShowLiteSerializer
+
+    @action(detail=False)
+    def favorites(self, request):
+        queryset = Show.objects.filter(favorites=request.user)
+        serializer = ShowLiteSerializer(
+            queryset, context={'request': request}, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False)
+    def watchlist(self, request):
+        queryset = Show.objects.filter(watchlist=request.user)
+        serializer = ShowLiteSerializer(
+            queryset, context={'request': request}, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False)
+    def new(self, request):
+        queryset = Show.objects.order_by('-updated')[:25]
+        serializer = ShowLiteSerializer(
+            queryset, context={'request': request}, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False)
+    def history(self, request):
+        if not request.user.history:
             return Show.objects.none()
         all_show_timestamps = []
-        for date, times in user.history.items():
+        for date, times in request.user.history.items():
             for time, show_id in times.items():
                 all_show_timestamps.append((f"{date} {time}", show_id))
 
@@ -86,8 +102,8 @@ class HistoryShowsView(viewsets.ModelViewSet):
             if show_id not in seen_show_ids:
                 last_shows_ids.append(show_id)
                 seen_show_ids.add(show_id)
-            # Stop once we have 10 unique shows
-            if len(last_shows_ids) >= 10:
+            # Stop once we have 25 unique shows
+            if len(last_shows_ids) >= 25:
                 break
         # If no shows were found, return an empty queryset
         if not last_shows_ids:
@@ -98,82 +114,20 @@ class HistoryShowsView(viewsets.ModelViewSet):
                          for pos, pk in enumerate(last_shows_ids)])
         queryset = Show.objects.filter(
             id__in=last_shows_ids).order_by(preserved)
-        return queryset
-
-
-class RandomShowsView(viewsets.ModelViewSet):
-    serializer_class = ShowCardSerializer
-    permission_classes = [permissions.AllowAny]
-
-    def get_queryset(self):
-        if self.request.user.remember_home_tab:
-            self.request.user.home_tab = 'random'; self.request.user.save()
-        all_shows = Show.objects.all()
-        if all_shows.count() > 10:
-            return random.sample(list(all_shows), 10)
-        return all_shows
-
-# ------- Show Detail Views -------
-
-
-class ShowDetailView(RetrieveAPIView):
-    queryset = Show.objects.all()
-    serializer_class = ShowSerializer
-    lookup_field = 'pk'
-    lookup_url_kwarg = 'show_id'
-
-    def get_favorites_status(self, show):
-        if not self.request.user.is_authenticated:
-            return False
-        return show.favorites.filter(id=self.request.user.id).exists()
-
-    def get_watchlist_status(self, show):
-        if not self.request.user.is_authenticated:
-            return False
-        return show.watchlist.filter(id=self.request.user.id).exists()
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        show_id = instance.pk
-        # Log into user's history data
-        if request.user.is_authenticated:
-            if datetime.now().strftime('%Y-%m-%d') not in request.user.history:
-                request.user.history[datetime.now().strftime('%Y-%m-%d')] = {}
-            request.user.history[datetime.now().strftime(
-                '%Y-%m-%d')][datetime.now().strftime('%H:%M:%S')] = show_id
-            request.user.save()
-
-        # Standard serialization and response
-        serializer = self.get_serializer(instance)
+        serializer = ShowLiteSerializer(
+            queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
-
-class UserShowView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request, show_id):
-        try:
-            serializer = UserShowSerializer(
-                request.user, context={'request': request, 'show_id': show_id})
-            return Response(serializer.data, status=200)
-        except CustomUser.DoesNotExist:
-            return Response({'error': 'User not found'}, status=404)
-        except Exception as e:
-            return Response({'error': str(e)}, status=500)
-
-
-class ArtistView(RetrieveAPIView):
-    queryset = Artist.objects.all()
-    serializer_class = ArtistSerializer
-    lookup_field = 'pk'
-    lookup_url_kwarg = 'artist_id'
-
-
-class CountryView(RetrieveAPIView):
-    queryset = Country.objects.all()
-    serializer_class = CountrySerializer
-    lookup_field = 'pk'
-    lookup_url_kwarg = 'country_id'
+    @action(detail=False)
+    def random(self, request):
+        all_shows = Show.objects.all()
+        if all_shows.count() > 10:
+            sample = random.sample(list(all_shows), 10)
+        else:
+            sample = all_shows
+        serializer = ShowLiteSerializer(
+            sample, context={'request': request}, many=True)
+        return Response(serializer.data)
 
 # ------- Action Views -------
 
@@ -181,14 +135,14 @@ class CountryView(RetrieveAPIView):
 
 
 class firstEpisode(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, show_id, current_season, current_episode):
         return changeEpisode(request.user, show_id, 1, 1, True, 'First Episode of the show!')
 
 
 class previousEpisode(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, show_id, current_season, current_episode):
         if current_season == 1 and current_episode == 1:
@@ -210,7 +164,7 @@ class previousEpisode(APIView):
 
 
 class nextEpisode(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, show_id, current_season, current_episode):
         show_episodes = Show.objects.get(id=show_id).episodes
@@ -233,7 +187,7 @@ class nextEpisode(APIView):
 
 
 class lastEpisode(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, show_id, current_season, current_episode):
         show_episodes = Show.objects.get(id=show_id).episodes
@@ -243,7 +197,7 @@ class lastEpisode(APIView):
 ## Updating Time Reached ##
 
 class UpdateTimeReached(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, show_id, season, episode, time_reached):
         show = Show.objects.get(id=show_id)
@@ -258,7 +212,7 @@ class UpdateTimeReached(APIView):
 ## Toggling Status ##
 
 class ToggleFavoriteView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, show_id):
         try:
@@ -282,7 +236,7 @@ class ToggleFavoriteView(APIView):
 
 
 class ToggleWatchlistView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, show_id):
         try:
