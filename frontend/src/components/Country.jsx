@@ -12,7 +12,7 @@ import ArtistCard from './snippets/ArtistCard';
 const useCountryData = (country_id) => {
 	const state = useAsync(async () => {
 		try {
-			const response = await axiosInstance.get(`/shows/country/${country_id}/`);
+			const response = await axiosInstance.get(`/countries/${country_id}/`);
 			console.log(response);
 			return response.data;
 		} catch (error) {

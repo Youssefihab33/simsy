@@ -24,8 +24,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import VideoStableIcon from '@mui/icons-material/VideoStable';
 
-import { UserContext } from './APIs/Context';
-import axiosInstance from './APIs/Axios';
+import { UserContext } from '../APIs/Context';
+import axiosInstance from '../APIs/Axios';
 
 const pages = [
 	{ name: 'Home', path: '/' },

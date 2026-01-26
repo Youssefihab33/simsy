@@ -1,104 +1,63 @@
 import { useNavigate } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
-import { useState } from 'react';
-import { useLocalStorage } from 'react-use';
+import { useState, useContext } from 'react';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import { Container, Grow, TextField, Button, Link, Alert, Box, Grid } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 import axiosInstance from './APIs/Axios.jsx';
+import { UserContext } from './APIs/Context.jsx';
 import AlreadyLoggedIn from './snippets/AlreadyLoggedIn.jsx';
 
-const registerFormSchema = yup.object({
-	email: yup.string().email('Invalid email format').required('Email is required!'),
-	username: yup.string().required('Username is required!').min(3, 'Username must be at least 3 characters long'),
-	password: yup.string().required('Password is required!').min(8, 'Password must be at least 8 characters long'),
-	password2: yup
-		.string()
-		.required('Password confirmation is required!')
-		.oneOf([yup.ref('password'), null], 'Passwords do not match!'),
-	first_name: yup.string().matches(/^[^0-9]*$/, 'Name cannot contain numbers'),
-	last_name: yup.string().matches(/^[^0-9]*$/, 'Name cannot contain numbers'),
-	nickname: yup.string().matches(/^[^0-9]*$/, 'Nicknames cannot contain numbers'),
-});
+const registerFormSchema = yup
+	.object({
+		email: yup.string().email('Invalid email format').required('Email is required!'),
+		username: yup.string().required('Username is required!').min(3, 'Username must be at least 3 characters long'),
+		password: yup.string().required('Password is required!').min(8, 'Password must be at least 8 characters long'),
+		password2: yup
+			.string()
+			.required('Password confirmation is required!')
+			.oneOf([yup.ref('password'), null], 'Passwords do not match!'),
+		first_name: yup.string().matches(/^[^0-9]*$/, 'Name cannot contain numbers'),
+		last_name: yup.string().matches(/^[^0-9]*$/, 'Name cannot contain numbers'),
+		nickname: yup.string().matches(/^[^0-9]*$/, 'Nicknames cannot contain numbers'),
+		birthday: yup.string().nullable(),
+		bio: yup.string().nullable(),
+	})
+	.required();
 
 export default function Register() {
+	const { user, login } = useContext(UserContext);
 	const [alert, setAlert] = useState(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [token, setToken] = useLocalStorage('auth_token', null, { raw: true });
-	const { handleSubmit, control, setError } = useForm({
+
+	const { handleSubmit, control, setError, clearErrors } = useForm({
 		resolver: yupResolver(registerFormSchema),
+		defaultValues: {
+			email: '',
+			username: '',
+			password: '',
+			password2: '',
+			first_name: '',
+			last_name: '',
+			nickname: '',
+			birthday: '',
+			bio: '',
+		},
 	});
-	const navigate = useNavigate();
-	// Check if already logged in early
-	if (token) {
-		return <AlreadyLoggedIn />;
-	}
 
-	// If user actually needs to register
-	const handleLoginSuccess = (token) => {
-		setToken(token);
-		navigate('/');
-	};
-
-	const handleLoginError = (error) => {
-		if (error.response && error.response.status === 401) {
-			setAlert({
-				type: 'error',
-				message: 'Invalid login. Please try again.',
-			});
-			setError('username', { type: 'manual', message: 'Username not found' });
-			setError('password', { type: 'manual', message: 'Wrong password' });
-		} else {
-			console.error('Login error:', error);
-			setAlert({
-				type: 'error',
-				message: 'An unexpected error occurred. Please try again.',
-			});
-		}
-	};
-
-	const handleRegisterError = (error) => {
-		if (error.response && error.response.data) {
-			const errors = error.response.data;
-			let generalErrorMessage = 'Registration failed. Please check the form.';
-			for (const fieldName in errors) {
-				if (Object.prototype.hasOwnProperty.call(errors, fieldName)) {
-					const fieldErrors = errors[fieldName];
-					if (Array.isArray(fieldErrors) && fieldErrors.length > 0) {
-						setError(fieldName, { type: 'manual', message: String(fieldErrors[0]).charAt(0).toUpperCase() + String(fieldErrors[0]).slice(1) });
-						if (fieldName === 'non_field_errors' || fieldName === 'detail') {
-							generalErrorMessage = fieldErrors[0];
-						}
-					}
-				}
-			}
-			if (Object.keys(errors).length === 0 || generalErrorMessage !== 'Registration failed. Please check the form.') {
-				setAlert({
-					type: 'error',
-					message: generalErrorMessage,
-				});
-			} else {
-				// If there were only field-specific errors, clear any general alert
-				setAlert(null);
-			}
-		} else {
-			console.error('Register error:', error);
-			setAlert({
-				type: 'error',
-				message: 'An unexpected error occurred. Please try again.',
-			});
-		}
-	};
+	if (user) return <AlreadyLoggedIn />;
 
 	const onSubmit = async (data) => {
 		setAlert(null);
+		clearErrors();
 		setIsSubmitting(true);
 
-		axiosInstance
-			.post('/users/register/', {
+		try {
+			await axiosInstance.post('/users/register/', {
 				username: data.username,
 				email: data.email,
 				password: data.password,
@@ -107,38 +66,45 @@ export default function Register() {
 				nickname: data.nickname,
 				birthday: data.birthday,
 				bio: data.bio,
-			})
-			.then((response) => {
-				axiosInstance
-					.post('/users/login/', { username: data.username, password: data.password })
-					.then((response) => {
-						handleLoginSuccess(response.data.token);
-					})
-					.catch((error) => {
-						handleLoginError(error);
-					});
-			})
-			.catch((error) => {
-				handleRegisterError(error);
-			})
-			.finally(() => {
-				setIsSubmitting(false);
 			});
+
+			const loginRes = await axiosInstance.post('/users/login/', {
+				username: data.username,
+				password: data.password,
+			});
+
+			if (loginRes.status === 200) {
+				login(loginRes.data.token);
+			}
+		} catch (error) {
+			const errors = error.response?.data;
+			if (errors) {
+				// Map backend errors to form fields
+				Object.keys(errors).forEach((key) => {
+					setError(key, {
+						type: 'manual',
+						message: Array.isArray(errors[key]) ? errors[key][0] : errors[key],
+					});
+				});
+
+				// Set general alert
+				const generalMsg = errors.non_field_errors?.[0] || errors.detail || 'Registration failed.';
+				setAlert({ type: 'error', message: generalMsg });
+			} else {
+				setAlert({ type: 'error', message: 'An unexpected error occurred.' });
+			}
+		} finally {
+			setIsSubmitting(false);
+		}
 	};
 
 	return (
 		<Container className='my-5' maxWidth='md'>
 			{alert && (
-				<Grow in={!!alert} style={{ transitionDelay: '200ms' }}>
+				<Grow in={!!alert}>
 					<Alert
 						severity={alert.type}
-						className='my-3 sticky-alert'
-						sx={{
-							position: 'sticky',
-							top: 75,
-							zIndex: 1000,
-							boxSizing: 'border-box',
-						}}
+						sx={{ position: 'sticky', top: 75, zIndex: 1000, mb: 3 }}
 						onClose={() => setAlert(null)}
 						icon={alert.type === 'info' ? <CheckIcon fontSize='inherit' /> : undefined}
 					>
@@ -147,123 +113,48 @@ export default function Register() {
 				</Grow>
 			)}
 
-			<Box
-				className='d-flex flex-column glassy align-items-center text-center p-4 px-5'
-				sx={{
-					boxShadow: 3,
-					p: 4,
-					maxWidth: 600,
-					mx: 'auto',
-				}}
-			>
+			<Box className='glassy p-4 px-5 text-center' sx={{ boxShadow: 3, maxWidth: 600, mx: 'auto' }}>
 				<h1 className='fw-bold secondaryColor my-3'>
-					<i className='bi-person-add'></i>&nbsp;Create an Account!
+					<PersonAddIcon sx={{ fontSize: 40, verticalAlign: 'middle', mr: 1 }} />
+					Create an Account
 				</h1>
-				<form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
-					<Grid container spacing={1}>
+
+				<form onSubmit={handleSubmit(onSubmit)}>
+					<Grid container spacing={2}>
 						<Grid item xs={12}>
 							<Controller
 								name='email'
 								control={control}
-								rules={{ required: 'Email is required!' }}
-								render={({ field, fieldState: { error } }) => (
-									<TextField
-										{...field}
-										label='Email'
-										variant='outlined'
-										error={!!error}
-										helperText={error ? error.message : ''}
-										margin='normal'
-										type='email'
-										fullWidth
-										autoComplete='email'
-										autoFocus
-										color='tertiary'
-										disabled={isSubmitting}
-									/>
-								)}
+								render={({ field, fieldState: { error } }) => <TextField {...field} label='Email' fullWidth error={!!error} helperText={error?.message} disabled={isSubmitting} />}
 							/>
 						</Grid>
 						<Grid item xs={12} sm={6}>
 							<Controller
 								name='first_name'
 								control={control}
-								render={({ field, fieldState: { error } }) => (
-									<TextField
-										{...field}
-										label='First Name'
-										variant='outlined'
-										error={!!error}
-										helperText={error ? error.message : ''}
-										margin='normal'
-										fullWidth
-										autoComplete='first-name'
-										color='tertiary'
-										disabled={isSubmitting}
-									/>
-								)}
+								render={({ field, fieldState: { error } }) => <TextField {...field} label='First Name' fullWidth error={!!error} helperText={error?.message} disabled={isSubmitting} />}
 							/>
 						</Grid>
 						<Grid item xs={12} sm={6}>
 							<Controller
 								name='last_name'
 								control={control}
-								render={({ field, fieldState: { error } }) => (
-									<TextField
-										{...field}
-										label='Last Name'
-										variant='outlined'
-										error={!!error}
-										helperText={error ? error.message : ''}
-										margin='normal'
-										fullWidth
-										autoComplete='last-name'
-										color='tertiary'
-										disabled={isSubmitting}
-									/>
-								)}
+								render={({ field, fieldState: { error } }) => <TextField {...field} label='Last Name' fullWidth error={!!error} helperText={error?.message} disabled={isSubmitting} />}
 							/>
 						</Grid>
 						<Grid item xs={12}>
 							<Controller
 								name='username'
 								control={control}
-								rules={{ required: 'Username is required!' }}
-								render={({ field, fieldState: { error } }) => (
-									<TextField
-										{...field}
-										label='Username'
-										variant='outlined'
-										error={!!error}
-										helperText={error ? error.message : ''}
-										margin='normal'
-										fullWidth
-										autoComplete='username'
-										color='tertiary'
-										disabled={isSubmitting}
-									/>
-								)}
+								render={({ field, fieldState: { error } }) => <TextField {...field} label='Username' fullWidth error={!!error} helperText={error?.message} disabled={isSubmitting} />}
 							/>
 						</Grid>
 						<Grid item xs={12} sm={6}>
 							<Controller
 								name='password'
 								control={control}
-								rules={{ required: 'Password is required!' }}
 								render={({ field, fieldState: { error } }) => (
-									<TextField
-										{...field}
-										label='Password'
-										variant='outlined'
-										error={!!error}
-										helperText={error ? error.message : ''}
-										margin='normal'
-										type='password'
-										fullWidth
-										autoComplete='new-password'
-										color='tertiary'
-										disabled={isSubmitting}
-									/>
+									<TextField {...field} type='password' label='Password' fullWidth error={!!error} helperText={error?.message} disabled={isSubmitting} />
 								)}
 							/>
 						</Grid>
@@ -271,21 +162,8 @@ export default function Register() {
 							<Controller
 								name='password2'
 								control={control}
-								rules={{ required: 'Enter the same password again!' }}
 								render={({ field, fieldState: { error } }) => (
-									<TextField
-										{...field}
-										label='Confirm Password'
-										variant='outlined'
-										error={!!error}
-										helperText={error ? error.message : ''}
-										margin='normal'
-										type='password'
-										fullWidth
-										autoComplete='new-password'
-										color='tertiary'
-										disabled={isSubmitting}
-									/>
+									<TextField {...field} type='password' label='Confirm Password' fullWidth error={!!error} helperText={error?.message} disabled={isSubmitting} />
 								)}
 							/>
 						</Grid>
@@ -293,20 +171,7 @@ export default function Register() {
 							<Controller
 								name='nickname'
 								control={control}
-								render={({ field, fieldState: { error } }) => (
-									<TextField
-										{...field}
-										label='Nickname'
-										variant='outlined'
-										error={!!error}
-										helperText={error ? error.message : ''}
-										margin='normal'
-										fullWidth
-										autoComplete='nickname'
-										color='tertiary'
-										disabled={isSubmitting}
-									/>
-								)}
+								render={({ field, fieldState: { error } }) => <TextField {...field} label='Nickname' fullWidth error={!!error} helperText={error?.message} disabled={isSubmitting} />}
 							/>
 						</Grid>
 						<Grid item xs={12}>
@@ -317,15 +182,11 @@ export default function Register() {
 									<TextField
 										{...field}
 										label='Date of Birth'
-										variant='outlined'
-										error={!!error}
-										helperText={error ? error.message : ''}
-										margin='normal'
 										type='date'
 										fullWidth
-										InputLabelProps={{ shrink: true }} // Ensures label doesn't overlap with date
-										autoComplete='bday'
-										color='tertiary'
+										InputLabelProps={{ shrink: true }}
+										error={!!error}
+										helperText={error?.message}
 										disabled={isSubmitting}
 									/>
 								)}
@@ -336,40 +197,19 @@ export default function Register() {
 								name='bio'
 								control={control}
 								render={({ field, fieldState: { error } }) => (
-									<TextField
-										{...field}
-										label='Bio'
-										variant='outlined'
-										error={!!error}
-										helperText={error ? error.message : ''}
-										margin='normal'
-										fullWidth
-										multiline // Allow multiple lines for bio
-										rows={3}
-										autoComplete='off'
-										color='tertiary'
-										disabled={isSubmitting}
-									/>
+									<TextField {...field} label='Bio' fullWidth multiline rows={3} error={!!error} helperText={error?.message} disabled={isSubmitting} />
 								)}
 							/>
 						</Grid>
 					</Grid>
 
-					<Button
-						type='submit'
-						color='secondary'
-						fullWidth
-						variant='outlined'
-						sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }}
-						disabled={isSubmitting}
-						startIcon={<i className='bi-person-add'></i>}
-					>
-						{isSubmitting ? 'Registering...' : 'Register'}
+					<Button type='submit' color='secondary' fullWidth variant='contained' sx={{ mt: 3, py: 1.5 }} disabled={isSubmitting}>
+						{isSubmitting ? 'Creating Account...' : 'Register'}
 					</Button>
 
-					<Link href='/login/' sx={{ mt: 1, display: 'block' }}>
-						Already have an account?
-					</Link>
+					<Box sx={{ mt: 2 }}>
+						<Link href='/login/'>Already have an account? Log In</Link>
+					</Box>
 				</form>
 			</Box>
 		</Container>

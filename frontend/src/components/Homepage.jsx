@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useContext, useMemo } from 'react';
-import { Box, Tabs, Tab, Pagination, Stack } from '@mui/material';
+import { Box, Tabs, Tab, Pagination, Stack, InputLabel, MenuItem, FormControl, Select } from '@mui/material';
 import axiosInstance from './APIs/Axios';
 import { UserContext } from './APIs/Context';
 import ShowCard from './snippets/ShowCard';
@@ -7,14 +7,12 @@ import LoadingSpinner from './snippets/LoadingSpinner';
 
 // 1. Configuration: Add or remove tabs here without touching the JSX logic
 const TABS_CONFIG = {
-	favorites: { label: 'Favorites', icon: 'bi-star-fill', color: 'text-warning', endpoint: '/shows/favoriteShows/', empty: 'No favorites yet!' },
-	watchlist: { label: 'Watchlist', icon: 'bi-list-columns', color: 'text-info', endpoint: '/shows/watchlistShows/', empty: 'No watchlist items yet!' },
-	new: { label: 'New', icon: 'bi-fire', color: 'primaryColor', endpoint: '/shows/newShows/', empty: 'No new shows available.' },
-	history: { label: 'History', icon: 'bi-clock-history', color: 'tertiaryColor', endpoint: '/shows/historyShows/', empty: 'No history items yet!' },
-	random: { label: 'For You', icon: 'bi-magic', color: 'secondaryColor', endpoint: '/shows/randomShows/', empty: 'No random shows available.', refreshable: true },
+	favorites: { label: 'Favorites', icon: 'bi-star-fill', color: 'text-warning', endpoint: '/shows/favorites/', empty: 'No favorites yet!' },
+	watchlist: { label: 'Watchlist', icon: 'bi-list-columns', color: 'text-info', endpoint: '/shows/watchlist/', empty: 'No watchlist items yet!' },
+	new: { label: 'New', icon: 'bi-fire', color: 'primaryColor', endpoint: '/shows/new/', empty: 'No new shows available.' },
+	history: { label: 'History', icon: 'bi-clock-history', color: 'tertiaryColor', endpoint: '/shows/history/', empty: 'No history items yet!' },
+	random: { label: 'For You', icon: 'bi-magic', color: 'secondaryColor', endpoint: '/shows/random/', empty: 'No random shows available.', refreshable: true },
 };
-
-const ITEMS_PER_PAGE = 5;
 
 const TabPanel = ({ children, value, index }) => (
 	<div role='tabpanel' hidden={value !== index}>
@@ -23,10 +21,23 @@ const TabPanel = ({ children, value, index }) => (
 );
 
 export default function Homepage() {
-	const user = useContext(UserContext);
+	const {user, setUser} = useContext(UserContext);
 	const [activeTab, setActiveTab] = useState('new');
 	const [page, setPage] = useState(1);
 	const [isConfiguring, setIsConfiguring] = useState(true);
+	const [ShowsPerPage, setShowsPerPage] = useState(user.shows_per_page);
+	const handleShowsPerPageChange = async (event) => {
+		setShowsPerPage(event.target.value);
+		try {
+			const response = await axiosInstance.put(`/users/current/`, {
+				shows_per_page: event.target.value,
+			});
+			setUser(response);
+		} catch (error) {
+			alert('An error occurred while attempting to save your Shows_Per_Page. Please try again.');
+			console.error('An error occurred while attempting to save Shows_Per_Page.', error);
+		}
+	};
 
 	// Consolidated State
 	const [state, setState] = useState({
@@ -98,10 +109,10 @@ export default function Homepage() {
 	 */
 	const { paginatedData, totalPages } = useMemo(() => {
 		const currentData = state.data[activeTab] || [];
-		const total = Math.ceil(currentData.length / ITEMS_PER_PAGE);
-		const sliced = currentData.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+		const total = Math.ceil(currentData.length / ShowsPerPage);
+		const sliced = currentData.slice((page - 1) * ShowsPerPage, page * ShowsPerPage);
 		return { paginatedData: sliced, totalPages: total };
-	}, [state.data, activeTab, page]);
+	}, [state.data, activeTab, page, ShowsPerPage]);
 
 	// UI Conditionals
 	if (isConfiguring)
@@ -152,19 +163,28 @@ export default function Homepage() {
 			</Box>
 
 			<TabPanel value={activeTab} index={activeTab}>
+				<FormControl sx={{ width: 150, color: 'white', alignSelf: 'flex-end' }}>
+					<InputLabel id='shows-per-page-select-label'>Shows per page</InputLabel>
+					<Select labelId='shows-per-page-select-label' id='shows-per-page-select' value={ShowsPerPage} label='Shows per page' onChange={handleShowsPerPageChange}>
+						<MenuItem value={5}>5</MenuItem>
+						<MenuItem value={10}>10</MenuItem>
+						<MenuItem value={15}>15</MenuItem>
+						<MenuItem value={20}>20</MenuItem>
+					</Select>
+				</FormControl>
 				{config.refreshable && (
 					<button type='button' className='btn btn-success d-flex mx-auto mb-3' onClick={() => fetchData(activeTab, true)}>
 						<span className='bi-arrow-repeat'>&nbsp;Refresh Shows</span>
 					</button>
 				)}
 
-				{isLoading ? (
+				{isLoading ?
 					<div className='text-center mt-5'>
 						<h3>
 							<LoadingSpinner /> Loading...
 						</h3>
 					</div>
-				) : paginatedData.length > 0 ? (
+				: paginatedData.length > 0 ?
 					<>
 						<div className='d-flex flex-wrap justify-content-center'>
 							{paginatedData.map((show) => (
@@ -177,9 +197,7 @@ export default function Homepage() {
 							</Stack>
 						)}
 					</>
-				) : (
-					<h3 className={`text-center mt-5 ${config.color.startsWith('text-') ? config.color : ''}`}>{config.empty}</h3>
-				)}
+				:	<h3 className={`text-center mt-5 ${config.color.startsWith('text-') ? config.color : ''}`}>{config.empty}</h3>}
 			</TabPanel>
 
 			<div className='text-end mt-3 me-5'>

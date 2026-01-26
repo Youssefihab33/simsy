@@ -10,7 +10,7 @@ import ShowCard from './snippets/ShowCard';
 const useActorData = (artist_id) => {
 	const state = useAsync(async () => {
 		try {
-			const response = await axiosInstance.get(`/shows/artist/${artist_id}/`);
+			const response = await axiosInstance.get(`/artists/${artist_id}/`);
 			return response.data;
 		} catch (error) {
 			return Promise.reject(error);

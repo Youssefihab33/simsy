@@ -1,4 +1,4 @@
-import { UserContext } from './APIs/Context';
+import { UserContext } from '../APIs/Context';
 import { useContext } from 'react';
 
 export default function Footer() {

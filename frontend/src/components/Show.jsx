@@ -19,7 +19,7 @@ import {
 
 // My modules
 import axiosInstance from './APIs/Axios.jsx';
-import LoadingSpinner from './snippets/LoadingSpinner';
+import LoadingSpinner from './snippets/LoadingSpinner.jsx';
 import ArtistCard from './snippets/ArtistCard.jsx';
 import styles from './modules/ShowDetails.module.css';
 import { VideoJS, videoJsOptions } from './snippets/VideoJS.jsx';
@@ -107,7 +107,7 @@ const useShowData = (showId) => {
 			setError(null);
 
 			try {
-				const response = await axiosInstance.get(`shows/show/${showId}/`);
+				const response = await axiosInstance.get(`shows/${showId}/`);
 				setShowDetails(response.data);
 				// DEBUG : 1
 				console.log('Fetched Show Data: ', response.data);

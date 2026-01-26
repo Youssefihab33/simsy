@@ -1,40 +1,67 @@
+import { createContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createContext, useState, useEffect } from 'react';
 import { useLocalStorage } from 'react-use';
-
 import LoadingSpinner from '../snippets/LoadingSpinner';
 import axiosInstance from './Axios';
 
 export const UserContext = createContext(null);
 
 export const UserProvider = ({ children }) => {
-	const [userData, setUserData] = useState(null);
+	const [user, setUser] = useState(null);
 	const [loading, setLoading] = useState(true);
+	const [token, setToken, removeToken] = useLocalStorage('auth_token', null, { raw: true });
 	const navigate = useNavigate();
 
+	const fetchUserData = useCallback(async () => {
+		if (!token) {
+			setLoading(false);
+			return;
+		}
+		try {
+			const res = await axiosInstance.get(`/users/current/`);
+			setUser(res.data);
+		} catch (err) {
+			console.error('Session invalid:', err);
+			logout();
+		} finally {
+			setLoading(false);
+		}
+	}, [token]);
+
 	useEffect(() => {
-		const fetchUserData = async () => {
-			try {
-				const res = await axiosInstance.get('/users/user_info/');
-				setUserData(res.data);
-			} catch (err) {
-				if (err.response && err.response.status === 401) {
-					// Handle 401 Unauthorized specifically
-					console.warn('User not authenticated. Redirecting to login.');
-					// navigate('/login/');
-				} else {
-					// Handle other errors
-					console.error('Error fetching user data:', err);
-				}
-			} finally {
-				setLoading(false);
-			}
-		};
-
 		fetchUserData();
-	}, [navigate]);
+	}, [fetchUserData]);
 
-	if (loading) return <LoadingSpinner />;
+	const login = (newToken, redirectTo = '/') => {
+		setToken(newToken);
+		// The useEffect will pick up the token change and call fetchUserData
+		navigate(redirectTo, { replace: true });
+	};
 
-	return <UserContext.Provider value={userData}>{children}</UserContext.Provider>;
+	const logout = async () => {
+		try {
+			await axiosInstance.post('/auth/logout/');
+		} catch (error) {
+			console.error('Logout API error:', error);
+		} finally {
+			setUser(null);
+			removeToken();
+			navigate('/login');
+		}
+	};
+
+	// We provide an 'isInitialLoading' flag so ProtectedRoutes knows
+	// the difference between "not logged in" and "still checking".
+	const contextValue = {
+		user,
+		setUser,
+		login,
+		logout,
+		isAuthenticated: !!user,
+		isInitialLoading: loading && !!token,
+	};
+
+	if (loading && !user && token) return <LoadingSpinner />;
+
+	return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>;
 };

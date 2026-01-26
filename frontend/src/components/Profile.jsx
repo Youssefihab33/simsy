@@ -67,12 +67,12 @@ export default function Profile() {
 
 	useEffect(() => {
 		const fetchUserProfileData = async () => {
-			return axiosInstance.get('/users/profile/').then((response) => {
+			return axiosInstance.get('/users/current/').then((response) => {
 				return response.data;
 			});
 		};
 		const fetchCountriesList = async () => {
-			return axiosInstance.get('/list_countries/').then((response) => {
+			return axiosInstance.get('/countries/').then((response) => {
 				return response.data;
 			});
 		};
@@ -135,7 +135,7 @@ export default function Profile() {
 				profile_picture: selectedFile ? 'new_profile_pic_url' : userData.profile_picture,
 			};
 			const { profile_picture, date_joined, is_active, is_staff, is_superuser, last_login, ...dataToSave } = resp;
-			const response = await axiosInstance.put('/users/update_user_data/', dataToSave);
+			const response = await axiosInstance.put('/users/current/', dataToSave);
 			if (response.status == 200) {
 				setAlert({ type: 'success', message: 'Updated your data!' });
 				setUserData({
