@@ -213,13 +213,11 @@
 	padding: 4px;
 	border-radius: 12px !important;
 	opacity: 0;
-	transform: translateY(-10px);
-	transition: all 0.3s ease;
+	transition: opacity 0.3s ease;
 }
 
 .showCard-container:hover .showCard-transparent-overlay {
 	opacity: 1;
-	transform: translateY(0);
 }
 
 .showCard,

@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { Fade } from '@mui/material';
 import './app.css';
 
 import { UserProvider } from './components/APIs/Context';
@@ -25,6 +26,15 @@ const theme = createTheme({
 		tertiary: { main: '#54a9de' },
 		favorite: { main: '#D4AF37' },
 		watchlist: { main: '#0dcaf0' },
+	},
+	components: {
+		MuiTooltip: {
+			defaultProps: {
+				TransitionComponent: Fade,
+				TransitionProps: { timeout: 300 },
+				enterTouchDelay: 0,
+			},
+		},
 	},
 });
 
