@@ -29,7 +29,7 @@ const ShowCard = memo(function ShowCard({ show }) {
 			e.stopPropagation();
 			setIsFavoriteLoading(true);
 			try {
-				const response = await axiosInstance.post(`shows/toggleFavorite/${show.id}/`);
+				const response = await axiosInstance.post(`shows/${show.id}/toggleFavorite/`);
 				if (response.status === 200) {
 					setInFavorites(response.data.in_favorites);
 				}
@@ -47,7 +47,7 @@ const ShowCard = memo(function ShowCard({ show }) {
 			e.stopPropagation();
 			setIsWatchlistLoading(true);
 			try {
-				const response = await axiosInstance.post(`shows/toggleWatchlist/${show.id}/`);
+				const response = await axiosInstance.post(`shows/${show.id}/toggleWatchlist/`);
 				if (response.status === 200) {
 					setInWatchlist(response.data.in_watchlist);
 				}

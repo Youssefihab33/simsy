@@ -142,6 +142,40 @@ class ShowsViewSet(ModelViewSet):
             queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=['post'])
+    def toggleFavorite(self, request, pk=None):
+        show = self.get_object()
+        if show.favorites.filter(id=request.user.id).exists():
+            show.favorites.remove(request.user)
+            message = 'Show removed from favorites successfully!'
+            current_status = False
+        else:
+            show.favorites.add(request.user)
+            message = 'Show added to favorites successfully!'
+            current_status = True
+
+        return Response({
+            'message': message,
+            'in_favorites': current_status
+        }, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def toggleWatchlist(self, request, pk=None):
+        show = self.get_object()
+        if show.watchlist.filter(id=request.user.id).exists():
+            show.watchlist.remove(request.user)
+            message = 'Show removed from watchlist successfully!'
+            current_status = False
+        else:
+            show.watchlist.add(request.user)
+            message = 'Show added to watchlist successfully!'
+            current_status = True
+
+        return Response({
+            'message': message,
+            'in_watchlist': current_status
+        }, status=status.HTTP_200_OK)
+
 # ------- Action Views -------
 
 ## Changing Episodes ##
@@ -224,52 +258,6 @@ class UpdateTimeReached(APIView):
 
 ## Toggling Status ##
 
-class ToggleFavoriteView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, show_id):
-        try:
-            show = Show.objects.get(id=show_id)
-        except Show.DoesNotExist:
-            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
-
-        if show in request.user.favorite_shows.all():
-            show.favorites.remove(request.user.id)
-            message = 'Show removed from favorites successfully!'
-            current_status = False
-        else:
-            show.favorites.add(request.user.id)
-            message = 'Show added to favorites successfully!'
-            current_status = True
-
-        return Response({
-            'message': message,
-            'in_favorites': current_status
-        }, status=status.HTTP_200_OK)
-
-
-class ToggleWatchlistView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, show_id):
-        try:
-            show = Show.objects.get(id=show_id)
-        except Show.DoesNotExist:
-            return Response({'detail': 'Show not found!'}, status=status.HTTP_404_NOT_FOUND)
-
-        if show in request.user.watchlist_shows.all():
-            show.watchlist.remove(request.user.id)
-            message = 'Show removed from watchlist successfully!'
-            current_status = False
-        else:
-            show.watchlist.add(request.user.id)
-            message = 'Show added to watchlist successfully!'
-            current_status = True
-
-        return Response({
-            'message': message,
-            'in_watchlist': current_status
-        }, status=status.HTTP_200_OK)
 
 
 def searchView(request, query):
