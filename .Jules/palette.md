@@ -9,3 +9,7 @@
 ## 2025-05-23 - Cursor Tracking for Interactive Elements
 **Learning:** Adding a global `mousemove` listener to interactive SVG components (like the `AnimatedFace`) creates a highly engaging and responsive experience. Normalizing vectors from the component center to the cursor allows for smooth, limited-range movement (like eyes looking around) without breaking the aesthetic.
 **Action:** Use `useEffect` to attach/detach global mouse move listeners for interactive visual components. Use state precedence (e.g., hiding > typing > tracking) to ensure the component behaves logically during different user interactions.
+
+## 2025-05-23 - Modern Glassy Footer & Refined Transitions
+**Learning:** A footer is more than just links; it's a place for personalization and reinforcing the brand identity. Redesigning it with a glassy, structured layout (using MUI Grid) and adding personalized user stats (like birthday countdowns) makes the app feel more "finished" and user-centric. Additionally, using `Fade` instead of directional animations (like `Slide` or `Grow`) for Tooltips and overlays provides a more sophisticated and less "busy" feel.
+**Action:** Overhaul legacy footers with responsive Grid layouts and personalized touchpoints. Favor `Fade` transitions for a premium, modern feel in UI overlays and tooltips.
