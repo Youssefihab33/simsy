@@ -4,12 +4,13 @@ import { useState, useContext } from 'react';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import { Container, Grow, TextField, Button, Link, Alert, Box, Grid } from '@mui/material';
-import LoginIcon from '@mui/icons-material/Login';
+import { Container, Grow, TextField, Button, Link, Alert, Box, Grid, InputAdornment, IconButton } from '@mui/material';
+import { Visibility, VisibilityOff, Login as LoginIcon } from '@mui/icons-material';
 
 import axiosInstance from './APIs/Axios.jsx';
 import { UserContext } from './APIs/Context.jsx';
 import AlreadyLoggedIn from './snippets/AlreadyLoggedIn.jsx';
+import AnimatedFace from './snippets/AnimatedFace.jsx';
 
 const loginFormSchema = yup
 	.object({
@@ -22,6 +23,8 @@ export default function Login() {
 	const { user, login } = useContext(UserContext);
 	const [alert, setAlert] = useState(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [faceState, setFaceState] = useState('default');
+	const [showPassword, setShowPassword] = useState(false);
 
 	const navigate = useNavigate();
 	const location = useLocation();
@@ -67,24 +70,38 @@ export default function Login() {
 		<Container className='my-5' maxWidth='sm'>
 			{alert && (
 				<Grow in={!!alert}>
-					<Alert severity={alert.type} sx={{ mb: 2 }} onClose={() => setAlert(null)}>
+					<Alert severity={alert.type} sx={{ mb: 2, borderRadius: '12px' }} onClose={() => setAlert(null)}>
 						{alert.message}
 					</Alert>
 				</Grow>
 			)}
 
-			<Box className='glassy p-4 text-center' sx={{ boxShadow: 3 }}>
-				<h1 className='fw-bold secondaryColor mb-4'>
-					<LoginIcon sx={{ fontSize: 40, verticalAlign: 'middle', mr: 1 }} />
-					Login
+			<Box className='glassy p-5 text-center'>
+				<AnimatedFace state={faceState} />
+				<h1 className='fw-bold mb-4' style={{ color: 'white', letterSpacing: '1px' }}>
+					Welcome Back
 				</h1>
 				<form onSubmit={handleSubmit(onSubmit)}>
-					<Grid container spacing={2}>
+					<Grid container spacing={3}>
 						<Grid item xs={12}>
 							<Controller
 								name='username'
 								control={control}
-								render={({ field, fieldState: { error } }) => <TextField {...field} label='Username' fullWidth error={!!error} helperText={error?.message} disabled={isSubmitting} />}
+								render={({ field, fieldState: { error } }) => (
+									<TextField
+										{...field}
+										label='Username'
+										fullWidth
+										error={!!error}
+										helperText={error?.message}
+										disabled={isSubmitting}
+										onFocus={() => setFaceState('typing')}
+										onBlur={() => setFaceState('default')}
+										sx={{
+											'& .MuiOutlinedInput-root': { borderRadius: '12px' },
+										}}
+									/>
+								)}
 							/>
 						</Grid>
 						<Grid item xs={12}>
@@ -92,20 +109,66 @@ export default function Login() {
 								name='password'
 								control={control}
 								render={({ field, fieldState: { error } }) => (
-									<TextField {...field} type='password' label='Password' fullWidth error={!!error} helperText={error?.message} disabled={isSubmitting} />
+									<TextField
+										{...field}
+										type={showPassword ? 'text' : 'password'}
+										label='Password'
+										fullWidth
+										error={!!error}
+										helperText={error?.message}
+										disabled={isSubmitting}
+										onFocus={() => setFaceState(showPassword ? 'typing' : 'hiding')}
+										onBlur={() => setFaceState('default')}
+										sx={{
+											'& .MuiOutlinedInput-root': { borderRadius: '12px' },
+										}}
+										InputProps={{
+											endAdornment: (
+												<InputAdornment position='end'>
+													<IconButton
+														aria-label='toggle password visibility'
+														onClick={() => {
+															const nextShow = !showPassword;
+															setShowPassword(nextShow);
+															setFaceState(nextShow ? 'typing' : 'hiding');
+														}}
+														edge='end'
+														sx={{ color: 'rgba(255,255,255,0.5)' }}
+													>
+														{showPassword ? <VisibilityOff /> : <Visibility />}
+													</IconButton>
+												</InputAdornment>
+											),
+										}}
+									/>
 								)}
 							/>
 						</Grid>
 					</Grid>
-					<Button type='submit' color='primary' fullWidth variant='contained' sx={{ mt: 3, py: 1.5 }} disabled={isSubmitting}>
+					<Button
+						type='submit'
+						color='primary'
+						fullWidth
+						variant='contained'
+						sx={{
+							mt: 4,
+							py: 1.5,
+							borderRadius: '12px',
+							fontSize: '1.1rem',
+							fontWeight: 'bold',
+							textTransform: 'none',
+							boxShadow: '0 4px 12px rgba(154, 6, 6, 0.3)',
+						}}
+						disabled={isSubmitting}
+					>
 						{isSubmitting ? 'Verifying...' : 'Log In'}
 					</Button>
-					<Box sx={{ mt: 2 }}>
-						<Link component={RouterLink} to='/forgot-password/' display='block' sx={{ mb: 1 }}>
+					<Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
+						<Link component={RouterLink} to='/forgot-password/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
 							Forgot password?
 						</Link>
-						<Link component={RouterLink} to='/register/' display='block'>
-							Create a new Account?
+						<Link component={RouterLink} to='/register/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
+							Don't have an account? <span style={{ color: 'var(--color3)', fontWeight: 'bold' }}>Sign Up</span>
 						</Link>
 					</Box>
 				</form>

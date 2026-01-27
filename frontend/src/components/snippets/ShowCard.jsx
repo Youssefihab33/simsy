@@ -86,8 +86,6 @@ export default function ShowCard({ show }) {
 							display: 'flex',
 							alignItems: 'center',
 							gap: 0.5,
-							background: 'linear-gradient(45deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%)',
-							padding: '4px 8px',
 							zIndex: 3,
 						}}
 					>
