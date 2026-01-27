@@ -376,9 +376,9 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 									src: captionsSrc,
 									mode: userShowData?.view_captions ? 'showing' : 'disabled',
 								},
-						  ]
+						]
 						: [],
-		  }
+		}
 		: {};
 
 	const actionEpisode = useCallback(
@@ -429,7 +429,7 @@ const useToggleApi = (showId, setInState, endpoint, name) => {
 	const handleToggle = useCallback(async () => {
 		if (!showId) return;
 		try {
-			const response = await axiosInstance.post(`shows/${endpoint}/${showId}/`);
+			const response = await axiosInstance.post(`shows/${showId}/${endpoint}/`);
 			if (response.status === 200) {
 				setInState(response.data[`in_${name}`]); // Update local state based on API response
 			} else {
@@ -507,11 +507,12 @@ const ShowDetails = () => {
 					case 'KeyF': // F -> Fullscreen (Video.js handles this natively, just focus)
 						playerRef.current.focus();
 						break;
-					case 'KeyX': // X -> Adjust Playback Rate
+					case 'KeyX': { // X -> Adjust Playback Rate
 						playerRef.current.focus();
 						const currentRate = playerRef.current.playbackRate();
 						playerRef.current.playbackRate(event.shiftKey ? currentRate - 0.25 : currentRate + 0.25);
 						break;
+					}
 					case 'KeyZ': // Z -> Reset Playback Rate to 1x
 						playerRef.current.focus();
 						playerRef.current.playbackRate(1);
