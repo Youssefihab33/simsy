@@ -1,4 +1,4 @@
-import { useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { useState, useContext } from 'react';
 import * as yup from 'yup';
@@ -23,6 +23,7 @@ export default function Login() {
 	const [alert, setAlert] = useState(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
+	const navigate = useNavigate();
 	const location = useLocation();
 	const from = location.state?.from?.pathname || '/';
 
@@ -58,6 +59,7 @@ export default function Login() {
 			}
 		} finally {
 			setIsSubmitting(false);
+			navigate('/');
 		}
 	};
 
@@ -95,7 +97,7 @@ export default function Login() {
 							/>
 						</Grid>
 					</Grid>
-					<Button type='submit' color='secondary' fullWidth variant='contained' sx={{ mt: 3, py: 1.5 }} disabled={isSubmitting}>
+					<Button type='submit' color='primary' fullWidth variant='contained' sx={{ mt: 3, py: 1.5 }} disabled={isSubmitting}>
 						{isSubmitting ? 'Verifying...' : 'Log In'}
 					</Button>
 					<Box sx={{ mt: 2 }}>

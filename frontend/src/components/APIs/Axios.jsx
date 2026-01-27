@@ -1,8 +1,8 @@
-// This file is not using the useLocalStorage hook because it does not contain any function to summon the hook in...
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-	baseURL: import.meta.env.VITE_BACKEND_URL+'/',
+	// Ensure the baseURL always has a trailing slash for Django/DRF compatibility
+	baseURL: import.meta.env.VITE_BACKEND_URL.endsWith('/') ? import.meta.env.VITE_BACKEND_URL : `${import.meta.env.VITE_BACKEND_URL}/`,
 	timeout: 30000,
 	headers: {
 		'Content-Type': 'application/json',
@@ -10,26 +10,54 @@ const axiosInstance = axios.create({
 	},
 });
 
-axiosInstance.interceptors.request.use((config) => {
-	const token = localStorage.getItem('auth_token');
-	if (token) {
-		config.headers.Authorization = `Token ${token}`;
-	} else {
-		config.headers.Authorization = '';
-	}
-	return config;
-});
+/**
+ * Request Interceptor
+ * Automatically attaches the 'Token <key>' header if a token exists in localStorage.
+ */
+axiosInstance.interceptors.request.use(
+	(config) => {
+		// Using raw localStorage here as this file is outside the React component lifecycle
+		const token = localStorage.getItem('auth_token');
 
-axiosInstance.interceptors.response.use(
-	(response) => {
-		return response;
+		if (token) {
+			// Ensure token is trimmed and formatted correctly for Django Knox/Authtoken
+			const cleanToken = token.replace(/['"]+/g, '');
+			config.headers.Authorization = `Token ${cleanToken}`;
+		}
+
+		return config;
 	},
 	(error) => {
-		if (error.response.status === 401) {
-			localStorage.removeItem('auth_token');
-		}
 		return Promise.reject(error);
-	}
+	},
+);
+
+/**
+ * Response Interceptor
+ * Handles global error states, specifically 401 Unauthorized.
+ */
+axiosInstance.interceptors.response.use(
+	(response) => response,
+	(error) => {
+		const originalRequest = error.config;
+
+		if (error.response?.status === 401 && !originalRequest._retry) {
+			// Don't clear token if we are already on the login page to avoid loops
+			if (!window.location.pathname.includes('/login')) {
+				console.warn('Session expired or unauthorized. Cleaning up...');
+				localStorage.removeItem('auth_token');
+
+				// Optional: Force a hard reload to reset the React state or redirect
+				window.location.href = '/login';
+			}
+		}
+
+		if (error.code === 'ECONNABORTED') {
+			console.error('Request timed out. Please check your connection.');
+		}
+
+		return Promise.reject(error);
+	},
 );
 
 export default axiosInstance;

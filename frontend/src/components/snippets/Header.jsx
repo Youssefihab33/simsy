@@ -1,31 +1,12 @@
-import { useState, useEffect, useContext } from 'react';
+import { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
-import {
-	AppBar,
-	Box,
-	Toolbar,
-	IconButton,
-	Typography,
-	Menu,
-	Container,
-	Avatar,
-	Button,
-	Tooltip,
-	MenuItem,
-	TextField,
-	InputAdornment,
-	Popper,
-	Paper,
-	ClickAwayListener,
-	CircularProgress,
-} from '@mui/material';
+import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Container, Avatar, Button, Tooltip, MenuItem, TextField, InputAdornment } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import VideoStableIcon from '@mui/icons-material/VideoStable';
 
 import { UserContext } from '../APIs/Context';
-import axiosInstance from '../APIs/Axios';
 
 const pages = [
 	{ name: 'Home', path: '/' },
@@ -34,334 +15,178 @@ const pages = [
 const settings = [
 	{ name: 'Profile', path: '/profile' },
 	{ name: 'Dashboard', path: '/dashboard' },
-	{ name: 'Logout', path: '/logout' },
 ];
 
 const LogoComponent = ({ screen = 'large' }) => {
 	let displayProp = { xs: screen === 'small' ? 'flex' : 'none', md: screen === 'large' ? 'flex' : 'none' };
-	let extraProps = {};
-	if (screen === 'small') {
-		extraProps = { flexGrow: 1, backgroundSize: '75%' };
-	}
-	if (screen === 'large') {
-		extraProps = { backgroundSize: '100%' };
-	}
 	return (
-		<>
-			<VideoStableIcon sx={{ color: 'var(--color1)', opacity: '50%', mr: 1, display: displayProp }} />
+		<Box component={Link} to='/' sx={{ display: displayProp, alignItems: 'center', textDecoration: 'none', color: 'inherit', flexGrow: screen === 'small' ? 1 : 0 }}>
+			<VideoStableIcon sx={{ display: displayProp, mr: 1 }} />
 			<Typography
-				variant='h6'
+				variant={screen === 'large' ? 'h6' : 'h5'}
 				noWrap
-				component='a'
-				href='/'
 				sx={{
-					backgroundcolor: 'primary',
-					backgroundImage: `linear-gradient(90deg, var(--color1), var(--color2), var(--color3))`,
-					backgroundRepeat: 'repeat',
-					backgroundClip: 'text',
-					WebkitBackgroundClip: 'text',
-					WebkitTextFillColor: 'transparent',
 					mr: 2,
 					display: displayProp,
 					fontFamily: 'monospace',
 					fontWeight: 700,
-					fontStyle: 'italic',
 					letterSpacing: '.3rem',
 					color: 'inherit',
 					textDecoration: 'none',
-					userSelect: 'none',
-					...extraProps,
 				}}
 			>
 				SIMSY
 			</Typography>
-		</>
-	);
-};
-
-const SearchComponent = ({ sx = {}, width = '100%' }) => {
-	const navigate = useNavigate();
-	const [searchTerm, setSearchTerm] = useState('');
-	const [searchResults, setSearchResults] = useState([]);
-	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-	const [isLoading, setIsLoading] = useState(false);
-	const [anchorEl, setAnchorEl] = useState(null);
-
-	// Debounce search effect
-	useEffect(() => {
-		if (searchTerm === '') {
-			setIsDropdownOpen(false);
-			setSearchResults([]);
-			return;
-		} else if (searchTerm.length < 3) {
-			setIsDropdownOpen(true);
-			setSearchResults([]);
-			return;
-		}
-
-		const delayDebounceFn = setTimeout(() => {
-			setIsLoading(true);
-			axiosInstance
-				.get(`shows/search/${encodeURIComponent(searchTerm)}/`)
-				.then((response) => {
-					if (response.status != 200) {
-						throw new Error('Network response was not Successful');
-					}
-					return response.data;
-				})
-				.then((data) => {
-					setSearchResults(data.results);
-					setIsDropdownOpen(true);
-					setIsLoading(false);
-				})
-				.catch((error) => {
-					console.error('There was a problem with the search fetch operation:', error);
-					setSearchResults([]);
-					setIsLoading(false);
-				});
-		}, 500);
-
-		return () => clearTimeout(delayDebounceFn);
-	}, [searchTerm]);
-
-	const handleSearchChange = (event) => {
-		const newSearchTerm = event.target.value;
-		setSearchTerm(newSearchTerm);
-		setAnchorEl(event.currentTarget);
-	};
-
-	const handleDropdownClickAway = () => {
-		setIsDropdownOpen(false);
-	};
-
-	const handleResultClick = (result) => {
-		setIsDropdownOpen(false);
-		setSearchTerm('');
-		navigate(`/show/${result.id}`);
-	};
-
-	return (
-		<Box sx={{ position: 'relative', ...sx }}>
-			<TextField
-				variant='outlined'
-				size='small'
-				placeholder='Search...'
-				value={searchTerm}
-				onChange={handleSearchChange}
-				color='tertiary'
-				sx={{
-					backgroundColor: 'rgba(255, 255, 255, 0.1)',
-					borderRadius: '5px',
-					'& .MuiOutlinedInput-root': {
-						'& fieldset': {
-							borderColor: 'transparent',
-						},
-						'&:hover fieldset': {
-							borderColor: 'rgba(255, 255, 255, 0.5)',
-						},
-						'&.Mui-focused fieldset': {
-							borderColor: 'tertiary',
-						},
-						color: 'white',
-					},
-					'& .MuiInputBase-input::placeholder': {
-						color: 'rgba(255, 255, 255, 0.7)',
-						opacity: 1,
-					},
-				}}
-				InputProps={{
-					startAdornment: (
-						<InputAdornment position='start'>
-							<SearchIcon sx={{ color: 'rgba(255, 255, 255, 0.7)' }} />
-						</InputAdornment>
-					),
-				}}
-			/>
-			<Popper open={isDropdownOpen} anchorEl={anchorEl} placement='bottom-start' style={{ maxWidth: '90vw', minWidth: 500, zIndex: 1300 }}>
-				<Paper
-					sx={{
-						mt: 1,
-						backgroundColor: 'rgba(255, 255, 255, 0.1)',
-						backdropFilter: 'blur(10px)',
-						borderRadius: '5px',
-						color: 'white',
-						overflow: 'hidden',
-					}}
-				>
-					<ClickAwayListener onClickAway={handleDropdownClickAway}>
-						<Box sx={{ maxHeight: '300px', overflowY: 'auto' }}>
-							{isLoading ? (
-								<Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-									<CircularProgress size={20} sx={{ color: 'white' }} />
-								</Box>
-							) : searchResults && searchResults.length > 0 ? (
-								searchResults.map((result) => (
-									<MenuItem
-										key={result.id}
-										onClick={() => handleResultClick(result)}
-										sx={{
-											'&:hover': {
-												backgroundColor: 'rgba(255, 255, 255, 0.2)',
-											},
-											display: 'block',
-										}}
-									>
-										<Box>
-											<Typography variant='subtitle1' sx={{ fontWeight: 'bold' }}>
-												{result.name}
-											</Typography>
-											<Typography variant='body2' color='text.secondary' noWrap sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-												{result.description}
-											</Typography>
-										</Box>
-									</MenuItem>
-								))
-							) : searchTerm.length < 3 ? (
-								<MenuItem>
-									<Typography sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>Keep Typing...</Typography>
-								</MenuItem>
-							) : (
-								<MenuItem>
-									<Typography sx={{ textAlign: 'center', color: 'rgba(255, 255, 255, 0.7)' }}>No results found</Typography>
-								</MenuItem>
-							)}
-						</Box>
-					</ClickAwayListener>
-				</Paper>
-			</Popper>
 		</Box>
 	);
 };
 
 export default function Header() {
-	const userData = useContext(UserContext);
+	const { user, logout } = useContext(UserContext); // Logic Change: Using Context
+	const navigate = useNavigate();
+
 	const [anchorElNav, setAnchorElNav] = useState(null);
 	const [anchorElUser, setAnchorElUser] = useState(null);
-	const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-	const { first_name, last_name, profile_picture } = userData || {};
 
-	const handleOpenNavMenu = (event) => {
-		setAnchorElNav(event.currentTarget);
-	};
-	const handleOpenUserMenu = (event) => {
-		setAnchorElUser(event.currentTarget);
-	};
+	const handleOpenNavMenu = (event) => setAnchorElNav(event.currentTarget);
+	const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
+	const handleCloseNavMenu = () => setAnchorElNav(null);
+	const handleCloseUserMenu = () => setAnchorElUser(null);
 
-	const handleCloseNavMenu = () => {
-		setAnchorElNav(null);
-	};
-
-	const handleCloseUserMenu = () => {
-		setAnchorElUser(null);
-	};
-
-	const handleToggleMobileSearch = () => {
-		setIsMobileSearchOpen(!isMobileSearchOpen);
+	const handleLogout = () => {
+		handleCloseUserMenu();
+		logout();
 	};
 
 	return (
-		<>
-			<AppBar position='sticky'>
-				<Container maxWidth='xl' className='glassy rounded-0'>
-					<Toolbar disableGutters>
-						{/* For Large Screens */}
-						<LogoComponent screen='large' />
-						
-						<Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
+		<AppBar position='static' color='primary' elevation={5}>
+			<Container maxWidth='xl'>
+				<Toolbar disableGutters>
+					{/* Large Screen Logo */}
+					<LogoComponent screen='large' />
+
+					{/* Small Screen Menu Icon */}
+					<Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
+						<IconButton size='large' aria-label='account of current user' aria-controls='menu-appbar' aria-haspopup='true' onClick={handleOpenNavMenu} color='inherit'>
+							<MenuIcon />
+						</IconButton>
+						<Menu
+							id='menu-appbar'
+							anchorEl={anchorElNav}
+							anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+							keepMounted
+							transformOrigin={{ vertical: 'top', horizontal: 'left' }}
+							open={Boolean(anchorElNav)}
+							onClose={handleCloseNavMenu}
+							sx={{ display: { xs: 'block', md: 'none' } }}
+						>
 							{pages.map((page) => (
-								<Button key={page.name} onClick={handleCloseNavMenu} sx={{ my: 2, color: 'white', display: 'block' }} component={Link} to={page.path}>
-									{page.name}
-								</Button>
+								<MenuItem key={page.name} onClick={handleCloseNavMenu} component={Link} to={page.path}>
+									<Typography sx={{ textAlign: 'center' }}>{page.name}</Typography>
+								</MenuItem>
 							))}
-						</Box>
-						{/* Search Bar with Debounced Search (Large Screens) */}
-						{userData && (
-							<Box sx={{ display: { xs: 'none', md: 'flex' }, ml: 'auto', mr: 3 }}>
-								<SearchComponent sx={{ minWidth: '200px' }} />
-							</Box>
-						)}
-						
-						{/* For Small Screens */}
-						<Box sx={{ flexGrow: 1, display: { xs: 'flex', md: 'none' } }}>
-							<IconButton size='large' aria-label='account of current user' aria-controls='menu-appbar' aria-haspopup='true' onClick={handleOpenNavMenu} color='inherit'>
-								<MenuIcon />
-							</IconButton>
-							<Menu
-								id='menu-appbar'
-								anchorEl={anchorElNav}
-								anchorOrigin={{
-									vertical: 'bottom',
-									horizontal: 'left',
-								}}
-								keepMounted
-								transformOrigin={{
-									vertical: 'top',
-									horizontal: 'left',
-								}}
-								open={Boolean(anchorElNav)}
-								onClose={handleCloseNavMenu}
-								sx={{ display: { xs: 'block', md: 'none' } }}
-							>
-								{pages.map((page) => (
-									<MenuItem key={page.name} onClick={handleCloseNavMenu} component={Link} to={page.path}>
-										<Typography sx={{ textAlign: 'center' }}>{page.name}</Typography>
-									</MenuItem>
-								))}
-							</Menu>
-						</Box>
-						{/* Logo for Small Screens */}
-						<LogoComponent screen='small' />
+						</Menu>
+					</Box>
 
-						{/* Search Icon for small screens */}
-						{userData && (
-							<Box sx={{ display: { xs: 'flex', md: 'none' }, ml: 'auto', mr: 1 }}>
-								<IconButton size='large' aria-label='search' color='inherit' onClick={handleToggleMobileSearch}>
-									<SearchIcon />
-								</IconButton>
-							</Box>
-						)}
+					{/* Small Screen Logo */}
+					<LogoComponent screen='small' />
 
-						{/* Common (User Settings) */}
-						{userData && (
-							<Box sx={{ flexGrow: 0 }}>
-								<Tooltip title='Open settings'>
-									<IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-										{userData ? <Avatar alt={`${first_name} ${last_name}`} src={profile_picture} sx={{ boxShadow: '0 0 0 1px var(--color1)' }} /> : <Avatar alt='Loading...' />}
-									</IconButton>
-								</Tooltip>
-								<Menu
-									sx={{ mt: '45px' }}
-									id='menu-appbar'
-									anchorEl={anchorElUser}
-									anchorOrigin={{
-										vertical: 'top',
-										horizontal: 'right',
-									}}
-									keepMounted
-									transformOrigin={{
-										vertical: 'top',
-										horizontal: 'right',
-									}}
-									open={Boolean(anchorElUser)}
-									onClose={handleCloseUserMenu}
-								>
-									{settings.map((setting) => (
-										<MenuItem key={setting.name} onClick={handleCloseUserMenu} component={Link} to={setting.path}>
-											<Typography sx={{ textAlign: 'center' }}>{setting.name}</Typography>
-										</MenuItem>
-									))}
-								</Menu>
-							</Box>
-						)}
-					</Toolbar>
-					{/* Search Bar for Small Screens (conditionally rendered) */}
-					{userData && (
-						<Box sx={{ display: { xs: isMobileSearchOpen ? 'flex' : 'none', md: 'none' }, justifyContent: 'center', pb: 1 }}>
-							<SearchComponent />
+					{/* Large Screen Navigation Items */}
+					<Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
+						{pages.map((page) => (
+							<Button key={page.name} onClick={handleCloseNavMenu} component={Link} to={page.path} sx={{ my: 2, color: 'white', display: 'block' }}>
+								{page.name}
+							</Button>
+						))}
+					</Box>
+
+					{/* Search Bar (Visible only when logged in) */}
+					{user && (
+						<Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 2}}>
+							<TextField
+								// fullWidth
+								size='small'
+								placeholder='Search...'
+								variant='outlined'
+								sx={{
+									backgroundColor: 'rgba(255, 255, 255, 0.15)',
+									borderRadius: '4px',
+									'& .MuiOutlinedInput-root': { color: 'white' },
+								}}
+								InputProps={{
+									startAdornment: (
+										<InputAdornment position='start'>
+											<SearchIcon sx={{ color: 'white' }} />
+										</InputAdornment>
+									),
+								}}
+							/>
 						</Box>
 					)}
-				</Container>
-			</AppBar>
-		</>
+
+					{/* Auth Section */}
+					{!user ?
+						<Box sx={{ flexGrow: 0, display: 'flex' }}>
+							<Button component={Link} to='/login' sx={{ color: 'white' }}>
+								Login
+							</Button>
+							<Button component={Link} to='/register' color='primary' variant='contained' sx={{ ml: 1 }}>
+								Sign Up
+							</Button>
+						</Box>
+					:	<Box sx={{ flexGrow: 0 }}>
+							<Tooltip title='Open settings'>
+								<IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+									<Avatar alt={user.username} src={user.profile_picture} />
+								</IconButton>
+							</Tooltip>
+							<Menu
+								sx={{ mt: '45px' }}
+								id='menu-appbar'
+								anchorEl={anchorElUser}
+								anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+								keepMounted
+								transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+								open={Boolean(anchorElUser)}
+								onClose={handleCloseUserMenu}
+							>
+								{settings.map((setting) => (
+									<MenuItem key={setting.name} onClick={handleCloseUserMenu} component={Link} to={setting.path}>
+										<Typography sx={{ textAlign: 'center' }}>{setting.name}</Typography>
+									</MenuItem>
+								))}
+								<MenuItem onClick={handleLogout}>
+									<Typography sx={{ textAlign: 'center', color: 'error.main' }}>Logout</Typography>
+								</MenuItem>
+							</Menu>
+						</Box>
+					}
+				</Toolbar>
+
+				{/* Mobile Search Bar */}
+				{user && (
+					<Box sx={{ display: { xs: 'flex', md: 'none' }, pb: 2 }}>
+						<TextField
+							fullWidth
+							size='small'
+							placeholder='Search...'
+							variant='outlined'
+							sx={{
+								backgroundColor: 'rgba(255, 255, 255, 0.15)',
+								borderRadius: '4px',
+								'& .MuiOutlinedInput-root': { color: 'white' },
+							}}
+							InputProps={{
+								startAdornment: (
+									<InputAdornment position='start'>
+										<SearchIcon sx={{ color: 'white' }} />
+									</InputAdornment>
+								),
+							}}
+						/>
+					</Box>
+				)}
+			</Container>
+		</AppBar>
 	);
 }

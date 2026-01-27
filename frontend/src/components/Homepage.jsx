@@ -5,7 +5,7 @@ import { UserContext } from './APIs/Context';
 import ShowCard from './snippets/ShowCard';
 import LoadingSpinner from './snippets/LoadingSpinner';
 
-// 1. Configuration: Add or remove tabs here without touching the JSX logic
+// Configuration: Add or remove tabs here without touching the JSX logic
 const TABS_CONFIG = {
 	favorites: { label: 'Favorites', icon: 'bi-star-fill', color: 'text-warning', endpoint: '/shows/favorites/', empty: 'No favorites yet!' },
 	watchlist: { label: 'Watchlist', icon: 'bi-list-columns', color: 'text-info', endpoint: '/shows/watchlist/', empty: 'No watchlist items yet!' },
@@ -21,7 +21,7 @@ const TabPanel = ({ children, value, index }) => (
 );
 
 export default function Homepage() {
-	const {user, setUser} = useContext(UserContext);
+	const { user, setUser } = useContext(UserContext);
 	const [activeTab, setActiveTab] = useState('new');
 	const [page, setPage] = useState(1);
 	const [isConfiguring, setIsConfiguring] = useState(true);
@@ -135,6 +135,51 @@ export default function Homepage() {
 
 	return (
 		<section className='container my-5'>
+			<Box sx={{ display: 'flex', justifyContent: 'flex-end', color: 'tertiary' }}>
+				<FormControl sx={{ width: 120, color: 'tertiary' }}>
+					<InputLabel
+						sx={{
+							color: 'tertiary.main',
+							'&.Mui-focused': { color: 'tertiary.main' },
+						}}
+						id='shows-per-page-select-label'
+					>
+						Shows per page
+					</InputLabel>
+					<Select
+						labelId='shows-per-page-select-label'
+						id='shows-per-page-select'
+						value={ShowsPerPage}
+						label='Shows per page'
+						onChange={handleShowsPerPageChange}
+						sx={{
+							color: 'tertiary.main',
+							'.MuiOutlinedInput-notchedOutline': { borderColor: 'tertiary.main' },
+							'&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'tertiary.main' },
+							'&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'tertiary.main' },
+							'.MuiSvgIcon-root': { color: 'tertiary.main' },
+						}}
+						MenuProps={{
+							PaperProps: {
+								sx: {
+									bgcolor: '#333',
+									color: '#ddd',
+									'& .MuiMenuItem-root': {
+										'&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
+										'&.Mui-selected': { bgcolor: 'tertiary.main', color: '#000' },
+										'&.Mui-selected:hover': { bgcolor: 'tertiary.main' },
+									},
+								},
+							},
+						}}
+					>
+						<MenuItem value={5}>5</MenuItem>
+						<MenuItem value={10}>10</MenuItem>
+						<MenuItem value={15}>15</MenuItem>
+						<MenuItem value={20}>20</MenuItem>
+					</Select>
+				</FormControl>
+			</Box>
 			<Box sx={{ width: '100%', borderBottom: 1, borderColor: 'divider' }}>
 				<Tabs
 					value={activeTab}
@@ -163,15 +208,6 @@ export default function Homepage() {
 			</Box>
 
 			<TabPanel value={activeTab} index={activeTab}>
-				<FormControl sx={{ width: 150, color: 'white', alignSelf: 'flex-end' }}>
-					<InputLabel id='shows-per-page-select-label'>Shows per page</InputLabel>
-					<Select labelId='shows-per-page-select-label' id='shows-per-page-select' value={ShowsPerPage} label='Shows per page' onChange={handleShowsPerPageChange}>
-						<MenuItem value={5}>5</MenuItem>
-						<MenuItem value={10}>10</MenuItem>
-						<MenuItem value={15}>15</MenuItem>
-						<MenuItem value={20}>20</MenuItem>
-					</Select>
-				</FormControl>
 				{config.refreshable && (
 					<button type='button' className='btn btn-success d-flex mx-auto mb-3' onClick={() => fetchData(activeTab, true)}>
 						<span className='bi-arrow-repeat'>&nbsp;Refresh Shows</span>

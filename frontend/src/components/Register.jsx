@@ -33,6 +33,7 @@ export default function Register() {
 	const { user, login } = useContext(UserContext);
 	const [alert, setAlert] = useState(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const navigate = useNavigate();
 
 	const { handleSubmit, control, setError, clearErrors } = useForm({
 		resolver: yupResolver(registerFormSchema),
@@ -95,6 +96,7 @@ export default function Register() {
 			}
 		} finally {
 			setIsSubmitting(false);
+			navigate('/');
 		}
 	};
 

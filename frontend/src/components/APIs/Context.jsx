@@ -15,14 +15,19 @@ export const UserProvider = ({ children }) => {
 	const fetchUserData = useCallback(async () => {
 		if (!token) {
 			setLoading(false);
+			setUser(null);
 			return;
 		}
+
+		setLoading(true); // Ensure loading is true when fetching starts
 		try {
 			const res = await axiosInstance.get(`/users/current/`);
 			setUser(res.data);
 		} catch (err) {
 			console.error('Session invalid:', err);
-			logout();
+			if (err.response?.status === 401 || err.response?.status === 403) {
+				logout();
+			}
 		} finally {
 			setLoading(false);
 		}
@@ -33,6 +38,7 @@ export const UserProvider = ({ children }) => {
 	}, [fetchUserData]);
 
 	const login = (newToken, redirectTo = '/') => {
+		setLoading(true); // Block ProtectedRoutes from redirecting during fetch
 		setToken(newToken);
 		// The useEffect will pick up the token change and call fetchUserData
 		navigate(redirectTo, { replace: true });
@@ -46,6 +52,7 @@ export const UserProvider = ({ children }) => {
 		} finally {
 			setUser(null);
 			removeToken();
+			setLoading(false);
 			navigate('/login');
 		}
 	};
@@ -58,10 +65,11 @@ export const UserProvider = ({ children }) => {
 		login,
 		logout,
 		isAuthenticated: !!user,
-		isInitialLoading: loading && !!token,
+		loading, // Pass the loading state to the context
 	};
 
-	if (loading && !user && token) return <LoadingSpinner />;
+	// Show loading if we are fetching user data
+	if (loading) return <LoadingSpinner />;
 
 	return <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>;
 };
