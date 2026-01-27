@@ -87,106 +87,50 @@ const getDarkerColor = (accentColor) => {
  * @returns {object} Contains show details, user interaction status, loading state, error, and refetch functions.
  */
 const useShowData = (showId) => {
-	const [showDetails, setShowDetails] = useState(null);
-	const [userInteraction, setUserInteraction] = useState({
-		inFavorites: false,
-		inWatchlist: false,
-		userShowData: null,
-	});
+	const [data, setData] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 
-	// Fetch show details only once when showId changes
-	useEffect(() => {
-		const fetchShowDetails = async () => {
-			if (!showId) {
-				setLoading(false);
-				setError('No Show ID was provided!');
-				return;
-			}
-			setError(null);
-
-			try {
-				const response = await axiosInstance.get(`shows/${showId}/`);
-				setShowDetails(response.data);
-				// DEBUG : 1
-				console.log('Fetched Show Data: ', response.data);
-			} catch (err) {
-				console.error('Error fetching show details:', err);
-				setError(err);
-				setShowDetails(null); // Clear show details on error
-			} finally {
-				// We'll set overall loading to false after both initial fetches are done.
-				// For now, assume user data fetch will handle the final loading state.
-			}
-		};
-
-		fetchShowDetails();
-	}, [showId]); // Dependency on showId ensures it runs only when the show changes
-
-	// Fetch user-specific data whenever showId changes or explicitly refetched
-	const fetchUserInteractionData = useCallback(async () => {
+	const fetchData = useCallback(async () => {
 		if (!showId) {
 			setLoading(false);
 			setError('No Show ID was provided!');
 			return;
 		}
-		// If it's the initial load, keep loading true until both are fetched.
-		// If it's a refetch, only set loading if showDetails is already loaded.
-		if (!showDetails || !userInteraction.userShowData) {
-			setLoading(true);
-		}
 		setError(null);
 
 		try {
-			const response = await axiosInstance.get(`shows/user/${showId}/`);
-			setUserInteraction({
-				inFavorites: response.data.in_favorites,
-				inWatchlist: response.data.in_watchlist,
-				userShowData: response.data,
-			});
-			// DEBUG : 2
-			console.log('Fetched User-Show data: ', response);
+			const response = await axiosInstance.get(`shows/${showId}/`);
+			setData(response.data);
 		} catch (err) {
-			console.error('Error fetching user interaction data:', err);
+			console.error('Error fetching show data:', err);
 			setError(err);
-			setUserInteraction({
-				inFavorites: false,
-				inWatchlist: false,
-				userShowData: null,
-			});
 		} finally {
-			setLoading(false); // Always set loading to false after this fetch attempt
+			setLoading(false);
 		}
-	}, [showId, showDetails]); // Added showDetails and userShowData for more precise loading state management
+	}, [showId]);
 
-	// Initial fetch of user interaction data
 	useEffect(() => {
-		fetchUserInteractionData();
-	}, [fetchUserInteractionData]);
+		fetchData();
+	}, [fetchData]);
 
-	// Functions to update favorite/watchlist status locally
-	const toggleFavoriteLocal = useCallback(() => {
-		setUserInteraction((prev) => ({ ...prev, inFavorites: !prev.inFavorites }));
+	const setInFavorites = useCallback((val) => {
+		setData((prev) => (prev ? { ...prev, in_favorites: val } : prev));
 	}, []);
 
-	const toggleWatchlistLocal = useCallback(() => {
-		setUserInteraction((prev) => ({ ...prev, inWatchlist: !prev.inWatchlist }));
+	const setInWatchlist = useCallback((val) => {
+		setData((prev) => (prev ? { ...prev, in_watchlist: val } : prev));
 	}, []);
-
-	// Determine overall loading state
-	const overallLoading = loading || showDetails === null || userInteraction.userShowData === null;
 
 	return {
-		show: showDetails,
-		userShowData: userInteraction.userShowData,
-		inFavorites: userInteraction.inFavorites,
-		inWatchlist: userInteraction.inWatchlist,
-		setInFavorites: toggleFavoriteLocal,
-		setInWatchlist: toggleWatchlistLocal,
-		loading: overallLoading,
+		show: data,
+		inFavorites: data?.in_favorites || false,
+		inWatchlist: data?.in_watchlist || false,
+		setInFavorites,
+		setInWatchlist,
+		loading,
 		error,
-		refetchShowData: fetchUserInteractionData, // This only refetches user data
+		refetchShowData: fetchData,
 	};
 };
 
@@ -197,7 +141,7 @@ const useShowData = (showId) => {
  * @param {function} refetchShowData - Function to refetch show and user data.
  * @returns {object} Contains modal state, player options, episode navigation functions, and more.
  */
-const useMediaPlayer = (show, userShowData, refetchShowData) => {
+const useMediaPlayer = (show, refetchShowData) => {
 	const [modalOpen, setModalOpen] = useState(false);
 	const [season, setSeason] = useState(0);
 	const [episode, setEpisode] = useState(0);
@@ -215,14 +159,14 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 		episodeRef.current = episode;
 	}, [episode]);
 
-	// This useEffect initializes season, episode, and starting time from user data
+	// This useEffect initializes season, episode, and starting time from show data
 	useEffect(() => {
-		if (userShowData) {
-			setSeason(userShowData.season_reached || 1);
-			setEpisode(userShowData.episode_reached || 1);
-			setCurrentVideoStartTime(userShowData.time_reached || 0);
+		if (show) {
+			setSeason(show.season_reached || 1);
+			setEpisode(show.episode_reached || 1);
+			setCurrentVideoStartTime(show.time_reached || 0);
 		}
-	}, [userShowData]);
+	}, [show]);
 
 	const handleModalOpen = useCallback(() => {
 		setModalOpen(true);
@@ -241,12 +185,12 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 
 	const sendTimeReached = useCallback(async (currentShowId, currentSeason, currentEpisode, timeReached) => {
 		try {
-			await axiosInstance
-				.get(`shows/update_time_reached/${currentShowId}/${currentSeason || 0}/${currentEpisode || 0}/${Math.round(timeReached)}/`)
-				// DEBUG : 3
-				.then((response) => {
-					console.log(response.data.message);
-				});
+			const response = await axiosInstance.post(`shows/${currentShowId}/update_time_reached/`, {
+				season: currentSeason || 0,
+				episode: currentEpisode || 0,
+				time_reached: Math.round(timeReached),
+			});
+			console.log(response.data.message);
 		} catch (error) {
 			console.error('Error updating time reached:', error);
 		}
@@ -269,13 +213,13 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 				sendTimeReached(show.id, seasonRef.current, episodeRef.current, 0);
 				// If it's a series, automatically go to the next episode
 				if (show.kind === 'series') {
-					actionEpisode('next'); // This will update season/episode and trigger re-render/source change
+					actionEpisode('next_episode'); // This will update season/episode and trigger re-render/source change
 				}
 				// DEBUG : 5
 				console.log('---VIDEO ENDED---');
 			});
 		},
-		[sendTimeReached, show] // Removed currentVideoStartTime from dependency
+		[sendTimeReached, show, actionEpisode]
 	);
 
 	const getVideoDetails = useCallback(() => {
@@ -330,7 +274,7 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 						srclang: 'en',
 						label: 'English',
 						src: captionsSrc,
-						mode: userShowData?.view_captions ? 'showing' : 'disabled',
+						mode: show.view_captions !== false ? 'showing' : 'disabled',
 					},
 					true
 				); // The 'true' argument ensures the track is loaded
@@ -356,7 +300,7 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 				playerRef.current.off('loadeddata');
 			}
 		};
-	}, [filmsSrc, seriesSrc, captionsSrc, show, currentVideoStartTime, userShowData]); // Added currentVideoStartTime to dependencies
+	}, [filmsSrc, seriesSrc, captionsSrc, show, currentVideoStartTime]); // Added currentVideoStartTime to dependencies
 
 	const playerOptions = show
 		? {
@@ -374,7 +318,7 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 									srclang: 'en',
 									label: 'English',
 									src: captionsSrc,
-									mode: userShowData?.view_captions ? 'showing' : 'disabled',
+									mode: show.view_captions !== false ? 'showing' : 'disabled',
 								},
 						]
 						: [],
@@ -382,9 +326,12 @@ const useMediaPlayer = (show, userShowData, refetchShowData) => {
 		: {};
 
 	const actionEpisode = useCallback(
-		async (action) => {
+		async (actionName) => {
 			try {
-				const response = await axiosInstance.get(`shows/${action}_episode/${show.id}/${seasonRef.current}/${episodeRef.current}/`);
+				const response = await axiosInstance.post(`shows/${show.id}/${actionName}_episode/`, {
+					season: seasonRef.current,
+					episode: episodeRef.current,
+				});
 				if (response.data.changed === false) {
 					setEpisodeChangeMessage(response.data.message);
 				} else {
@@ -450,14 +397,13 @@ const ShowDetails = () => {
 	const { show_id } = useParams();
 	const searchbarRef = useRef(null); // Assuming a searchbar exists elsewhere that might steal focus // DEBUG : FIX THIS
 
-	const { show, userShowData, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, refetchShowData } = useShowData(show_id);
+	const { show, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, refetchShowData } = useShowData(show_id);
 
 	const handleFavoritesToggle = useToggleApi(show?.id, setInFavorites, 'toggleFavorite', 'favorites');
 	const handleWatchlistToggle = useToggleApi(show?.id, setInWatchlist, 'toggleWatchlist', 'watchlist');
 
 	const { modalOpen, handleModalOpen, handleModalClose, handlePlayerReady, playerOptions, season, episode, actionEpisode, episodeChangeMessage, playerRef } = useMediaPlayer(
 		show,
-		userShowData,
 		refetchShowData
 	); // Removed playerKey from destructuring
 

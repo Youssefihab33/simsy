@@ -15,3 +15,7 @@
 ## 2025-05-14 - Consolidating Logic into ViewSets
 **Learning:** Moving logic from separate `APIView` classes into `ViewSet` actions allows for better reuse of optimized `get_queryset` methods (with `select_related`, `prefetch_related`, and annotations).
 **Action:** Prefer ViewSet `@action`s over separate `APIView`s for model-related operations to maintain performance and consistency.
+
+## 2025-05-14 - Redundant Data Fetching
+**Learning:** Found that the application was making multiple parallel requests for the same model data (one for details, one for user status).
+**Action:** Consolidate data into a single serializer and endpoint. This reduces network overhead and simplifies frontend state management.

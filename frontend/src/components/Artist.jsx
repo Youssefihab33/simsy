@@ -55,7 +55,7 @@ export default function Actor() {
 		>
 			<Grid container className='mb-4'>
 				<Grid item md={4}>
-					<Box md={4} className='d-flex justify-content-center justify-content-md-start mb-4 mb-md-0 mt-5 mt-md-0'>
+					<Box className='d-flex justify-content-center justify-content-md-start mb-4 mb-md-0 mt-5 mt-md-0'>
 						<img src={actor.image} alt={actor.name} className={styles.posterImage + ' mt-0'} style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }} loading='lazy' />
 					</Box>
 				</Grid>
