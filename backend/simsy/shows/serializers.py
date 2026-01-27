@@ -62,6 +62,7 @@ class ShowSerializer(serializers.ModelSerializer):
     time_reached = serializers.SerializerMethodField()
     in_favorites = serializers.SerializerMethodField()
     in_watchlist = serializers.SerializerMethodField()
+    view_captions = serializers.SerializerMethodField()
 
     # Helper function to stay DRY
     def _get_x_reached(self, show, key_type, default_value=0):
@@ -106,6 +107,10 @@ class ShowSerializer(serializers.ModelSerializer):
         if hasattr(show, 'in_watchlist_annotated'):
             return show.in_watchlist_annotated
         return get_in_f_or_w(self.context['request'].user, show, 'w')
+
+    def get_view_captions(self, show):
+        user = self.context.get('request').user
+        return user.view_captions if user.is_authenticated else True
 
     class Meta:
         model = Show

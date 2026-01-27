@@ -196,6 +196,31 @@ const useMediaPlayer = (show, refetchShowData) => {
 		}
 	}, []);
 
+	const actionEpisode = useCallback(
+		async (actionName) => {
+			try {
+				const response = await axiosInstance.post(`shows/${show.id}/${actionName}_episode/`, {
+					season: seasonRef.current,
+					episode: episodeRef.current,
+				});
+				if (response.data.changed === false) {
+					setEpisodeChangeMessage(response.data.message);
+				} else {
+					setSeason(response.data.new_season);
+					setEpisode(response.data.new_episode);
+					// Update currentVideoStartTime from the backend response
+					setCurrentVideoStartTime(response.data.starting_time);
+					setEpisodeChangeMessage(null);
+					console.log('action_Episode success:', response.data);
+				}
+			} catch (error) {
+				setEpisodeChangeMessage(error.response?.data || 'Error changing episode.');
+				console.error('Error in action_Episode:', error);
+			}
+		},
+		[show?.id]
+	);
+
 	const handlePlayerReady = useCallback(
 		(player) => {
 			playerRef.current = player;
@@ -213,7 +238,7 @@ const useMediaPlayer = (show, refetchShowData) => {
 				sendTimeReached(show.id, seasonRef.current, episodeRef.current, 0);
 				// If it's a series, automatically go to the next episode
 				if (show.kind === 'series') {
-					actionEpisode('next_episode'); // This will update season/episode and trigger re-render/source change
+					actionEpisode('next'); // This will update season/episode and trigger re-render/source change
 				}
 				// DEBUG : 5
 				console.log('---VIDEO ENDED---');
@@ -324,31 +349,6 @@ const useMediaPlayer = (show, refetchShowData) => {
 						: [],
 		}
 		: {};
-
-	const actionEpisode = useCallback(
-		async (actionName) => {
-			try {
-				const response = await axiosInstance.post(`shows/${show.id}/${actionName}_episode/`, {
-					season: seasonRef.current,
-					episode: episodeRef.current,
-				});
-				if (response.data.changed === false) {
-					setEpisodeChangeMessage(response.data.message);
-				} else {
-					setSeason(response.data.new_season);
-					setEpisode(response.data.new_episode);
-					// Update currentVideoStartTime from the backend response
-					setCurrentVideoStartTime(response.data.starting_time);
-					setEpisodeChangeMessage(null);
-					console.log('action_Episode success:', response.data);
-				}
-			} catch (error) {
-				setEpisodeChangeMessage(error.response?.data || 'Error changing episode.');
-				console.error('Error in action_Episode:', error);
-			}
-		},
-		[show?.id]
-	);
 
 	return {
 		modalOpen,
