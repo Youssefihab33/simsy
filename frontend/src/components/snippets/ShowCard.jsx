@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import axiosInstance from '../APIs/Axios';
 import { IconButton, Tooltip, Box } from '@mui/material';
 import {
@@ -11,7 +11,8 @@ import {
 } from '@mui/icons-material';
 import LoadingSpinner from './LoadingSpinner';
 
-export default function ShowCard({ show }) {
+// Memoized to prevent unnecessary re-renders when switching tabs on the Homepage
+const ShowCard = memo(function ShowCard({ show }) {
 	const navigate = useNavigate();
 	const [inFavorites, setInFavorites] = useState(show.in_favorites);
 	const [inWatchlist, setInWatchlist] = useState(show.in_watchlist);
@@ -74,7 +75,7 @@ export default function ShowCard({ show }) {
 								<span>Sample</span>
 							</div>
 						)}
-						<img className='showCard-image d-block' src={show.image} alt={show.name} />
+						<img className='showCard-image d-block' src={show.image} alt={show.name} loading='lazy' />
 						<div className='showCard-front-textbox'>
 							<div className='showCard-front-text'>{show.name}</div>
 						</div>
@@ -139,4 +140,6 @@ export default function ShowCard({ show }) {
 			</div>
 		</div>
 	);
-}
+});
+
+export default ShowCard;

@@ -66,12 +66,12 @@ class ShowSerializer(serializers.ModelSerializer):
     # Helper function to stay DRY
     def _get_x_reached(self, show, key_type, default_value=0):
         user = self.context.get('request').user
+        if not user or not user.is_authenticated:
+            return default_value
         show_id = str(show.id)
-        # initialization
-        if show_id not in user.reached:
-            user.reached[show_id] = {}
-            user.save()
-        return user.reached[show_id].get(key_type, default_value)
+        # return from memory; initialization in DB should happen on write, not read
+        user_reached = user.reached.get(show_id, {})
+        return user_reached.get(key_type, default_value)
 
     def get_episodes_count(self, show):
         try:
@@ -96,9 +96,15 @@ class ShowSerializer(serializers.ModelSerializer):
         return user.reached.get(str(show.id), {}).get('t', {}).get(str(s), {}).get(str(e), 0)
 
     def get_in_favorites(self, show):
+        # Optimization: Use annotated value if available to avoid N+1 queries
+        if hasattr(show, 'in_favorites_annotated'):
+            return show.in_favorites_annotated
         return get_in_f_or_w(self.context['request'].user, show, 'f')
 
     def get_in_watchlist(self, show):
+        # Optimization: Use annotated value if available to avoid N+1 queries
+        if hasattr(show, 'in_watchlist_annotated'):
+            return show.in_watchlist_annotated
         return get_in_f_or_w(self.context['request'].user, show, 'w')
 
     class Meta:

@@ -11,7 +11,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
-from django.db.models import Case, When, Q
+from django.db.models import Case, When, Q, Exists, OuterRef
 User = get_user_model()
 
 
@@ -56,6 +56,17 @@ class ShowsViewSet(ModelViewSet):
     queryset = Show.objects.all()
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        user = self.request.user
+        queryset = Show.objects.select_related('rating')
+        if user.is_authenticated:
+            # Optimize in_favorites/in_watchlist checks with annotations to avoid N+1 queries during serialization
+            queryset = queryset.annotate(
+                in_favorites_annotated=Exists(Show.objects.filter(favorites=user, pk=OuterRef('pk'))),
+                in_watchlist_annotated=Exists(Show.objects.filter(watchlist=user, pk=OuterRef('pk')))
+            )
+        return queryset
+
     def get_serializer_class(self):
         if self.action == 'retrieve':
             return ShowSerializer
@@ -63,21 +74,21 @@ class ShowsViewSet(ModelViewSet):
 
     @action(detail=False)
     def favorites(self, request):
-        queryset = Show.objects.filter(favorites=request.user)
+        queryset = self.get_queryset().filter(favorites=request.user)
         serializer = ShowLiteSerializer(
             queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
     @action(detail=False)
     def watchlist(self, request):
-        queryset = Show.objects.filter(watchlist=request.user)
+        queryset = self.get_queryset().filter(watchlist=request.user)
         serializer = ShowLiteSerializer(
             queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
     @action(detail=False)
     def new(self, request):
-        queryset = Show.objects.order_by('-updated')[:25]
+        queryset = self.get_queryset().order_by('-updated')[:25]
         serializer = ShowLiteSerializer(
             queryset, context={'request': request}, many=True)
         return Response(serializer.data)
@@ -85,7 +96,7 @@ class ShowsViewSet(ModelViewSet):
     @action(detail=False)
     def history(self, request):
         if not request.user.history:
-            return Show.objects.none()
+            return Response([])
         all_show_timestamps = []
         for date, times in request.user.history.items():
             for time, show_id in times.items():
@@ -107,12 +118,12 @@ class ShowsViewSet(ModelViewSet):
                 break
         # If no shows were found, return an empty queryset
         if not last_shows_ids:
-            return Show.objects.none()
+            return Response([])
         # Fetch the Show objects from the database using the collected IDs.
         # We also use `F('id')` and `last_shows_ids` to preserve the original order.
         preserved = Case(*[When(id=pk, then=pos)
                          for pos, pk in enumerate(last_shows_ids)])
-        queryset = Show.objects.filter(
+        queryset = self.get_queryset().filter(
             id__in=last_shows_ids).order_by(preserved)
         serializer = ShowLiteSerializer(
             queryset, context={'request': request}, many=True)
@@ -120,13 +131,15 @@ class ShowsViewSet(ModelViewSet):
 
     @action(detail=False)
     def random(self, request):
-        all_shows = Show.objects.all()
-        if all_shows.count() > 10:
-            sample = random.sample(list(all_shows), 10)
+        # Optimization: Fetch only IDs first to avoid evaluating all fields of all shows in memory
+        all_pks = list(Show.objects.values_list('pk', flat=True))
+        if len(all_pks) > 10:
+            sample_pks = random.sample(all_pks, 10)
+            queryset = self.get_queryset().filter(pk__in=sample_pks)
         else:
-            sample = all_shows
+            queryset = self.get_queryset()
         serializer = ShowLiteSerializer(
-            sample, context={'request': request}, many=True)
+            queryset, context={'request': request}, many=True)
         return Response(serializer.data)
 
 # ------- Action Views -------

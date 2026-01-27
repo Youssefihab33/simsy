@@ -56,7 +56,7 @@ export default function Actor() {
 			<Grid container className='mb-4'>
 				<Grid item md={4}>
 					<Box md={4} className='d-flex justify-content-center justify-content-md-start mb-4 mb-md-0 mt-5 mt-md-0'>
-						<img src={actor.image} alt={actor.name} className={styles.posterImage + ' mt-0'} style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }} />
+						<img src={actor.image} alt={actor.name} className={styles.posterImage + ' mt-0'} style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }} loading='lazy' />
 					</Box>
 				</Grid>
 				<Grid item md={8}>
@@ -138,7 +138,7 @@ export default function Actor() {
 					</Typography>
 					<List>
 						<div className='d-flex flex-wrap justify-content-center'>
-							{actor.shows.map((show, index) => (
+							{actor.shows.map((show) => (
 								<ShowCard key={show.id} show={show} />
 							))}
 						</div>
