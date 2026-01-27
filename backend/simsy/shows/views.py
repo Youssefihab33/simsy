@@ -5,7 +5,6 @@ from .serializers import ArtistSerializer, LanguageSerializer, CountrySerializer
 
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -176,22 +175,17 @@ class ShowsViewSet(ModelViewSet):
             'in_watchlist': current_status
         }, status=status.HTTP_200_OK)
 
-# ------- Action Views -------
+    @action(detail=True, methods=['post'])
+    def first_episode(self, request, pk=None):
+        show = self.get_object()
+        return changeEpisode(request.user, show.id, 1, 1, True, 'First Episode of the show!')
 
-## Changing Episodes ##
+    @action(detail=True, methods=['post'])
+    def previous_episode(self, request, pk=None):
+        show = self.get_object()
+        current_season = int(request.data.get('season', 1))
+        current_episode = int(request.data.get('episode', 1))
 
-
-class firstEpisode(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, show_id, current_season, current_episode):
-        return changeEpisode(request.user, show_id, 1, 1, True, 'First Episode of the show!')
-
-
-class previousEpisode(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, show_id, current_season, current_episode):
         if current_season == 1 and current_episode == 1:
             message = 'Already the first episode of first season!'
             new_season = new_episode = 1
@@ -199,22 +193,22 @@ class previousEpisode(APIView):
         elif current_season != 1 and current_episode == 1:
             message = 'Back to first episode of previous season.'
             new_season = current_season - 1
-            new_episode = Show.objects.get(
-                id=show_id).episodes[str(new_season)]
+            new_episode = show.episodes[str(new_season)]
             changed = True
         else:
             message = 'Previous episode...'
             new_season = current_season
             new_episode = current_episode - 1
             changed = True
-        return changeEpisode(request.user, show_id, new_season, new_episode, changed, message)
+        return changeEpisode(request.user, show.id, new_season, new_episode, changed, message)
 
+    @action(detail=True, methods=['post'])
+    def next_episode(self, request, pk=None):
+        show = self.get_object()
+        current_season = int(request.data.get('season', 1))
+        current_episode = int(request.data.get('episode', 1))
 
-class nextEpisode(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, show_id, current_season, current_episode):
-        show_episodes = Show.objects.get(id=show_id).episodes
+        show_episodes = show.episodes
         if current_season == len(show_episodes) and current_episode == show_episodes[str(current_season)]:
             message = 'Last episode of last season!'
             new_season = current_season
@@ -230,34 +224,29 @@ class nextEpisode(APIView):
             new_season = current_season
             new_episode = current_episode + 1
             changed = True
-        return changeEpisode(request.user, show_id, new_season, new_episode, changed, message)
+        return changeEpisode(request.user, show.id, new_season, new_episode, changed, message)
 
+    @action(detail=True, methods=['post'])
+    def last_episode(self, request, pk=None):
+        show = self.get_object()
+        show_episodes = show.episodes
+        return changeEpisode(request.user, show.id, len(show_episodes), show_episodes[str(len(show_episodes))], True, 'Last episode of the show!')
 
-class lastEpisode(APIView):
-    permission_classes = [IsAuthenticated]
+    @action(detail=True, methods=['post'])
+    def update_time_reached(self, request, pk=None):
+        show = self.get_object()
+        season = int(request.data.get('season', 1))
+        episode = int(request.data.get('episode', 1))
+        time_reached = int(request.data.get('time_reached', 0))
 
-    def get(self, request, show_id, current_season, current_episode):
-        show_episodes = Show.objects.get(id=show_id).episodes
-        return changeEpisode(request.user, show_id, len(show_episodes), show_episodes[str(len(show_episodes))], True, 'Last episode of the show!')
-
-
-## Updating Time Reached ##
-
-class UpdateTimeReached(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, show_id, season, episode, time_reached):
-        show = Show.objects.get(id=show_id)
-        updateReached(request.user, show_id, show.kind,
+        updateReached(request.user, show.id, show.kind,
                       season, episode, time_reached)
         return Response({
             'message': f'Updated time reached for the {show.kind.title()} \'{show.name}\' Season {season} Episode {episode} to {time_reached}',
             'new_time_reached': time_reached
         }, status=status.HTTP_200_OK)
 
-
-## Toggling Status ##
-
+# ------- Action Views -------
 
 
 def searchView(request, query):

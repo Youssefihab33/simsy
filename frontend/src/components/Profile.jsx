@@ -103,7 +103,7 @@ export default function Profile() {
 
 			// Create a submission object that EXCLUDES profile_picture
 			// This prevents the "submitted data was not a file" error
-			const { profile_picture, ...textData } = data;
+			const { profile_picture: _, ...textData } = data;
 
 			const payload = {
 				...textData,

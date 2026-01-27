@@ -59,7 +59,7 @@ export default function Homepage() {
 	 * Functional updates are used inside setState to keep the function stable (empty dependency array).
 	 * This prevents the infinite "random" refresh loop.
 	 */
-	const fetchData = useCallback(async (tabKey, force = false) => {
+	const fetchData = useCallback(async (tabKey) => {
 		setState((prev) => ({
 			...prev,
 			loading: { ...prev.loading, [tabKey]: true },
