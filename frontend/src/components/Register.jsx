@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { useState, useContext } from 'react';
 import * as yup from 'yup';
@@ -210,7 +210,9 @@ export default function Register() {
 					</Button>
 
 					<Box sx={{ mt: 2 }}>
-						<Link href='/login/'>Already have an account? Log In</Link>
+						<Link component={RouterLink} to='/login/'>
+							Already have an account? Log In
+						</Link>
 					</Box>
 				</form>
 			</Box>

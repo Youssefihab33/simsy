@@ -1,4 +1,4 @@
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { useState, useContext } from 'react';
 import * as yup from 'yup';
@@ -101,10 +101,10 @@ export default function Login() {
 						{isSubmitting ? 'Verifying...' : 'Log In'}
 					</Button>
 					<Box sx={{ mt: 2 }}>
-						<Link href='/forgot-password/' display='block' sx={{ mb: 1 }}>
+						<Link component={RouterLink} to='/forgot-password/' display='block' sx={{ mb: 1 }}>
 							Forgot password?
 						</Link>
-						<Link href='/register/' display='block'>
+						<Link component={RouterLink} to='/register/' display='block'>
 							Create a new Account?
 						</Link>
 					</Box>
