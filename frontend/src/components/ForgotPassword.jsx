@@ -1,8 +1,9 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { useState } from 'react';
 import axiosInstance from './APIs/Axios.jsx';
 import { Container, Grow, Alert, TextField, Button, Link, Box, Grid } from '@mui/material';
+import KeyIcon from '@mui/icons-material/Key';
 
 export default function ForgotPassword() {
 	const [alert, setAlert] = useState(null);
@@ -15,7 +16,10 @@ export default function ForgotPassword() {
 		axiosInstance
 			.post('/password_reset/', { email: data.email })
 			.then(() => {
-				setAlert({ type: 'success', message: 'Check your Email! You should find a password reset link! You will now be redirected to the login page...' });
+				setAlert({
+					type: 'success',
+					message: 'Check your Email! You should find a password reset link! You will now be redirected to the login page...',
+				});
 				// setIsSubmitting(false); Keep this true to prevent multiple SUCCESSFUL submissions
 				setTimeout(() => {
 					navigate('/login/');
@@ -42,7 +46,6 @@ export default function ForgotPassword() {
 							boxSizing: 'border-box',
 						}}
 						onClose={() => setAlert(null)}
-						icon={alert.type === 'info' ? <CheckIcon fontSize='inherit' /> : undefined}
 					>
 						{alert.message}
 					</Alert>
@@ -59,7 +62,8 @@ export default function ForgotPassword() {
 				}}
 			>
 				<h1 className='fw-bold primaryColor my-3'>
-					<i className='bi-key'></i>&nbsp;Forgot Password
+					<KeyIcon sx={{ verticalAlign: 'middle', mr: 1, fontSize: 40 }} />
+					Forgot Password
 				</h1>
 				<form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
 					<Grid container spacing={1}>
@@ -87,13 +91,20 @@ export default function ForgotPassword() {
 							/>
 						</Grid>
 					</Grid>
-					<Button type='submit' fullWidth variant='outlined' sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }} startIcon={<i className='bi-key'></i>} disabled={isSubmitting}>
+					<Button
+						type='submit'
+						fullWidth
+						variant='outlined'
+						sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }}
+						startIcon={<KeyIcon />}
+						disabled={isSubmitting}
+					>
 						Get Reset Link
 					</Button>
-					<Link href='/login/' color='secondary' sx={{ mt: 1, display: 'block' }}>
+					<Link component={RouterLink} to='/login/' color='secondary' sx={{ mt: 1, display: 'block' }}>
 						Did you remember your password?
 					</Link>
-					<Link href='/register/' color='secondary' sx={{ mt: 1, display: 'block' }}>
+					<Link component={RouterLink} to='/register/' color='secondary' sx={{ mt: 1, display: 'block' }}>
 						Create a new Account?
 					</Link>
 				</form>

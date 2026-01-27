@@ -1,18 +1,20 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Col, Card } from 'react-bootstrap';
 import { Typography, Avatar } from '@mui/material';
 
-import styles from '../modules/ShowDetails.module.css'
+import styles from '../modules/ShowDetails.module.css';
 
-export default function ArtistCard({artist}) {
+export default function ArtistCard({ artist }) {
 	const [hoveredArtist, setHoveredArtist] = useState(null);
+	const navigate = useNavigate();
 
 	return (
 		<Col key={artist.id}>
 			<Card
 				className={styles.artistCard}
 				onClick={() => {
-					location.href = `/artist/${artist.id}`;
+					navigate(`/artist/${artist.id}`);
 				}}
 				onMouseEnter={() => setHoveredArtist(artist)}
 				onMouseLeave={() => setHoveredArtist(null)}

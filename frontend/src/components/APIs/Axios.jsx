@@ -1,8 +1,10 @@
 import axios from 'axios';
 
+const backendUrl = import.meta.env?.VITE_BACKEND_URL || '';
+
 const axiosInstance = axios.create({
 	// Ensure the baseURL always has a trailing slash for Django/DRF compatibility
-	baseURL: import.meta.env.VITE_BACKEND_URL.endsWith('/') ? import.meta.env.VITE_BACKEND_URL : `${import.meta.env.VITE_BACKEND_URL}/`,
+	baseURL: backendUrl.endsWith('/') ? backendUrl : `${backendUrl}/`,
 	timeout: 30000,
 	headers: {
 		'Content-Type': 'application/json',
