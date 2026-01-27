@@ -85,10 +85,10 @@ export default function Country() {
 			<Grid container className='mb-4'>
 				<Grid item md={4}>
 					<Box md={4} className='d-flex justify-content-center justify-content-md-start mb-4 mb-md-0 mt-5 mt-md-0'>
-						<img src={Country.flag} alt={Country.name} className={styles.posterImage + ' mt-0'} style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }} />
+						<img src={Country.flag} alt={Country.name} className={styles.posterImage + ' mt-0'} style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }} loading='lazy' />
 					</Box>
 					<Box md={4} className='d-flex justify-content-center justify-content-md-start mt-4'>
-						<img src={Country.image} alt={Country.name} className={styles.posterImage + ' mt-0'} style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }} />
+						<img src={Country.image} alt={Country.name} className={styles.posterImage + ' mt-0'} style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }} loading='lazy' />
 					</Box>
 				</Grid>
 				<Grid item md={8}>

@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Col, Card } from 'react-bootstrap';
 import { Typography, Avatar } from '@mui/material';
 
 import styles from '../modules/ShowDetails.module.css';
 
-export default function ArtistCard({ artist }) {
+const ArtistCard = memo(function ArtistCard({ artist }) {
 	const [hoveredArtist, setHoveredArtist] = useState(null);
 	const navigate = useNavigate();
 
@@ -19,7 +19,7 @@ export default function ArtistCard({ artist }) {
 				onMouseEnter={() => setHoveredArtist(artist)}
 				onMouseLeave={() => setHoveredArtist(null)}
 			>
-				<Avatar src={artist.image} alt={artist.name} className={styles.artistImage} />
+				<Avatar src={artist.image} alt={artist.name} className={styles.artistImage} imgProps={{ loading: 'lazy' }} />
 				<Typography variant='subtitle1' className='fw-bold text-light'>
 					{artist.name}
 				</Typography>
@@ -35,4 +35,6 @@ export default function ArtistCard({ artist }) {
 			</Card>
 		</Col>
 	);
-}
+});
+
+export default ArtistCard;
