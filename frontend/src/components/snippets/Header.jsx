@@ -1,5 +1,5 @@
 import { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Container, Avatar, Button, Tooltip, MenuItem, TextField, InputAdornment } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -43,7 +43,6 @@ const LogoComponent = ({ screen = 'large' }) => {
 
 export default function Header() {
 	const { user, logout } = useContext(UserContext); // Logic Change: Using Context
-	const navigate = useNavigate();
 
 	const [anchorElNav, setAnchorElNav] = useState(null);
 	const [anchorElUser, setAnchorElUser] = useState(null);
@@ -59,7 +58,17 @@ export default function Header() {
 	};
 
 	return (
-		<AppBar position='static' color='primary' elevation={5}>
+		<AppBar
+			position='sticky'
+			sx={{
+				background: 'rgba(10, 10, 10, 0.4)',
+				backdropFilter: 'blur(12px)',
+				borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+				top: 0,
+				zIndex: 1100,
+			}}
+			elevation={0}
+		>
 			<Container maxWidth='xl'>
 				<Toolbar disableGutters>
 					{/* Large Screen Logo */}
@@ -102,21 +111,25 @@ export default function Header() {
 
 					{/* Search Bar (Visible only when logged in) */}
 					{user && (
-						<Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 2}}>
+						<Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 2 }}>
 							<TextField
-								// fullWidth
 								size='small'
 								placeholder='Search...'
 								variant='outlined'
 								sx={{
-									backgroundColor: 'rgba(255, 255, 255, 0.15)',
-									borderRadius: '4px',
-									'& .MuiOutlinedInput-root': { color: 'white' },
+									backgroundColor: 'rgba(255, 255, 255, 0.05)',
+									borderRadius: '12px',
+									'& .MuiOutlinedInput-root': {
+										color: 'white',
+										'& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+										'&:hover fieldset': { borderColor: 'rgba(255,255,255,0.2)' },
+									},
 								}}
 								InputProps={{
+									sx: { borderRadius: '12px' },
 									startAdornment: (
 										<InputAdornment position='start'>
-											<SearchIcon sx={{ color: 'white' }} />
+											<SearchIcon sx={{ color: 'rgba(255,255,255,0.5)' }} />
 										</InputAdornment>
 									),
 								}}

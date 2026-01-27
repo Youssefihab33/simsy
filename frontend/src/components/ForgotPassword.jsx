@@ -4,10 +4,12 @@ import { useState } from 'react';
 import axiosInstance from './APIs/Axios.jsx';
 import { Container, Grow, Alert, TextField, Button, Link, Box, Grid } from '@mui/material';
 import KeyIcon from '@mui/icons-material/Key';
+import AnimatedFace from './snippets/AnimatedFace.jsx';
 
 export default function ForgotPassword() {
 	const [alert, setAlert] = useState(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [faceState, setFaceState] = useState('default');
 	const { handleSubmit, control } = useForm();
 	const navigate = useNavigate();
 	const onSubmit = (data) => {
@@ -35,38 +37,20 @@ export default function ForgotPassword() {
 	return (
 		<Container className='my-5' maxWidth='sm'>
 			{alert && (
-				<Grow in={!!alert} style={{ transitionDelay: '200ms' }}>
-					<Alert
-						severity={alert.type}
-						className='my-3 sticky-alert'
-						sx={{
-							position: 'sticky',
-							top: 75,
-							zIndex: 1000,
-							boxSizing: 'border-box',
-						}}
-						onClose={() => setAlert(null)}
-					>
+				<Grow in={!!alert}>
+					<Alert severity={alert.type} sx={{ mb: 2, borderRadius: '12px' }} onClose={() => setAlert(null)}>
 						{alert.message}
 					</Alert>
 				</Grow>
 			)}
 
-			<Box
-				className='d-flex flex-column glassy align-items-center text-center p-4 px-5'
-				sx={{
-					boxShadow: 3,
-					p: 4,
-					maxWidth: 600,
-					mx: 'auto',
-				}}
-			>
-				<h1 className='fw-bold primaryColor my-3'>
-					<KeyIcon sx={{ verticalAlign: 'middle', mr: 1, fontSize: 40 }} />
+			<Box className='glassy p-5 text-center' sx={{ maxWidth: 600, mx: 'auto' }}>
+				<AnimatedFace state={faceState} />
+				<h1 className='fw-bold mb-4' style={{ color: 'white', letterSpacing: '1px' }}>
 					Forgot Password
 				</h1>
 				<form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
-					<Grid container spacing={1}>
+					<Grid container spacing={3}>
 						<Grid item xs={12}>
 							<Controller
 								name='email'
@@ -79,13 +63,14 @@ export default function ForgotPassword() {
 										variant='outlined'
 										error={!!error}
 										helperText={error ? error.message : ''}
-										margin='normal'
 										required
 										fullWidth
 										autoComplete='email'
 										autoFocus
-										color='tertiary'
 										disabled={isSubmitting}
+										onFocus={() => setFaceState('typing')}
+										onBlur={() => setFaceState('default')}
+										sx={{ '& .MuiOutlinedInput-root': { borderRadius: '12px' } }}
 									/>
 								)}
 							/>
@@ -94,19 +79,27 @@ export default function ForgotPassword() {
 					<Button
 						type='submit'
 						fullWidth
-						variant='outlined'
-						sx={{ mt: 3, mb: 2, py: 1.5, fontSize: '1.1rem' }}
-						startIcon={<KeyIcon />}
+						variant='contained'
+						color='primary'
+						sx={{
+							mt: 4,
+							mb: 2,
+							py: 1.5,
+							borderRadius: '12px',
+							fontSize: '1.1rem',
+							fontWeight: 'bold',
+							textTransform: 'none',
+							boxShadow: '0 4px 12px rgba(154, 6, 6, 0.3)',
+						}}
 						disabled={isSubmitting}
 					>
 						Get Reset Link
 					</Button>
-					<Link component={RouterLink} to='/login/' color='secondary' sx={{ mt: 1, display: 'block' }}>
-						Did you remember your password?
-					</Link>
-					<Link component={RouterLink} to='/register/' color='secondary' sx={{ mt: 1, display: 'block' }}>
-						Create a new Account?
-					</Link>
+					<Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
+						<Link component={RouterLink} to='/login/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
+							Remember your password? <span style={{ color: 'var(--color3)', fontWeight: 'bold' }}>Log In</span>
+						</Link>
+					</Box>
 				</form>
 			</Box>
 		</Container>
