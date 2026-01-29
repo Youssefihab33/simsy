@@ -17,44 +17,6 @@ def get_in_f_or_w(user, show, change_type):
 
 
 # Serializers start here
-class ArtistSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Artist
-        fields = '__all__'
-        depth = 1
-
-
-class LanguageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Language
-        fields = '__all__'
-
-
-class CountrySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Country
-        fields = '__all__'
-        depth = 1
-
-
-class GenreSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Genre
-        fields = '__all__'
-
-
-class RatingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Rating
-        fields = '__all__'
-
-
-class LabelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Label
-        fields = '__all__'
-
-
 class ShowSerializer(serializers.ModelSerializer):
     episodes_count = serializers.SerializerMethodField()
     season_reached = serializers.SerializerMethodField()
@@ -121,5 +83,64 @@ class ShowSerializer(serializers.ModelSerializer):
 class ShowLiteSerializer(ShowSerializer):
     class Meta:
         model = Show
-        exclude = ['artists', 'languages', 'countries',
-                   'genres', 'labels', 'favorites', 'watchlist']
+        exclude = ['artists', 'languages', 'countries', 'genres', 'labels', 'favorites', 'watchlist']
+        depth = 1
+
+
+class CountryLiteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Country
+        fields = ['id', 'name', 'flag', 'image', 'description']
+
+
+class ArtistSerializer(serializers.ModelSerializer):
+    shows = ShowLiteSerializer(many=True, read_only=True)
+    age = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Artist
+        fields = '__all__'
+        depth = 2
+
+
+class LanguageSerializer(serializers.ModelSerializer):
+    shows = ShowLiteSerializer(many=True, read_only=True)
+    countries = CountryLiteSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Language
+        fields = '__all__'
+
+
+class CountrySerializer(serializers.ModelSerializer):
+    shows = ShowLiteSerializer(many=True, read_only=True)
+    artists = ArtistSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Country
+        fields = '__all__'
+        depth = 2
+
+
+class GenreSerializer(serializers.ModelSerializer):
+    shows = ShowLiteSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Genre
+        fields = '__all__'
+
+
+class RatingSerializer(serializers.ModelSerializer):
+    shows = ShowLiteSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Rating
+        fields = '__all__'
+
+
+class LabelSerializer(serializers.ModelSerializer):
+    shows = ShowLiteSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Label
+        fields = '__all__'

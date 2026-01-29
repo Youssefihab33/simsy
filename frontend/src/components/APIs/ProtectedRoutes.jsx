@@ -4,10 +4,10 @@ import { UserContext } from './Context';
 import LoadingSpinner from '../snippets/LoadingSpinner';
 
 const ProtectedRoutes = () => {
-	const { user, isInitialLoading } = useContext(UserContext);
+	const { user, loading } = useContext(UserContext);
 	const location = useLocation();
 
-	if (isInitialLoading) {
+	if (loading) {
 		return <LoadingSpinner />;
 	}
 

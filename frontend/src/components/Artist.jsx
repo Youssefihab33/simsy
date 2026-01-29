@@ -1,150 +1,165 @@
-import { useParams } from 'react-router-dom';
-import { useAsync } from 'react-use';
-import { Card, CardContent, Typography, Chip, List, ListItem, Container, Grid, Box, Alert, Avatar } from '@mui/material';
-import { FlagFill, Globe, CameraVideo, Calendar, InfoCircle } from 'react-bootstrap-icons';
+import React, { useState, useEffect } from 'react';
+import { useParams, Link as RouterLink } from 'react-router-dom';
+import { Container, Row, Col, Card, Badge, Spinner, Alert } from 'react-bootstrap';
+import { Typography, Box, Chip, Avatar, Tooltip } from '@mui/material';
+import {
+	CalendarMonth as CalendarIcon,
+	Flag as FlagIcon,
+	Language as LanguageIcon,
+	Movie as MovieIcon,
+} from '@mui/icons-material';
+
+import axiosInstance from './APIs/Axios.jsx';
+import LoadingSpinner from './snippets/LoadingSpinner.jsx';
+import ShowCard from './snippets/ShowCard.jsx';
 import styles from './modules/ShowDetails.module.css';
-import axiosInstance from './APIs/Axios';
-import LoadingSpinner from './snippets/LoadingSpinner';
-import ShowCard from './snippets/ShowCard';
 
-const useActorData = (artist_id) => {
-	const state = useAsync(async () => {
-		try {
-			const response = await axiosInstance.get(`/artists/${artist_id}/`);
-			return response.data;
-		} catch (error) {
-			return Promise.reject(error);
-		}
-	}, [artist_id]);
-	return state;
-};
-
-export default function Actor() {
+const ArtistDetails = () => {
 	const { artist_id } = useParams();
-	const { loading, error, value: actor } = useActorData(artist_id);
+	const [artist, setArtist] = useState(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(null);
 
-	if (loading) {
-		return <LoadingSpinner />;
-	}
+	useEffect(() => {
+		const fetchArtist = async () => {
+			try {
+				const response = await axiosInstance.get(`artists/${artist_id}/`);
+				setArtist(response.data);
+			} catch (err) {
+				console.error('Error fetching artist details:', err);
+				setError(err);
+			} finally {
+				setLoading(false);
+			}
+		};
+		fetchArtist();
+	}, [artist_id]);
 
-	if (error) {
-		return (
-			<Box p={3}>
-				<Alert severity='error'>Error fetching data: {error.message}</Alert>
-			</Box>
-		);
-	}
+	if (loading) return <LoadingSpinner />;
+	if (error) return <Alert variant='danger' className='mt-5'>Error loading artist details.</Alert>;
+	if (!artist) return <Alert variant='warning' className='mt-5'>Artist not found.</Alert>;
 
-	if (!actor) {
-		return null; // or a "Not Found" message
-	}
+	const accentColor = '#54A9DE'; // Default blue for artists
 
 	return (
-		<Container
-			className='my-4'
-			sx={{
-				p: { xs: 3, sm: 6 },
-				mx: 'auto',
-				color: '#E0E0E0',
-				backgroundColor: 'rgba(255, 255, 255, 0.08)',
-				backdropFilter: 'blur(10px)',
-				borderRadius: '12px',
-				border: '1px solid rgba(255, 255, 255, 0.15)',
-				boxShadow: '0 4px 30px rgba(0, 0, 0, 0.2)',
-			}}
-		>
-			<Grid container className='mb-4'>
-				<Grid item md={4}>
-					<Box className='d-flex justify-content-center justify-content-md-start mb-4 mb-md-0 mt-5 mt-md-0'>
-						<img src={actor.image} alt={actor.name} className={styles.posterImage + ' mt-0'} style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }} loading='lazy' />
-					</Box>
-				</Grid>
-				<Grid item md={8}>
-					<Card
-						className='mb-3'
-						sx={{
-							p: 1,
-							mx: 'auto',
-							color: '#E0E0E0',
-							backgroundColor: 'rgba(255, 255, 255, 0.08)',
-							backdropFilter: 'blur(10px)',
-							borderRadius: '12px',
-							border: '1px solid rgba(255, 255, 255, 0.15)',
-							boxShadow: '0 4px 30px rgba(0, 0, 0, 0.2)',
-						}}
-					>
-						<CardContent>
-                            <Typography className='text-center' color='secondary' variant='h2' component='h1' gutterBottom>
-						{actor.name}
-					</Typography>
-							<Typography color='primary' fontWeight='bold' variant='h6' component='h3' gutterBottom>
-								<InfoCircle className='me-2' />
-								About
+		<div className={styles.showDetailsContainer}>
+			{/* Hero Section */}
+			<div
+				className={styles.heroSection}
+				style={{
+					backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(${artist.image})`,
+				}}
+			>
+				<Container>
+					<Row className='align-items-center'>
+						<Col md={4} className='d-flex justify-content-center justify-content-md-start mb-4 mb-md-0'>
+							<img src={artist.image} alt={artist.name} className={styles.posterImage} loading='lazy' />
+						</Col>
+						<Col md={8}>
+							<Typography variant='h2' component='h1' gutterBottom className='fw-bold' sx={{ color: accentColor }}>
+								{artist.name}
 							</Typography>
-							<Typography variant='body1' paragraph>
-								{actor.description}
+							<Typography variant='h5' component='p' className='text-light mb-4'>
+								{artist.birthYear} ({artist.age} years old)
 							</Typography>
-							<div className='d-flex align-items-center mb-3'>
-								<Calendar size={20} className='me-2' />
-								<Box variant='body2'>
-									<Typography fontWeight='bold'>
+							<Box className='d-flex flex-wrap gap-2'>
+								<Chip
+									label={artist.nationality.name}
+									variant='outlined'
+									component={RouterLink}
+									to={`/country/${artist.nationality.id}`}
+									avatar={<Avatar alt={artist.nationality.name} src={artist.nationality.flag} />}
+									sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)', cursor: 'pointer' }}
+									clickable
+								/>
+							</Box>
+						</Col>
+					</Row>
+				</Container>
+			</div>
+
+			{/* Main Content */}
+			<Container className='my-5'>
+				<Row>
+					<Col md={8}>
+						{/* About */}
+						<div className='mb-5'>
+							<Typography variant='h4' component='h2' gutterBottom className='fw-bold text-light'>
+								About {artist.name}
+							</Typography>
+							<Typography variant='body1' paragraph className='text-light'>
+								{artist.description || 'No description available.'}
+							</Typography>
+						</div>
+
+						{/* Details */}
+						<div className='mb-5'>
+							<Typography variant='h5' component='h3' gutterBottom className='fw-bold text-light'>
+								Details
+							</Typography>
+							<Row className='text-light'>
+								<Col md={6} className='mb-3'>
+									<Typography variant='subtitle1' sx={{ color: accentColor }}>
 										Born:
 									</Typography>
-									{actor.birthYear} ({actor.age} Years old!)
-								</Box>
-							</div>
-							<div className='d-flex align-items-center mb-2'>
-								<FlagFill size={20} className='me-2' />
-								<Box variant='body2'>
-									Nationality:
+									<Typography variant='body1'>{artist.birthYear}</Typography>
+								</Col>
+								<Col md={6} className='mb-3'>
+									<Typography variant='subtitle1' sx={{ color: accentColor }}>
+										Age:
+									</Typography>
+									<Typography variant='body1'>{artist.age} years old</Typography>
+								</Col>
+								<Col md={6} className='mb-3'>
+									<Typography variant='subtitle1' sx={{ color: accentColor }}>
+										Nationality:
+									</Typography>
+									<Typography variant='body1'>{artist.nationality.name}</Typography>
+								</Col>
+							</Row>
+						</div>
+
+						{/* Languages (via Nationality) */}
+						<div className='mb-5'>
+							<Typography variant='h5' component='h3' gutterBottom className='fw-bold' sx={{ color: accentColor }}>
+								Languages
+							</Typography>
+							<div className='d-flex flex-wrap gap-2'>
+								{artist.nationality.languages.map((lang) => (
 									<Chip
-										avatar={<Avatar alt={actor.nationality.name} src={actor.nationality.flag} />}
-										label={actor.nationality.name}
+										key={lang.id}
+										label={lang.name}
 										variant='outlined'
-										component='a'
-										href={`/country/${actor.nationality.id}`}
-										className='ms-2 text-light'
+										component={RouterLink}
+										to={`/language/${lang.id}`}
+										avatar={<Avatar alt={lang.name} src={lang.image} />}
+										sx={{ color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)', cursor: 'pointer' }}
 										clickable
 									/>
-								</Box>
+								))}
 							</div>
-							<div className='d-flex align-items-center mb-2'>
-								<Globe size={20} className='me-2' />
-								<Box variant='body2'>
-									Languages:
-									{actor.nationality.languages.map((lang, index) => (
-										<Chip
-											key={index}
-											avatar={<Avatar alt={lang.name} src={lang.image} />}
-											label={lang.name}
-											variant='outlined'
-											component='a'
-											href={`/language/${lang.id}`}
-											className='ms-2 text-light'
-											clickable
-										/>
-									))}
-								</Box>
-							</div>
-						</CardContent>
-					</Card>
-				</Grid>
-			</Grid>
-			<Grid container>
-				<Grid item>
-					<Typography color='primary' fontWeight='bold' variant='h4' component='h2' className='mb-3'>
-						<CameraVideo className='me-2' />
-						Filmography
-					</Typography>
-					<List>
-						<div className='d-flex flex-wrap justify-content-center'>
-							{actor.shows.map((show) => (
-								<ShowCard key={show.id} show={show} />
-							))}
 						</div>
-					</List>
-				</Grid>
-			</Grid>
-		</Container>
+					</Col>
+
+					{/* Filmography Section */}
+					<Col md={4}>
+						<div className='overflow-visible mb-5'>
+							<Typography variant='h4' component='h2' gutterBottom className='fw-bold text-light'>
+								Filmography
+							</Typography>
+							<div className={styles.castContainer}>
+								<Row xs={2} className='g-2'>
+									{artist.shows.map((show) => (
+										<ShowCard key={show.id} show={show} />
+									))}
+								</Row>
+							</div>
+						</div>
+					</Col>
+				</Row>
+			</Container>
+		</div>
 	);
-}
+};
+
+export default ArtistDetails;
