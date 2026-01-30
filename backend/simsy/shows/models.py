@@ -122,7 +122,7 @@ class Show(models.Model):
         Language, related_name='shows', blank=True)
     genres = models.ManyToManyField(Genre, related_name='shows', blank=True)
     labels = models.ManyToManyField(Label, related_name='shows', blank=True)
-    rating = models.ForeignKey('Rating', on_delete=models.CASCADE, default='')
+    rating = models.ForeignKey('Rating', on_delete=models.CASCADE, default='', related_name='shows')
     artists = models.ManyToManyField(Artist, related_name='shows', blank=True)
 
     episodes = models.JSONField(

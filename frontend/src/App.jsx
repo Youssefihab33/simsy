@@ -15,6 +15,10 @@ import LoadingSpinner from './components/snippets/LoadingSpinner';
 const Homepage = lazy(() => import('./components/Homepage'));
 const Artist = lazy(() => import('./components/Artist'));
 const Country = lazy(() => import('./components/Country'));
+const Language = lazy(() => import('./components/Language'));
+const Genre = lazy(() => import('./components/Genre'));
+const Rating = lazy(() => import('./components/Rating'));
+const Label = lazy(() => import('./components/Label'));
 const Show = lazy(() => import('./components/Show'));
 const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/ResetPassword'));
@@ -67,6 +71,10 @@ export default function App() {
 							<Route path='/' element={<Homepage />} />
 							<Route path='/artist/:artist_id' element={<Artist />} />
 							<Route path='/country/:country_id' element={<Country />} />
+							<Route path='/language/:language_id' element={<Language />} />
+							<Route path='/genre/:genre_id' element={<Genre />} />
+							<Route path='/rating/:rating_id' element={<Rating />} />
+							<Route path='/label/:label_id' element={<Label />} />
 							<Route path='/show/:show_id' element={<Show />} />
 							<Route path='/profile' element={<Profile />} />
 						</Route>
