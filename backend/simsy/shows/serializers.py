@@ -144,3 +144,21 @@ class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label
         fields = '__all__'
+
+
+class SearchResultSerializer(serializers.Serializer):
+    result_type = serializers.CharField()
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    image = serializers.CharField(allow_null=True)
+    description = serializers.CharField(allow_blank=True, allow_null=True)
+
+    # Specific fields for Shows
+    kind = serializers.CharField(required=False)
+    year = serializers.CharField(required=False)
+    rating = serializers.CharField(required=False)
+
+    # Specific fields for Artists/Users
+    birthYear = serializers.IntegerField(required=False)
+    age = serializers.IntegerField(required=False)
+    nationality = serializers.CharField(required=False)

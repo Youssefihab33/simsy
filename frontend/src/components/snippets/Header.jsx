@@ -1,12 +1,14 @@
-import { useState, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useContext, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Container, Avatar, Button, Tooltip, MenuItem, TextField, InputAdornment } from '@mui/material';
+import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Container, Avatar, Button, Tooltip, MenuItem, TextField, InputAdornment, Popper, Paper, List, ListItem, ListItemText, CircularProgress, ClickAwayListener } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import VideoStableIcon from '@mui/icons-material/VideoStable';
 
 import { UserContext } from '../APIs/Context';
+import axiosInstance from '../APIs/Axios';
+import SearchHorizontalCard from './SearchHorizontalCard';
 
 const pages = [
 	{ name: 'Home', path: '/' },
@@ -42,10 +44,19 @@ const LogoComponent = ({ screen = 'large' }) => {
 };
 
 export default function Header() {
-	const { user, logout } = useContext(UserContext); // Logic Change: Using Context
+	const { user, logout } = useContext(UserContext);
+	const navigate = useNavigate();
 
 	const [anchorElNav, setAnchorElNav] = useState(null);
 	const [anchorElUser, setAnchorElUser] = useState(null);
+
+	// Search states
+	const [searchQuery, setSearchQuery] = useState('');
+	const [searchResults, setSearchResults] = useState([]);
+	const [loadingSearch, setLoadingSearch] = useState(false);
+	const [showResults, setShowResults] = useState(false);
+	const searchRef = useRef(null);
+	const mobileSearchRef = useRef(null);
 
 	const handleOpenNavMenu = (event) => setAnchorElNav(event.currentTarget);
 	const handleOpenUserMenu = (event) => setAnchorElUser(event.currentTarget);
@@ -55,6 +66,47 @@ export default function Header() {
 	const handleLogout = () => {
 		handleCloseUserMenu();
 		logout();
+	};
+
+	// Debounced search logic
+	useEffect(() => {
+		if (!searchQuery.trim()) {
+			setSearchResults([]);
+			setShowResults(false);
+			return;
+		}
+
+		const delayDebounceFn = setTimeout(async () => {
+			setLoadingSearch(true);
+			setShowResults(true);
+			try {
+				const response = await axiosInstance.get(`api/search/${searchQuery}/`);
+				setSearchResults(response.data.results || []);
+			} catch (error) {
+				console.error('Search error:', error);
+				setSearchResults([]);
+			} finally {
+				setLoadingSearch(false);
+			}
+		}, 500);
+
+		return () => clearTimeout(delayDebounceFn);
+	}, [searchQuery]);
+
+	const handleResultClick = (result) => {
+		setSearchQuery('');
+		setShowResults(false);
+		const pathMap = {
+			show: `/show/${result.id}`,
+			artist: `/artist/${result.id}`,
+			country: `/country/${result.id}`,
+			language: `/language/${result.id}`,
+			genre: `/genre/${result.id}`,
+			label: `/label/${result.id}`,
+			rating: `/rating/${result.id}`,
+			user: `/profile`, // Assuming we go to profile for users
+		};
+		navigate(pathMap[result.result_type] || '/');
 	};
 
 	return (
@@ -111,14 +163,20 @@ export default function Header() {
 
 					{/* Search Bar (Visible only when logged in) */}
 					{user && (
-						<Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 2 }}>
+						<Box sx={{ display: { xs: 'none', md: 'flex' }, mr: 2, position: 'relative' }} ref={searchRef}>
 							<TextField
 								size='small'
 								placeholder='Search...'
 								variant='outlined'
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								onFocus={() => searchQuery && setShowResults(true)}
 								sx={{
 									backgroundColor: 'rgba(255, 255, 255, 0.05)',
 									borderRadius: '12px',
+									width: '250px',
+									transition: 'width 0.3s',
+									'&:focus-within': { width: '350px' },
 									'& .MuiOutlinedInput-root': {
 										color: 'white',
 										'& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
@@ -132,8 +190,48 @@ export default function Header() {
 											<SearchIcon sx={{ color: 'rgba(255,255,255,0.5)' }} />
 										</InputAdornment>
 									),
+									endAdornment: loadingSearch && (
+										<InputAdornment position='end'>
+											<CircularProgress size={20} color='inherit' />
+										</InputAdornment>
+									),
 								}}
 							/>
+
+							<Popper open={showResults} anchorEl={searchRef.current} placement='bottom-start' sx={{ zIndex: 1300, width: '400px', mt: 1 }}>
+								<ClickAwayListener onClickAway={() => setShowResults(false)}>
+									<Paper
+										sx={{
+											background: 'rgba(15, 15, 15, 0.95)',
+											backdropFilter: 'blur(20px)',
+											border: '1px solid rgba(255, 255, 255, 0.1)',
+											borderRadius: '16px',
+											maxHeight: '450px',
+											overflow: 'auto',
+											boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+											p: 1,
+										}}
+									>
+										<List sx={{ p: 0 }}>
+											{searchResults.length > 0 ? (
+												searchResults.map((result, index) => (
+													<SearchHorizontalCard
+														key={`${result.result_type}-${result.id}-${index}`}
+														result={result}
+														onClick={handleResultClick}
+													/>
+												))
+											) : (
+												!loadingSearch && (
+													<ListItem>
+														<ListItemText primary='No results found' sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center' }} />
+													</ListItem>
+												)
+											)}
+										</List>
+									</Paper>
+								</ClickAwayListener>
+							</Popper>
 						</Box>
 					)}
 
@@ -178,16 +276,23 @@ export default function Header() {
 
 				{/* Mobile Search Bar */}
 				{user && (
-					<Box sx={{ display: { xs: 'flex', md: 'none' }, pb: 2 }}>
+					<Box sx={{ display: { xs: 'flex', md: 'none' }, pb: 2, position: 'relative' }} ref={mobileSearchRef}>
 						<TextField
 							fullWidth
 							size='small'
 							placeholder='Search...'
 							variant='outlined'
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+							onFocus={() => searchQuery && setShowResults(true)}
 							sx={{
 								backgroundColor: 'rgba(255, 255, 255, 0.15)',
-								borderRadius: '4px',
-								'& .MuiOutlinedInput-root': { color: 'white' },
+								borderRadius: '12px',
+								'& .MuiOutlinedInput-root': {
+									color: 'white',
+									borderRadius: '12px',
+									'& fieldset': { borderColor: 'rgba(255,255,255,0.1)' },
+								},
 							}}
 							InputProps={{
 								startAdornment: (
@@ -195,8 +300,48 @@ export default function Header() {
 										<SearchIcon sx={{ color: 'white' }} />
 									</InputAdornment>
 								),
+								endAdornment: loadingSearch && (
+									<InputAdornment position='end'>
+										<CircularProgress size={20} color='inherit' />
+									</InputAdornment>
+								),
 							}}
 						/>
+						{/* Mobile results popup */}
+						<Popper open={showResults} anchorEl={mobileSearchRef.current} placement='bottom' sx={{ zIndex: 1300, width: 'calc(100vw - 32px)', mt: 1 }}>
+							<ClickAwayListener onClickAway={() => setShowResults(false)}>
+								<Paper
+									sx={{
+										background: 'rgba(15, 15, 15, 0.98)',
+										backdropFilter: 'blur(20px)',
+										border: '1px solid rgba(255, 255, 255, 0.1)',
+										borderRadius: '16px',
+										maxHeight: '60vh',
+										overflow: 'auto',
+										boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+										p: 1,
+									}}
+								>
+									<List sx={{ p: 0 }}>
+										{searchResults.length > 0 ? (
+											searchResults.map((result, index) => (
+												<SearchHorizontalCard
+													key={`${result.result_type}-${result.id}-${index}`}
+													result={result}
+													onClick={handleResultClick}
+												/>
+											))
+										) : (
+											!loadingSearch && (
+												<ListItem>
+													<ListItemText primary='No results found' sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center' }} />
+												</ListItem>
+											)
+										)}
+									</List>
+								</Paper>
+							</ClickAwayListener>
+						</Popper>
 					</Box>
 				)}
 			</Container>

@@ -1,10 +1,11 @@
 import random
 from .imports import updateReached, changeEpisode
 from .models import Artist, Language, Country, Genre, Rating, Label, Show
-from .serializers import ArtistSerializer, LanguageSerializer, CountrySerializer, GenreSerializer, RatingSerializer, LabelSerializer, ShowSerializer, ShowLiteSerializer
+from .serializers import ArtistSerializer, LanguageSerializer, CountrySerializer, GenreSerializer, RatingSerializer, LabelSerializer, ShowSerializer, ShowLiteSerializer, SearchResultSerializer
 
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -249,6 +250,8 @@ class ShowsViewSet(ModelViewSet):
 # ------- Action Views -------
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def searchView(request, query):
     if query:
         results = []
@@ -257,7 +260,7 @@ def searchView(request, query):
                 'result_type': 'country',
                 'id': country.id,
                 'name': country.name,
-                # 'image': country.flag if country.flag else None,
+                'image': country.flag.url if country.flag else (country.image.url if country.image else None),
                 'description': country.description[:100] + '...' if len(country.description) > 100 else country.description
             })
         for language in Language.objects.filter(name__icontains=query):
@@ -265,6 +268,7 @@ def searchView(request, query):
                 'result_type': 'language',
                 'id': language.id,
                 'name': language.name,
+                'image': language.image.url if language.image else None,
                 'description': language.description[:100] + '...' if len(language.description) > 100 else language.description
             })
         for genre in Genre.objects.filter(name__icontains=query):
@@ -272,6 +276,7 @@ def searchView(request, query):
                 'result_type': 'genre',
                 'id': genre.id,
                 'name': genre.name,
+                'image': genre.image.url if genre.image else None,
                 'description': genre.description[:100] + '...' if len(genre.description) > 100 else genre.description
             })
         for label in Label.objects.filter(name__icontains=query):
@@ -279,31 +284,50 @@ def searchView(request, query):
                 'result_type': 'label',
                 'id': label.id,
                 'name': label.name,
+                'image': label.image.url if label.image else None,
                 'description': label.description[:100] + '...' if len(label.description) > 100 else label.description
             })
-        for user in User.objects.filter(username__icontains=query):
+        for rating in Rating.objects.filter(name__icontains=query):
+            results.append({
+                'result_type': 'rating',
+                'id': rating.id,
+                'name': rating.name,
+                'image': rating.image.url if rating.image else None,
+                'description': rating.description[:100] + '...' if len(rating.description) > 100 else rating.description
+            })
+        for user in User.objects.filter(username__icontains=query).select_related('nationality'):
             results.append({
                 'result_type': 'user',
                 'id': user.id,
                 'name': user.username,
-                'description': user.email if user.email else 'No email provided'
+                'image': user.profile_picture.url if user.profile_picture else None,
+                'description': user.bio[:100] + '...' if user.bio and len(user.bio) > 100 else (user.bio or 'No bio provided'),
+                'nationality': user.nationality.name if user.nationality else None
             })
-        for show in Show.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)):
+        for show in Show.objects.filter(Q(name__icontains=query) | Q(description__icontains=query)).select_related('rating'):
             results.append({
                 'result_type': 'show',
                 'kind': show.kind,
                 'id': show.id,
                 'name': show.name,
-                'description': show.description[:100] + '...' if len(show.description) > 100 else show.description
+                'image': show.image.url if show.image else None,
+                'description': show.description[:100] + '...' if len(show.description) > 100 else show.description,
+                'year': show.year,
+                'rating': show.rating.name if show.rating else None
             })
-        for artist in Artist.objects.filter(name__icontains=query):
+        for artist in Artist.objects.filter(name__icontains=query).select_related('nationality'):
             results.append({
                 'result_type': 'artist',
                 'id': artist.id,
                 'name': artist.name,
-                'description': artist.description[:100] + '...' if len(artist.description) > 100 else artist.description
+                'image': artist.image.url if artist.image else None,
+                'description': artist.description[:100] + '...' if len(artist.description) > 100 else artist.description,
+                'birthYear': artist.birthYear,
+                'age': artist.age,
+                'nationality': artist.nationality.name if artist.nationality else None
             })
 
-        return JsonResponse({'message': 'Search Complete', 'query': query, 'results': results}, status=200)
+        serializer = SearchResultSerializer(results, many=True)
+        return Response({'message': 'Search Complete', 'query': query, 'results': serializer.data}, status=status.HTTP_200_OK)
     else:
-        return JsonResponse({'message': 'No search query provided'}, status=400)
+        return Response({'message': 'No search query provided'}, status=status.HTTP_400_BAD_REQUEST)

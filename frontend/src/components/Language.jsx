@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
-import { Container, Row, Col, Card, Badge, Spinner, Alert } from 'react-bootstrap';
-import { Typography, Box, Chip, Avatar, Tooltip } from '@mui/material';
+import { Typography, Box, Chip, Avatar, Tooltip, Container, Grid, Alert } from '@mui/material';
 import {
 	Language as LanguageIcon,
 	Flag as FlagIcon,
@@ -11,7 +10,6 @@ import {
 
 import axiosInstance from './APIs/Axios.jsx';
 import LoadingSpinner from './snippets/LoadingSpinner.jsx';
-import ArtistCard from './snippets/ArtistCard.jsx';
 import ShowCard from './snippets/ShowCard.jsx';
 import CountryCard from './snippets/CountryCard.jsx';
 import styles from './modules/ShowDetails.module.css';
@@ -38,82 +36,82 @@ const LanguageDetails = () => {
 	}, [language_id]);
 
 	if (loading) return <LoadingSpinner />;
-	if (error) return <Alert variant='danger' className='mt-5'>Error loading language details.</Alert>;
-	if (!language) return <Alert variant='warning' className='mt-5'>Language not found.</Alert>;
+	if (error) return <Container sx={{ mt: 5 }}><Alert severity='error'>Error loading language details.</Alert></Container>;
+	if (!language) return <Container sx={{ mt: 5 }}><Alert severity='warning'>Language not found.</Alert></Container>;
 
 	const accentColor = '#5DD95D'; // Green
 
 	return (
-		<div className={styles.showDetailsContainer}>
+		<Box className={styles.showDetailsContainer}>
 			{/* Hero Section */}
-			<div
+			<Box
 				className={styles.heroSection}
-				style={{
+				sx={{
 					backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(${language.image})`,
 				}}
 			>
 				<Container>
-					<Row className='align-items-center'>
-						<Col md={4} className='d-flex justify-content-center justify-content-md-start mb-4 mb-md-0'>
+					<Grid container alignItems='center'>
+						<Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' }, mb: { xs: 4, md: 0 } }}>
 							<img src={language.image} alt={language.name} className={styles.posterImage} loading='lazy' />
-						</Col>
-						<Col md={8}>
-							<Typography variant='h2' component='h1' gutterBottom className='fw-bold' sx={{ color: accentColor }}>
+						</Grid>
+						<Grid item xs={12} md={8}>
+							<Typography variant='h2' component='h1' gutterBottom sx={{ fontWeight: 'bold', color: accentColor }}>
 								{language.name}
 							</Typography>
-							<Typography variant='h5' component='p' className='text-light mb-4'>
+							<Typography variant='h5' component='p' sx={{ color: 'white', mb: 4 }}>
 								Explore content in {language.name}
 							</Typography>
-						</Col>
-					</Row>
+						</Grid>
+					</Grid>
 				</Container>
-			</div>
+			</Box>
 
 			{/* Main Content */}
-			<Container className='my-5'>
-				<Row>
-					<Col md={8}>
+			<Container sx={{ my: 5 }}>
+				<Grid container spacing={4}>
+					<Grid item xs={12} md={8}>
 						{/* About */}
-						<div className='mb-5'>
-							<Typography variant='h4' component='h2' gutterBottom className='fw-bold text-light'>
+						<Box sx={{ mb: 5 }}>
+							<Typography variant='h4' component='h2' gutterBottom sx={{ fontWeight: 'bold', color: 'white' }}>
 								About {language.name}
 							</Typography>
-							<Typography variant='body1' paragraph className='text-light'>
+							<Typography variant='body1' paragraph sx={{ color: 'white' }}>
 								{language.description || `Discover shows and movies in ${language.name}.`}
 							</Typography>
-						</div>
+						</Box>
 
 						{/* Countries where spoken */}
-						<div className='mb-5'>
-							<Typography variant='h5' component='h3' gutterBottom className='fw-bold text-light'>
+						<Box sx={{ mb: 5 }}>
+							<Typography variant='h5' component='h3' gutterBottom sx={{ fontWeight: 'bold', color: 'white' }}>
 								Countries where spoken
 							</Typography>
-							<Row xs={2} sm={3} md={4} className='g-2'>
+							<Grid container spacing={1}>
 								{language.countries.map((country) => (
-									<Col key={country.id}>
+									<Grid item xs={6} sm={4} md={3} key={country.id}>
 										<CountryCard country={country} />
-									</Col>
+									</Grid>
 								))}
-							</Row>
-						</div>
+							</Grid>
+						</Box>
 
 						{/* Filmography Section */}
-						<div className='mb-5'>
-							<Typography variant='h4' component='h2' gutterBottom className='fw-bold text-light'>
+						<Box sx={{ mb: 5 }}>
+							<Typography variant='h4' component='h2' gutterBottom sx={{ fontWeight: 'bold', color: 'white' }}>
 								Shows in {language.name}
 							</Typography>
-							<Row xs={2} sm={3} md={4} className='g-3'>
+							<Grid container spacing={2}>
 								{language.shows.map((show) => (
-									<Col key={show.id}>
+									<Grid item xs={6} sm={4} md={3} key={show.id}>
 										<ShowCard show={show} />
-									</Col>
+									</Grid>
 								))}
-							</Row>
-						</div>
-					</Col>
-				</Row>
+							</Grid>
+						</Box>
+					</Grid>
+				</Grid>
 			</Container>
-		</div>
+		</Box>
 	);
 };
 
