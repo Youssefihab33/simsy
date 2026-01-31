@@ -1,7 +1,7 @@
 import { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Container, Avatar, Button, Tooltip, MenuItem, TextField, InputAdornment, Popper, Paper, List, ListItem, ListItemText, CircularProgress, ClickAwayListener } from '@mui/material';
+import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Container, Avatar, Button, Tooltip, MenuItem, TextField, InputAdornment, Popper, Paper, List, ListItem, ListItemText, CircularProgress, ClickAwayListener, useMediaQuery, useTheme } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import VideoStableIcon from '@mui/icons-material/VideoStable';
@@ -46,6 +46,8 @@ const LogoComponent = ({ screen = 'large' }) => {
 export default function Header() {
 	const { user, logout } = useContext(UserContext);
 	const navigate = useNavigate();
+	const theme = useTheme();
+	const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
 	const [anchorElNav, setAnchorElNav] = useState(null);
 	const [anchorElUser, setAnchorElUser] = useState(null);
@@ -198,7 +200,7 @@ export default function Header() {
 								}}
 							/>
 
-							<Popper open={showResults} anchorEl={searchRef.current} placement='bottom-start' sx={{ zIndex: 1300, width: '400px', mt: 1 }}>
+							<Popper open={showResults && !isMobile} anchorEl={searchRef.current} placement='bottom-start' sx={{ zIndex: 1300, width: '45vw', maxWidth: '600px', mt: 1 }}>
 								<ClickAwayListener onClickAway={() => setShowResults(false)}>
 									<Paper
 										sx={{
@@ -308,7 +310,7 @@ export default function Header() {
 							}}
 						/>
 						{/* Mobile results popup */}
-						<Popper open={showResults} anchorEl={mobileSearchRef.current} placement='bottom' sx={{ zIndex: 1300, width: 'calc(100vw - 32px)', mt: 1 }}>
+						<Popper open={showResults && isMobile} anchorEl={mobileSearchRef.current} placement='bottom' sx={{ zIndex: 1300, width: 'calc(100vw - 32px)', mt: 1 }}>
 							<ClickAwayListener onClickAway={() => setShowResults(false)}>
 								<Paper
 									sx={{
