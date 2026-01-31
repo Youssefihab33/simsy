@@ -2,6 +2,8 @@ import { memo } from 'react';
 import { Typography, Box, Avatar } from '@mui/material';
 import styles from '../modules/HorizontalCard.module.css';
 
+const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
+
 /**
  * A horizontal card component for search results.
  * @param {Object} props
@@ -9,6 +11,13 @@ import styles from '../modules/HorizontalCard.module.css';
  * @param {Function} props.onClick - Click handler for the card.
  */
 const SearchHorizontalCard = memo(function SearchHorizontalCard({ result, onClick }) {
+	const getImageUrl = (url) => {
+		if (!url) return null;
+		if (url.startsWith('http')) return url;
+		const base = backendUrl.endsWith('/') ? backendUrl.slice(0, -1) : backendUrl;
+		return `${base}${url}`;
+	};
+
 	const getMeta = () => {
 		switch (result.result_type) {
 			case 'show':
@@ -35,7 +44,7 @@ const SearchHorizontalCard = memo(function SearchHorizontalCard({ result, onClic
 		<Box className={styles.horizontalCard} onClick={() => onClick(result)}>
 			<Box className={styles.imageContainer}>
 				<Avatar
-					src={result.image}
+					src={getImageUrl(result.image)}
 					alt={result.name}
 					variant={result.result_type === 'show' ? 'rounded' : 'circular'}
 					sx={{
