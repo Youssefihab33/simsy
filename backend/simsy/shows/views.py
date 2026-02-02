@@ -62,8 +62,10 @@ class ShowsViewSet(ModelViewSet):
         if user.is_authenticated:
             # Optimize in_favorites/in_watchlist checks with annotations to avoid N+1 queries during serialization
             queryset = queryset.annotate(
-                in_favorites_annotated=Exists(Show.objects.filter(favorites=user, pk=OuterRef('pk'))),
-                in_watchlist_annotated=Exists(Show.objects.filter(watchlist=user, pk=OuterRef('pk')))
+                in_favorites_annotated=Exists(
+                    Show.objects.filter(favorites=user, pk=OuterRef('pk'))),
+                in_watchlist_annotated=Exists(
+                    Show.objects.filter(watchlist=user, pk=OuterRef('pk')))
             )
         return queryset
 
@@ -327,6 +329,8 @@ def searchView(request, query):
                 'nationality': artist.nationality.name if artist.nationality else None
             })
 
+        if len(results) > 50:
+            return Response({'message': 'Be More Specific', 'query': [], 'results': []}, status=status.HTTP_300_MULTIPLE_CHOICES)
         serializer = SearchResultSerializer(results, many=True)
         return Response({'message': 'Search Complete', 'query': query, 'results': serializer.data}, status=status.HTTP_200_OK)
     else:

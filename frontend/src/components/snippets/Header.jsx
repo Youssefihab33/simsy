@@ -8,7 +8,7 @@ import VideoStableIcon from '@mui/icons-material/VideoStable';
 
 import { UserContext } from '../APIs/Context';
 import axiosInstance from '../APIs/Axios';
-import SearchHorizontalCard from './SearchHorizontalCard';
+import SearchHorizontalCard from './cards/SearchHorizontalCard';
 
 const pages = [
 	{ name: 'Home', path: '/' },
@@ -282,7 +282,7 @@ export default function Header() {
 						<TextField
 							fullWidth
 							size='small'
-							placeholder='Search...'
+							placeholder='Find anything...'
 							variant='outlined'
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Typography, Box, Container, Grid, Alert } from '@mui/material';
 import axiosInstance from './APIs/Axios.jsx';
 import LoadingSpinner from './snippets/LoadingSpinner.jsx';
-import ShowCard from './snippets/ShowCard.jsx';
+import ShowCard from './snippets/cards/ShowCard.jsx';
 import styles from './modules/ShowDetails.module.css';
 
 const RatingDetails = () => {

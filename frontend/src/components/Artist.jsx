@@ -8,9 +8,9 @@ import {
 	Movie as MovieIcon,
 } from '@mui/icons-material';
 
-import axiosInstance from './APIs/Axios.jsx';
-import LoadingSpinner from './snippets/LoadingSpinner.jsx';
-import ShowCard from './snippets/ShowCard.jsx';
+import axiosInstance from './APIs/Axios';
+import LoadingSpinner from './snippets/LoadingSpinner';
+import ShowCard from './snippets/cards/ShowCard';
 import styles from './modules/ShowDetails.module.css';
 
 const ArtistDetails = () => {

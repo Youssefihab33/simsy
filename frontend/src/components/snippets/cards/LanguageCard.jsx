@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Box } from '@mui/material';
-import styles from '../modules/SmallCard.module.css';
+import styles from '../../modules/SmallCard.module.css';
 
 const LanguageCard = memo(function LanguageCard({ language }) {
 	const navigate = useNavigate();

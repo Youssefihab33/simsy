@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback, memo } from 'react';
-import axiosInstance from '../APIs/Axios';
+import axiosInstance from '../../APIs/Axios';
 import { IconButton, Tooltip, Box } from '@mui/material';
 import {
 	Star as StarIcon,
@@ -9,7 +9,7 @@ import {
 	BookmarkBorder as BookmarkBorderIcon,
 	Info as InfoIcon,
 } from '@mui/icons-material';
-import LoadingSpinner from './LoadingSpinner';
+import LoadingSpinner from '../LoadingSpinner';
 
 // Memoized to prevent unnecessary re-renders when switching tabs on the Homepage
 const ShowCard = memo(function ShowCard({ show }) {

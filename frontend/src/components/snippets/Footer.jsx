@@ -4,16 +4,13 @@ import { Box, Container, Grid, Typography, Link, IconButton, Divider, Stack } fr
 import {
 	GitHub,
 	Twitter,
-	LinkedIn,
 	Instagram,
 	Favorite,
 	Person,
 	History,
 	Cake,
 	Email,
-	Info,
 	Security,
-	Description,
 } from '@mui/icons-material';
 import { UserContext } from '../APIs/Context';
 

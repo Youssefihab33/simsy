@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Typography, Box, Container, Grid, Alert } from '@mui/material';
-import axiosInstance from './APIs/Axios.jsx';
-import LoadingSpinner from './snippets/LoadingSpinner.jsx';
-import ShowCard from './snippets/ShowCard.jsx';
+import axiosInstance from './APIs/Axios';
+import LoadingSpinner from './snippets/LoadingSpinner';
+import ShowCard from './snippets/cards/ShowCard';
 import styles from './modules/ShowDetails.module.css';
 
 const GenreDetails = () => {

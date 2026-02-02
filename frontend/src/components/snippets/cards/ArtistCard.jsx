@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Col, Card } from 'react-bootstrap';
 import { Typography, Avatar } from '@mui/material';
 
-import styles from '../modules/ShowDetails.module.css';
+import styles from '../../modules/ShowDetails.module.css';
 
 const ArtistCard = memo(function ArtistCard({ artist }) {
 	const [hoveredArtist, setHoveredArtist] = useState(null);

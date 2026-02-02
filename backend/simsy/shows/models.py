@@ -148,10 +148,6 @@ class Show(models.Model):
     </div>'''
     popup = models.TextField(blank=True, default=default_popup)
 
-    @property
-    def age(self):
-        return int(this_year) - int(self.year[0:4])
-
     def __str__(self):
         return self.name
 

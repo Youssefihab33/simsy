@@ -10,8 +10,8 @@ import {
 
 import axiosInstance from './APIs/Axios.jsx';
 import LoadingSpinner from './snippets/LoadingSpinner.jsx';
-import ShowCard from './snippets/ShowCard.jsx';
-import CountryCard from './snippets/CountryCard.jsx';
+import ShowCard from './snippets/cards/ShowCard.jsx';
+import CountryCard from './snippets/cards/CountryCard.jsx';
 import styles from './modules/ShowDetails.module.css';
 
 const LanguageDetails = () => {

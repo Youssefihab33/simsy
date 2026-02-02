@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
-import { Typography, Box, Chip, Avatar, Tooltip, Container, Grid, Alert } from '@mui/material';
+import { Typography, Box, Chip, Avatar, Container, Grid, Alert } from '@mui/material';
 import {
 	Language as LanguageIcon,
 	People as PeopleIcon,
 	Movie as MovieIcon,
 } from '@mui/icons-material';
 
-import axiosInstance from './APIs/Axios.jsx';
-import LoadingSpinner from './snippets/LoadingSpinner.jsx';
-import ArtistCard from './snippets/ArtistCard.jsx';
-import ShowCard from './snippets/ShowCard.jsx';
+import axiosInstance from './APIs/Axios';
+import LoadingSpinner from './snippets/LoadingSpinner';
+import ArtistCard from './snippets/cards/ArtistCard';
+import ShowCard from './snippets/cards/ShowCard';
 import styles from './modules/ShowDetails.module.css';
 
 const CountryDetails = () => {

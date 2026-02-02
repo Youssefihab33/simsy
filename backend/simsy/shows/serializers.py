@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Artist, Language, Country, Genre, Rating, Label, Show
-
+from datetime import date
+current_year = date.today().strftime('%Y')
 User = get_user_model()
 
 
@@ -18,6 +19,7 @@ def get_in_f_or_w(user, show, change_type):
 
 # Serializers start here
 class ShowSerializer(serializers.ModelSerializer):
+    age = serializers.SerializerMethodField()
     episodes_count = serializers.SerializerMethodField()
     season_reached = serializers.SerializerMethodField()
     episode_reached = serializers.SerializerMethodField()
@@ -25,6 +27,9 @@ class ShowSerializer(serializers.ModelSerializer):
     in_favorites = serializers.SerializerMethodField()
     in_watchlist = serializers.SerializerMethodField()
     view_captions = serializers.SerializerMethodField()
+
+    def get_age(self, show):
+        return int(current_year) - int(show.year[0:4])
 
     # Helper function to stay DRY
     def _get_x_reached(self, show, key_type, default_value=0):
@@ -77,38 +82,35 @@ class ShowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Show
         exclude = ['favorites', 'watchlist']
-        depth = 1
+        depth = 2
 
 
 class ShowLiteSerializer(ShowSerializer):
     class Meta:
         model = Show
-        exclude = ['artists', 'languages', 'countries', 'genres', 'labels', 'favorites', 'watchlist']
+        exclude = ['artists', 'languages', 'countries',
+                   'genres', 'labels', 'favorites', 'watchlist']
         depth = 1
-
-
-class CountryLiteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Country
-        fields = ['id', 'name', 'flag', 'image', 'description']
 
 
 class ArtistSerializer(serializers.ModelSerializer):
     shows = ShowLiteSerializer(many=True, read_only=True)
-    age = serializers.ReadOnlyField()
+    age = serializers.SerializerMethodField()
+
+    def get_age(self, artist):
+        return int(current_year) - int(artist.birthYear)
 
     class Meta:
         model = Artist
         fields = '__all__'
-        depth = 2
+        depth = 1
 
 
-class LanguageSerializer(serializers.ModelSerializer):
+class LabelSerializer(serializers.ModelSerializer):
     shows = ShowLiteSerializer(many=True, read_only=True)
-    countries = CountryLiteSerializer(many=True, read_only=True)
 
     class Meta:
-        model = Language
+        model = Label
         fields = '__all__'
 
 
@@ -138,11 +140,12 @@ class RatingSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class LabelSerializer(serializers.ModelSerializer):
+class LanguageSerializer(serializers.ModelSerializer):
     shows = ShowLiteSerializer(many=True, read_only=True)
+    countries = CountrySerializer(many=True, read_only=True)
 
     class Meta:
-        model = Label
+        model = Language
         fields = '__all__'
 
 

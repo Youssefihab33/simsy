@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useContext, useMemo } from 'react';
 import { Box, Tabs, Tab, Pagination, Stack, InputLabel, MenuItem, FormControl, Select } from '@mui/material';
 import axiosInstance from './APIs/Axios';
 import { UserContext } from './APIs/Context';
-import ShowCard from './snippets/ShowCard';
+import ShowCard from './snippets/cards/ShowCard';
 import LoadingSpinner from './snippets/LoadingSpinner';
 
 // Configuration: Add or remove tabs here without touching the JSX logic

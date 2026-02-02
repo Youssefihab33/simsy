@@ -20,7 +20,7 @@ import {
 // My modules
 import axiosInstance from './APIs/Axios.jsx';
 import LoadingSpinner from './snippets/LoadingSpinner.jsx';
-import ArtistCard from './snippets/ArtistCard.jsx';
+import ArtistCard from './snippets/cards/ArtistCard.jsx';
 import styles from './modules/ShowDetails.module.css';
 import { VideoJS, videoJsOptions } from './snippets/VideoJS.jsx';
 
@@ -190,7 +190,6 @@ const useMediaPlayer = (show, refetchShowData) => {
 				episode: currentEpisode || 0,
 				time_reached: Math.round(timeReached),
 			});
-			console.log(response.data.message);
 		} catch (error) {
 			console.error('Error updating time reached:', error);
 		}
@@ -211,7 +210,6 @@ const useMediaPlayer = (show, refetchShowData) => {
 					// Update currentVideoStartTime from the backend response
 					setCurrentVideoStartTime(response.data.starting_time);
 					setEpisodeChangeMessage(null);
-					console.log('action_Episode success:', response.data);
 				}
 			} catch (error) {
 				setEpisodeChangeMessage(error.response?.data || 'Error changing episode.');
@@ -224,8 +222,6 @@ const useMediaPlayer = (show, refetchShowData) => {
 	const handlePlayerReady = useCallback(
 		(player) => {
 			playerRef.current = player;
-			// DEBUG : 4
-			console.log('PlayerReady run');
 
 			// Save current time on various player events
 			player.on(['fullscreenchange', 'seeked', 'dispose'], () => {
@@ -240,8 +236,6 @@ const useMediaPlayer = (show, refetchShowData) => {
 				if (show.kind === 'series') {
 					actionEpisode('next'); // This will update season/episode and trigger re-render/source change
 				}
-				// DEBUG : 5
-				console.log('---VIDEO ENDED---');
 			});
 		},
 		[sendTimeReached, show, actionEpisode]
@@ -309,8 +303,6 @@ const useMediaPlayer = (show, refetchShowData) => {
 			const handleLoadedData = () => {
 				if (playerRef.current) {
 					playerRef.current.currentTime(currentVideoStartTime);
-					// DEBUG : 6
-					console.log('set time on LOADEDDATA :', currentVideoStartTime);
 					playerRef.current.play(); // Auto-play the new episode
 					playerRef.current.off('loadeddata', handleLoadedData); // Remove listener after use
 				}

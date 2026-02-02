@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Box } from '@mui/material';
 
 export default function AnimatedFace({ state = 'default' }) {

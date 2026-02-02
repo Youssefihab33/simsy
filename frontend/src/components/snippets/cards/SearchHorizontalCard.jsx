@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Typography, Box, Avatar } from '@mui/material';
-import styles from '../modules/HorizontalCard.module.css';
+import styles from '../../modules/HorizontalCard.module.css';
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL || '';
 
