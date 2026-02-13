@@ -864,14 +864,15 @@ const ShowDetails = () => {
 
 										const isCurrent = Number(season) === item.s && Number(episode) === item.e;
 										const isWatched = show.reached_times?.[String(item.s)]?.[String(item.e)] > 0;
-										const isFirstInSeason = idx === 0 || (visibleEpisodes[idx - 1].s !== undefined && visibleEpisodes[idx - 1].s !== item.s);
+
+										// Find the last episode entry before this one to detect season changes
+										const lastEpisodeEntry = visibleEpisodes.slice(0, idx).reverse().find(i => i.s !== undefined);
+										const isSeasonBoundary = lastEpisodeEntry && lastEpisodeEntry.s !== item.s;
 
 										return (
 											<Box key={`${item.s}-${item.e}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-												{isFirstInSeason && (
-													<Box sx={{ ml: idx === 0 ? 0 : 1 }}>
-														<SeasonCircle num={item.s} />
-													</Box>
+												{isSeasonBoundary && (
+													<Typography sx={{ color: 'rgba(255,255,255,0.3)', mx: 1, fontWeight: 'bold', userSelect: 'none' }}>|</Typography>
 												)}
 												<Button
 													size='small'
