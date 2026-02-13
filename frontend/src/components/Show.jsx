@@ -550,11 +550,13 @@ const ShowDetails = () => {
 	const visibleEpisodes = useMemo(() => {
 		if (!show || !show.episodes || show.kind === 'film') return [];
 		const all = [];
-		Object.entries(show.episodes).forEach(([s, count]) => {
-			for (let e = 1; e <= count; e++) {
-				all.push({ s: Number(s), e: Number(e) });
-			}
-		});
+		Object.entries(show.episodes)
+			.sort((a, b) => Number(a[0]) - Number(b[0]))
+			.forEach(([s, count]) => {
+				for (let e = 1; e <= count; e++) {
+					all.push({ s: Number(s), e: Number(e) });
+				}
+			});
 
 		if (all.length <= 10) return all;
 
@@ -835,7 +837,7 @@ const ShowDetails = () => {
 								{/* Episode Pagination Container */}
 								<Box
 									sx={{
-										maxWidth: '80%',
+										maxWidth: '85%',
 										display: 'flex',
 										alignItems: 'center',
 										justifyContent: 'center',
@@ -853,27 +855,35 @@ const ShowDetails = () => {
 										</Box>
 									)}
 
-									{visibleEpisodes.map((item, idx) => {
-										if (item.type === 'ellipsis') {
+									{(() => {
+										let lastS = null;
+										return visibleEpisodes.map((item, idx) => {
+											if (item.type === 'ellipsis') {
+												return (
+													<Typography
+														key={`ell-${idx}`}
+														sx={{ color: 'rgba(255,255,255,0.5)', px: 0.5, userSelect: 'none' }}
+													>
+														...
+													</Typography>
+												);
+											}
+
+											const isCurrent = Number(season) === item.s && Number(episode) === item.e;
+											const isWatched = show.reached_times?.[String(item.s)]?.[String(item.e)] > 0;
+
+											const isSeasonBoundary = lastS !== null && lastS !== item.s;
+											lastS = item.s;
+
 											return (
-												<Typography key={`ell-${idx}`} sx={{ color: 'rgba(255,255,255,0.5)', px: 0.5, userSelect: 'none' }}>
-													...
-												</Typography>
-											);
-										}
-
-										const isCurrent = Number(season) === item.s && Number(episode) === item.e;
-										const isWatched = show.reached_times?.[String(item.s)]?.[String(item.e)] > 0;
-
-										// Find the last episode entry before this one to detect season changes
-										const lastEpisodeEntry = visibleEpisodes.slice(0, idx).reverse().find(i => i.s !== undefined);
-										const isSeasonBoundary = lastEpisodeEntry && lastEpisodeEntry.s !== item.s;
-
-										return (
-											<Box key={`${item.s}-${item.e}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-												{isSeasonBoundary && (
-													<Typography sx={{ color: 'rgba(255,255,255,0.3)', mx: 1, fontWeight: 'bold', userSelect: 'none' }}>|</Typography>
-												)}
+												<Box key={`${item.s}-${item.e}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+													{isSeasonBoundary && (
+														<Typography
+															sx={{ color: 'rgba(255,255,255,0.3)', mx: 1, fontWeight: 'bold', userSelect: 'none' }}
+														>
+															|
+														</Typography>
+													)}
 												<Button
 													size='small'
 													variant={isCurrent ? 'contained' : 'text'}
@@ -903,7 +913,8 @@ const ShowDetails = () => {
 												</Button>
 											</Box>
 										);
-									})}
+										});
+									})()}
 								</Box>
 
 								<Tooltip title='Next Episode'>
