@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import '@videojs/themes/dist/sea/index.css';
@@ -83,10 +83,25 @@ class CurrentEpisodeDisplay extends videojs.getComponent('Component') {
 	}
 }
 videojs.registerComponent('CurrentEpisodeDisplay', CurrentEpisodeDisplay);
+videojs.registerComponent('CustomIconButton', CustomIconButton);
 
 export function VideoJS({ options, onReady, color, episodeControls }) {
 	const videoRef = useRef(null);
 	const playerRef = useRef(null);
+	const currentSrcRef = useRef(null);
+
+	const applyInitialSeek = useCallback((player, startTime) => {
+		if (startTime !== undefined && startTime !== null) {
+			const handleLoadedData = () => {
+				player.currentTime(startTime);
+				player.play().catch(() => {
+					/* Handle autoplay block */
+				});
+				player.off('loadeddata', handleLoadedData);
+			};
+			player.on('loadeddata', handleLoadedData);
+		}
+	}, []);
 
 	useEffect(() => {
 		// Make sure Video.js player is only initialized once
@@ -99,8 +114,12 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 				onReady && onReady(player);
 			}));
 
+			currentSrcRef.current = JSON.stringify(options.sources);
+
+			// Apply initial seek if player is just initialized
+			applyInitialSeek(player, options.currentVideoStartTime);
+
 			// Adding custom components to the player
-			videojs.registerComponent('CustomIconButton', CustomIconButton);
 			const controlBar = playerRef.current.getChild('ControlBar');
 			if (controlBar) {
 				// --- Previous Episode Button ---
@@ -181,12 +200,40 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 			}
 		} else {
 			// This block is for updating an existing player.
-			// When updating, we need to handle the playlist logic as well.
 			const player = playerRef.current;
 
-			// Update player options (ADD THE REST OF THE OPTIONS HERE)
-			player.autoplay(options.autoplay);
-			player.src(options.sources);
+			// Optimization: Only update source if it actually changed to prevent "blinking"
+			const newSrcStr = JSON.stringify(options.sources);
+			if (currentSrcRef.current !== newSrcStr) {
+				player.autoplay(options.autoplay);
+				player.src(options.sources);
+				player.load();
+				currentSrcRef.current = newSrcStr;
+
+				// Handle seeking to the starting time when the source changes
+				applyInitialSeek(player, options.currentVideoStartTime);
+			}
+
+			// Update tracks if they changed
+			if (options.tracks) {
+				const currentTracks = player.remoteTextTracks();
+				const newTracks = options.tracks;
+
+				// Simple comparison or just replace if src is different
+				const currentSrcs = [];
+				for (let i = 0; i < currentTracks.length; i++) {
+					currentSrcs.push(currentTracks[i].src);
+				}
+
+				if (JSON.stringify(currentSrcs) !== JSON.stringify(newTracks.map((t) => t.src))) {
+					for (let i = 0; i < currentTracks.length; i++) {
+						player.removeRemoteTextTrack(currentTracks[i]);
+					}
+					newTracks.forEach((track) => {
+						player.addRemoteTextTrack(track, true);
+					});
+				}
+			}
 
 			// To update CurrentEpisodeDisplay text
 			const currentEpisodeDisplay = player.getChild('ControlBar')?.getChild('CurrentEpisodeDisplay');
@@ -216,7 +263,7 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 				});
 			}
 		}
-	}, [options, videoRef, onReady, episodeControls]);
+	}, [options, videoRef, onReady, episodeControls, applyInitialSeek]);
 
 	// Dispose the Video.js player when the functional component unmounts
 	useEffect(() => {
