@@ -376,6 +376,16 @@ const ShowDetails = () => {
 	const handleFavoritesToggle = useToggleApi(show?.id, setInFavorites, 'toggleFavorite', 'favorites');
 	const handleWatchlistToggle = useToggleApi(show?.id, setInWatchlist, 'toggleWatchlist', 'watchlist');
 
+	const handleMarkAsUnwatched = useCallback(async () => {
+		if (!show?.id) return;
+		try {
+			await axiosInstance.post(`shows/${show.id}/mark_as_unwatched/`);
+			refetchShowData();
+		} catch (error) {
+			console.error('Error marking show as unwatched:', error);
+		}
+	}, [show?.id, refetchShowData]);
+
 	const {
 		modalOpen,
 		handleModalOpen,
@@ -645,6 +655,15 @@ const ShowDetails = () => {
 									onClick={handleWatchlistToggle}
 								>
 									{inWatchlist ? 'In your Watchlist' : 'Add to Watchlist'}
+								</Button>
+								<Button
+									variant='outlined'
+									size='small'
+									color='error'
+									sx={{ ml: 1, textTransform: 'none' }}
+									onClick={handleMarkAsUnwatched}
+								>
+									Mark as unwatched
 								</Button>
 							</div>
 							{show.imdb && <div dangerouslySetInnerHTML={{ __html: show.imdb }} />}

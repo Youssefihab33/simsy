@@ -275,6 +275,17 @@ class ShowsViewSet(ModelViewSet):
             'new_time_reached': time_reached
         }, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'])
+    def mark_as_unwatched(self, request, pk=None):
+        show = self.get_object()
+        user = request.user
+        show_id = str(show.id)
+        if show_id in user.reached:
+            del user.reached[show_id]
+            user.save()
+            return Response({'message': f'Show {show.name} marked as unwatched.'}, status=status.HTTP_200_OK)
+        return Response({'message': f'Show {show.name} was already unwatched.'}, status=status.HTTP_200_OK)
+
 # ------- Action Views -------
 
 
