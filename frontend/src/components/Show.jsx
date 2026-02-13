@@ -1,5 +1,5 @@
 // Main
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 
 // Styles & Icons
@@ -185,7 +185,7 @@ const useMediaPlayer = (show, refetchShowData) => {
 
 	const sendTimeReached = useCallback(async (currentShowId, currentSeason, currentEpisode, timeReached) => {
 		try {
-			await axiosInstance.post(`shows/${currentShowId}/update_time_reached/`, {
+			const response = await axiosInstance.post(`shows/${currentShowId}/update_time_reached/`, {
 				season: currentSeason || 0,
 				episode: currentEpisode || 0,
 				time_reached: Math.round(timeReached),
@@ -241,7 +241,7 @@ const useMediaPlayer = (show, refetchShowData) => {
 		[sendTimeReached, show, actionEpisode]
 	);
 
-	const videoDetails = useMemo(() => {
+	const getVideoDetails = useCallback(() => {
 		let filmsSrc = '';
 		let seriesSrc = '';
 		let captionsSrc = '';
@@ -251,6 +251,8 @@ const useMediaPlayer = (show, refetchShowData) => {
 		}
 
 		switch (show.kind) {
+			// The strange part below is to make the films and series paths work with both films and series
+			// Making the rule less strict
 			case 'film':
 				filmsSrc = `${import.meta.env.VITE_VC_SOURCE + 'films/' + show.name}.mp4`;
 				seriesSrc = `${import.meta.env.VITE_VC_SOURCE + 'series/' + show.name}.mp4`;
@@ -266,37 +268,79 @@ const useMediaPlayer = (show, refetchShowData) => {
 				break;
 		}
 		return { filmsSrc, seriesSrc, captionsSrc };
-	}, [show, season, episode]);
+	}, [show, season, episode]); // Dependency on season and episode is crucial here
 
-	const { filmsSrc, seriesSrc, captionsSrc } = videoDetails;
+	const { filmsSrc, seriesSrc, captionsSrc } = getVideoDetails();
 
-	// Optimization: Move source updates and time setting to VideoJS component to avoid duplication
-	// The currentVideoStartTime is now part of playerOptions to trigger updates correctly.
-
-	const playerOptions = useMemo(() => {
-		if (!show) return {};
-		return {
-			...videoJsOptions,
-			show_name: show.name,
-			sources: [
+	// Effect to update player source when filmsSrc or captionsSrc changes
+	// and also apply the currentVideoStartTime
+	useEffect(() => {
+		if (playerRef.current && show) {
+			playerRef.current.src([
 				{ src: filmsSrc, type: 'video/mp4' },
 				{ src: seriesSrc, type: 'video/mp4' },
-			],
-			tracks:
-				show.captions && captionsSrc
-					? [
-							{
-								kind: 'captions',
-								srclang: 'en',
-								label: 'English',
-								src: captionsSrc,
-								mode: show.view_captions !== false ? 'showing' : 'disabled',
-							},
-					]
-					: [],
-			currentVideoStartTime, // Added to trigger updates in VideoJS
+			]);
+
+			if (show.captions && captionsSrc) {
+				// Remove existing tracks and add the new one
+				const tracks = playerRef.current.textTracks();
+				for (let i = 0; i < tracks.length; i++) {
+					playerRef.current.removeRemoteTextTrack(tracks[i]);
+				}
+				playerRef.current.addRemoteTextTrack(
+					{
+						kind: 'captions',
+						srclang: 'en',
+						label: 'English',
+						src: captionsSrc,
+						mode: show.view_captions !== false ? 'showing' : 'disabled',
+					},
+					true
+				); // The 'true' argument ensures the track is loaded
+			}
+
+			// This listener ensures currentTime is set AFTER the video is loaded
+			const handleLoadedData = () => {
+				if (playerRef.current) {
+					playerRef.current.currentTime(currentVideoStartTime);
+					playerRef.current.play(); // Auto-play the new episode
+					playerRef.current.off('loadeddata', handleLoadedData); // Remove listener after use
+				}
+			};
+
+			playerRef.current.on('loadeddata', handleLoadedData);
+			playerRef.current.load(); // Load the new source
+		}
+		// Cleanup function for useEffect to remove the 'loadeddata' listener
+		return () => {
+			if (playerRef.current) {
+				playerRef.current.off('loadeddata');
+			}
 		};
-	}, [show, filmsSrc, seriesSrc, captionsSrc, currentVideoStartTime]);
+	}, [filmsSrc, seriesSrc, captionsSrc, show, currentVideoStartTime]); // Added currentVideoStartTime to dependencies
+
+	const playerOptions = show
+		? {
+				...videoJsOptions,
+				show_name: show.name,
+				sources: [
+					{ src: filmsSrc, type: 'video/mp4' },
+					{ src: seriesSrc, type: 'video/mp4' },
+				],
+				tracks:
+					show.captions && captionsSrc
+						? [
+								{
+									kind: 'captions',
+									srclang: 'en',
+									label: 'English',
+									src: captionsSrc,
+									mode: show.view_captions !== false ? 'showing' : 'disabled',
+								},
+						]
+						: [],
+		}
+		: {};
 
 	return {
 		modalOpen,
@@ -350,29 +394,15 @@ const ShowDetails = () => {
 	const handleFavoritesToggle = useToggleApi(show?.id, setInFavorites, 'toggleFavorite', 'favorites');
 	const handleWatchlistToggle = useToggleApi(show?.id, setInWatchlist, 'toggleWatchlist', 'watchlist');
 
-	const {
-		modalOpen,
-		handleModalOpen,
-		handleModalClose,
-		handlePlayerReady,
-		playerOptions,
-		season,
-		episode,
-		actionEpisode,
-		episodeChangeMessage,
-		playerRef,
-	} = useMediaPlayer(show, refetchShowData);
+	const { modalOpen, handleModalOpen, handleModalClose, handlePlayerReady, playerOptions, season, episode, actionEpisode, episodeChangeMessage, playerRef } = useMediaPlayer(
+		show,
+		refetchShowData
+	); // Removed playerKey from destructuring
 
-	// Optimization: Memoize colors to prevent unnecessary re-calculations and re-renders
-	const accentColor = useMemo(() => getAccentColor(show?.kind), [show?.kind]);
-	const hoverColor = useMemo(() => getHoverColor(accentColor), [accentColor]);
-	const darkerColor = useMemo(() => getDarkerColor(accentColor), [accentColor]);
-
-	// Optimization: Memoize episode controls for VideoJS
-	const episodeControls = useMemo(() => {
-		if (!show || show.kind === 'film') return {};
-		return { actionEpisode, currentEpisode: episode, currentSeason: season };
-	}, [show, actionEpisode, episode, season]);
+	// Calculate accent and hover and darker colors once
+	const accentColor = getAccentColor(show?.kind);
+	const hoverColor = getHoverColor(accentColor);
+	const darkerColor = getDarkerColor(accentColor);
 
 	// Keyboard controls for media playback and modal
 	const handleKeyPress = useCallback(
@@ -443,55 +473,6 @@ const ShowDetails = () => {
 
 	// --- Render Logic ---
 
-	// Common props for MUI Chip components
-	const commonChipProps = useMemo(
-		() => ({
-			variant: 'outlined',
-			sx: { margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' },
-		}),
-		[]
-	);
-
-	// Modified render function for chips
-	const renderChipGroup = useCallback(
-		(items, kind) => (
-			<>
-				{items?.map((item) => (
-					<Tooltip key={item.id} title={item.description} placement='top'>
-						<Chip
-							label={item.name}
-							variant='outlined'
-							component='a'
-							href={`/${kind}/${item.id}`}
-							avatar={<Avatar alt={item.name} src={item.image || item.flag} className='ms-2 text-light' clickable='true' />}
-							{...commonChipProps}
-							clickable
-						/>
-					</Tooltip>
-				))}
-			</>
-		),
-		[commonChipProps]
-	);
-
-	// Optimization: Memoize chip groups
-	const countryChips = useMemo(() => renderChipGroup(show?.countries, 'country'), [show?.countries, renderChipGroup]);
-	const languageChips = useMemo(() => renderChipGroup(show?.languages, 'language'), [show?.languages, renderChipGroup]);
-	const genreChips = useMemo(() => renderChipGroup(show?.genres, 'genre'), [show?.genres, renderChipGroup]);
-	const labelChips = useMemo(() => renderChipGroup(show?.labels, 'label'), [show?.labels, renderChipGroup]);
-
-	// Optimization: Memoize cast list
-	const castList = useMemo(
-		() => (
-			<Row xs={2} className='g-2'>
-				{show?.artists?.map((artist, index) => (
-					<ArtistCard key={index} artist={artist} />
-				))}
-			</Row>
-		),
-		[show?.artists]
-	);
-
 	if (loading) {
 		return <LoadingSpinner />;
 	}
@@ -503,6 +484,31 @@ const ShowDetails = () => {
 	if (!show) {
 		return <div className='text-light text-center mt-5'>No show details found.</div>;
 	}
+
+	// Common props for MUI Chip components
+	const commonChipProps = {
+		variant: 'outlined',
+		sx: { margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' },
+	};
+
+	// Modified render function for chips
+	const renderChipGroup = (items, kind) => (
+		<>
+			{items.map((item) => (
+				<Tooltip key={item.id} title={item.description} placement='top'>
+					<Chip
+						label={item.name}
+						variant='outlined'
+						component='a'
+						href={`/${kind}/${item.id}`}
+						avatar={<Avatar alt={item.name} src={item.image || item.flag} className='ms-2 text-light' clickable='true' />}
+						{...commonChipProps}
+						clickable
+					/>
+				</Tooltip>
+			))}
+		</>
+	);
 
 	return (
 		<div className={styles.showDetailsContainer}>
@@ -641,9 +647,9 @@ const ShowDetails = () => {
 								Countries & Languages
 							</Typography>
 							<div className='d-flex flex-wrap'>
-								{countryChips}
+								{renderChipGroup(show.countries, 'country')}
 								{show.countries.length > 0 && show.languages.length > 0 && <h3 style={{ margin: '4px 8px', color: 'white' }}>|</h3>}
-								{languageChips}
+								{renderChipGroup(show.languages, 'language')}
 							</div>
 						</div>
 
@@ -653,9 +659,9 @@ const ShowDetails = () => {
 								Genres & Labels
 							</Typography>
 							<div className='d-flex flex-wrap'>
-								{genreChips}
+								{renderChipGroup(show.genres, 'genre')}
 								{show.genres.length > 0 && show.labels.length > 0 && <h3 style={{ margin: '4px 8px', color: 'white' }}>|</h3>}
-								{labelChips}
+								{renderChipGroup(show.labels, 'label')}
 							</div>
 						</div>
 						{/* Additional Info */}
@@ -681,7 +687,13 @@ const ShowDetails = () => {
 							<Typography variant='h4' component='h2' gutterBottom className='fw-bold text-light'>
 								Cast
 							</Typography>
-							<div className={styles.castContainer}>{castList}</div>
+							<div className={styles.castContainer}>
+								<Row xs={2} className='g-2'>
+									{show.artists.map((artist, index) => (
+										<ArtistCard key={index} artist={artist} />
+									))}
+								</Row>
+							</div>
 						</div>
 					</Col>
 				</Row>
@@ -710,7 +722,7 @@ const ShowDetails = () => {
 							options={playerOptions}
 							onReady={handlePlayerReady}
 							color={accentColor}
-							episodeControls={episodeControls}
+							episodeControls={show.kind === 'film' ? {} : { actionEpisode: actionEpisode, currentEpisode: episode, currentSeason: season }}
 						/>
 					)}
 					{show?.kind !== 'film' && (

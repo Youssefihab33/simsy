@@ -19,7 +19,3 @@
 ## 2025-05-14 - Redundant Data Fetching
 **Learning:** Found that the application was making multiple parallel requests for the same model data (one for details, one for user status).
 **Action:** Consolidate data into a single serializer and endpoint. This reduces network overhead and simplifies frontend state management.
-
-## 2026-02-12 - VideoJS "Blinking" and Sync Issues
-**Learning:** Updating the `src` of a VideoJS player on every parent render causes it to restart or "blink". Also, seeking to a saved timestamp must happen after the `loadeddata` event, both on initial load and source changes.
-**Action:** Implement deep comparison for video sources in `VideoJS.jsx` and use a dedicated `applyInitialSeek` helper attached to the `loadeddata` event. Ensure hooks are called in the same order by placing memoization above loading/error returns.
