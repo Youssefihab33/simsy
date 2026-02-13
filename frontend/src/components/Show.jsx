@@ -197,11 +197,12 @@ const useMediaPlayer = (show, refetchShowData) => {
 	}, []);
 
 	const actionEpisode = useCallback(
-		async (actionName) => {
+		async (actionName, finished = false) => {
 			try {
 				const response = await axiosInstance.post(`shows/${show.id}/${actionName}_episode/`, {
 					season: seasonRef.current,
 					episode: episodeRef.current,
+					finished: finished,
 				});
 				if (response.data.changed === false) {
 					setEpisodeChangeMessage(response.data.message);
@@ -251,12 +252,14 @@ const useMediaPlayer = (show, refetchShowData) => {
 					sendTimeReached(show.id, seasonRef.current, episodeRef.current, playerRef.current.currentTime());
 				}
 			});
-			// When video ends, reset time reached to 0 and advance episode if applicable
+			// When video ends, mark as watched and advance episode if applicable
 			player.on('ended', () => {
-				sendTimeReached(show.id, seasonRef.current, episodeRef.current, 0);
-				// If it's a series, automatically go to the next episode
 				if (show.kind === 'series') {
-					actionEpisode('next'); // This will update season/episode and trigger re-render/source change
+					// If it's a series, automatically go to the next episode and mark current as finished
+					actionEpisode('next', true);
+				} else {
+					// For films, just mark as finished
+					sendTimeReached(show.id, seasonRef.current, episodeRef.current, 1);
 				}
 			});
 		},
@@ -516,6 +519,46 @@ const ShowDetails = () => {
 		[show?.artists]
 	);
 
+	// Optimization: Memoize visible episode list for pagination
+	const visibleEpisodes = useMemo(() => {
+		if (!show || !show.episodes || show.kind === 'film') return [];
+		const all = [];
+		Object.entries(show.episodes).forEach(([s, count]) => {
+			for (let e = 1; e <= count; e++) {
+				all.push({ s: Number(s), e: Number(e) });
+			}
+		});
+
+		if (all.length <= 10) return all;
+
+		const currentIdx = all.findIndex((item) => item.s === Number(season) && item.e === Number(episode));
+		const range = 2;
+		const result = [];
+
+		// Always include first
+		result.push(all[0]);
+
+		let start = Math.max(1, currentIdx - range);
+		let end = Math.min(all.length - 2, currentIdx + range);
+
+		// Adjust window if near boundaries to keep consistent size
+		if (currentIdx <= range + 1) end = Math.min(all.length - 2, range * 2 + 1);
+		if (currentIdx >= all.length - range - 2) start = Math.max(1, all.length - range * 2 - 2);
+
+		if (start > 1) result.push({ type: 'ellipsis' });
+
+		for (let i = start; i <= end; i++) {
+			result.push(all[i]);
+		}
+
+		if (end < all.length - 2) result.push({ type: 'ellipsis' });
+
+		// Always include last
+		result.push(all[all.length - 1]);
+
+		return result;
+	}, [show, season, episode]);
+
 	if (loading) {
 		return <LoadingSpinner />;
 	}
@@ -762,62 +805,69 @@ const ShowDetails = () => {
 									</IconButton>
 								</Tooltip>
 
-								{/* Episode List Scrollable Container */}
+								{/* Episode Pagination Container */}
 								<Box
 									sx={{
 										maxWidth: '80%',
-										overflowX: 'auto',
-										whiteSpace: 'nowrap',
 										display: 'flex',
 										alignItems: 'center',
-										gap: 2,
-										px: 2,
+										justifyContent: 'center',
+										flexWrap: 'nowrap',
+										gap: 0.5,
+										px: 1,
 										py: 1,
-										'&::-webkit-scrollbar': { height: '6px' },
-										'&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '3px' },
 									}}
 								>
-									{Object.entries(show.episodes).map(([sNum, eCount]) => (
-										<Box key={sNum} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-											<Typography variant='body2' sx={{ fontWeight: 'bold', color: 'white', minWidth: 'max-content' }}>
-												S{sNum}:
-											</Typography>
-											{Array.from({ length: eCount }, (_, i) => i + 1).map((eNum) => {
-												const isCurrent = Number(season) === Number(sNum) && Number(episode) === Number(eNum);
-												const isWatched = show.reached_times?.[sNum]?.[String(eNum)] > 0;
-												return (
-													<Button
-														key={eNum}
-														size='small'
-														variant={isCurrent ? 'contained' : 'text'}
-														onClick={() => jumpToEpisode(Number(sNum), eNum)}
-														sx={{
-															minWidth: '32px',
-															height: '32px',
-															p: 0,
-															color: isCurrent ? 'white' : 'rgba(255,255,255,0.7)',
-															bgcolor: isCurrent ? accentColor : 'transparent',
-															'&:hover': { bgcolor: isCurrent ? hoverColor : 'rgba(255,255,255,0.1)' },
-															position: 'relative',
-														}}
-													>
-														{eNum}
-														{isWatched && !isCurrent && (
-															<CheckCircleIcon
-																sx={{
-																	position: 'absolute',
-																	top: -4,
-																	right: -4,
-																	fontSize: '12px',
-																	color: '#5DD95D',
-																}}
-															/>
-														)}
-													</Button>
-												);
-											})}
-										</Box>
-									))}
+									{visibleEpisodes.map((item, idx) => {
+										if (item.type === 'ellipsis') {
+											return (
+												<Typography key={`ell-${idx}`} sx={{ color: 'rgba(255,255,255,0.5)', px: 0.5, userSelect: 'none' }}>
+													...
+												</Typography>
+											);
+										}
+
+										const isCurrent = Number(season) === item.s && Number(episode) === item.e;
+										const isWatched = show.reached_times?.[String(item.s)]?.[String(item.e)] > 0;
+										const isFirstInSeason = idx === 0 || (visibleEpisodes[idx - 1].s !== undefined && visibleEpisodes[idx - 1].s !== item.s);
+
+										return (
+											<Box key={`${item.s}-${item.e}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+												{isFirstInSeason && (
+													<Typography variant='body2' sx={{ fontWeight: 'bold', color: 'white', ml: idx === 0 ? 0 : 1, userSelect: 'none' }}>
+														S{item.s}:
+													</Typography>
+												)}
+												<Button
+													size='small'
+													variant={isCurrent ? 'contained' : 'text'}
+													onClick={() => jumpToEpisode(item.s, item.e)}
+													sx={{
+														minWidth: '32px',
+														height: '32px',
+														p: 0,
+														color: isCurrent ? 'white' : 'rgba(255,255,255,0.7)',
+														bgcolor: isCurrent ? accentColor : 'transparent',
+														'&:hover': { bgcolor: isCurrent ? hoverColor : 'rgba(255,255,255,0.1)' },
+														position: 'relative',
+													}}
+												>
+													{item.e}
+													{isWatched && !isCurrent && (
+														<CheckCircleIcon
+															sx={{
+																position: 'absolute',
+																top: -4,
+																right: -4,
+																fontSize: '12px',
+																color: '#5DD95D',
+															}}
+														/>
+													)}
+												</Button>
+											</Box>
+										);
+									})}
 								</Box>
 
 								<Tooltip title='Next Episode'>
