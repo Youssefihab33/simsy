@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 
 // Styles & Icons
 import { Container, Row, Col, Card } from 'react-bootstrap';
-import { Typography, Button, Chip, Avatar, Tooltip, Modal, Box } from '@mui/material';
+import { Typography, Button, Chip, Avatar, Tooltip, Modal, Box, IconButton } from '@mui/material';
 import {
 	PlayArrow as PlayArrowIcon,
 	BookmarkAdd as BookmarkAddIcon,
