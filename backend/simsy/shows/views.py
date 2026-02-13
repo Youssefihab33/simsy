@@ -222,6 +222,12 @@ class ShowsViewSet(ModelViewSet):
         show = self.get_object()
         current_season = int(request.data.get('season', 1))
         current_episode = int(request.data.get('episode', 1))
+        finished = request.data.get('finished', False)
+
+        # Mark current episode as watched if finished is passed
+        if finished:
+            updateReached(request.user, show.id, show.kind,
+                          current_season, current_episode, 1)
 
         show_episodes = show.episodes
         if current_season == len(show_episodes) and current_episode == show_episodes[str(current_season)]:
