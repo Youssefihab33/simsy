@@ -7,3 +7,6 @@
 
 **Learning:** Backend N+1 query problems in Django ViewSets can be effectively eliminated by overriding `get_queryset` to include `prefetch_related` for all nested fields used in serializers, even those with `depth > 0`.
 **Action:** Proactively check `django-debug-toolbar` or query counts when serializers include multiple related models.
+
+**Learning:** When adding features to "reset" or "clear" data (like "Mark as unwatched"), ensure the backend action explicitly deletes the relevant keys from JSONFields to maintain a clean database state and prevent stale data from affecting UI indicators like "watched" checkmarks.
+**Action:** Use `del dictionary[key]` for JSONField updates in Django when the goal is to fully remove an entry.
