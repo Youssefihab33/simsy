@@ -27,6 +27,7 @@ class ShowSerializer(serializers.ModelSerializer):
     in_favorites = serializers.SerializerMethodField()
     in_watchlist = serializers.SerializerMethodField()
     view_captions = serializers.SerializerMethodField()
+    reached_times = serializers.SerializerMethodField()
 
     def get_age(self, show):
         return int(current_year) - int(show.year[0:4])
@@ -78,6 +79,12 @@ class ShowSerializer(serializers.ModelSerializer):
     def get_view_captions(self, show):
         user = self.context.get('request').user
         return user.view_captions if user.is_authenticated else True
+
+    def get_reached_times(self, show):
+        user = self.context.get('request').user
+        if not user or not user.is_authenticated:
+            return {}
+        return user.reached.get(str(show.id), {}).get('t', {})
 
     class Meta:
         model = Show

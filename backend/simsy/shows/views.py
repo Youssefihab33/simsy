@@ -248,6 +248,14 @@ class ShowsViewSet(ModelViewSet):
         return changeEpisode(request.user, show.id, len(show_episodes), show_episodes[str(len(show_episodes))], True, 'Last episode of the show!')
 
     @action(detail=True, methods=['post'])
+    def jump_to_episode(self, request, pk=None):
+        show = self.get_object()
+        new_season = int(request.data.get('season', 1))
+        new_episode = int(request.data.get('episode', 1))
+        message = f'Jumped to Season {new_season} Episode {new_episode}'
+        return changeEpisode(request.user, show.id, new_season, new_episode, True, message)
+
+    @action(detail=True, methods=['post'])
     def update_time_reached(self, request, pk=None):
         show = self.get_object()
         season = int(request.data.get('season', 1))
