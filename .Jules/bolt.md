@@ -1,25 +1,9 @@
-# Bolt's Journal - Critical Learnings Only
+## 2025-05-22 - Optimizing Video Playback and Show Details
+**Learning:** React hooks (like `useMemo`, `useCallback`) must always be placed before any conditional early returns (e.g., `if (loading) return ...`). Placing them after can cause inconsistent hook ordering and application crashes when the component transitions from a loading to a loaded state.
+**Action:** Always audit hook placement during component refactoring, especially when adding memoization to data-heavy detail pages.
 
-## 2025-05-14 - Critical Serialization Bottleneck
-**Learning:** Found that `ShowSerializer` was calling `user.save()` for every show in a list during serialization. This converted a simple GET request into O(N) database writes, causing massive latency.
-**Action:** Removed side-effects from serializers. Always move initialization or update logic to write-specific actions (POST/PUT).
+**Learning:** For VideoJS, seeking to a specific time immediately on `ready` can be unreliable if the source is still being initialized. Listening for the `loadeddata` event ensures the player is ready to accept seek commands, preventing the "seek to 0" bug on initial load.
+**Action:** Use `player.one('loadeddata', ...)` for initial seek operations in VideoJS wrappers.
 
-## 2025-05-14 - N+1 Query Patterns in DRF
-**Learning:** Many-to-Many checks (like `in_favorites`) were triggering a separate query per item in the list.
-**Action:** Use `Exists` subquery annotations in the ViewSet's `get_queryset` to fetch boolean flags in a single query.
-
-## 2025-05-14 - React Bundle Optimization
-**Learning:** The initial bundle was loading all route components at once, increasing Time to Interactive.
-**Action:** Implemented route-based code splitting using `React.lazy` and `Suspense`. This deferred loading of hidden routes and reduced initial load time.
-
-## 2025-05-14 - Consolidating Logic into ViewSets
-**Learning:** Moving logic from separate `APIView` classes into `ViewSet` actions allows for better reuse of optimized `get_queryset` methods (with `select_related`, `prefetch_related`, and annotations).
-**Action:** Prefer ViewSet `@action`s over separate `APIView`s for model-related operations to maintain performance and consistency.
-
-## 2025-05-14 - Redundant Data Fetching
-**Learning:** Found that the application was making multiple parallel requests for the same model data (one for details, one for user status).
-**Action:** Consolidate data into a single serializer and endpoint. This reduces network overhead and simplifies frontend state management.
-
-## 2026-02-12 - VideoJS "Blinking" and Sync Issues
-**Learning:** Updating the `src` of a VideoJS player on every parent render causes it to restart or "blink". Also, seeking to a saved timestamp must happen after the `loadeddata` event, both on initial load and source changes.
-**Action:** Implement deep comparison for video sources in `VideoJS.jsx` and use a dedicated `applyInitialSeek` helper attached to the `loadeddata` event. Ensure hooks are called in the same order by placing memoization above loading/error returns.
+**Learning:** Backend N+1 query problems in Django ViewSets can be effectively eliminated by overriding `get_queryset` to include `prefetch_related` for all nested fields used in serializers, even those with `depth > 0`.
+**Action:** Proactively check `django-debug-toolbar` or query counts when serializers include multiple related models.
