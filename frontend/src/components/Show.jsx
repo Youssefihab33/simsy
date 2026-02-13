@@ -15,6 +15,7 @@ import {
 	ArrowBackIosNew as ArrowBackIosNewIcon,
 	ArrowForwardIos as ArrowForwardIosIcon,
 	LastPage as LastPageIcon,
+	CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 
 // My modules
@@ -210,13 +211,34 @@ const useMediaPlayer = (show, refetchShowData) => {
 					// Update currentVideoStartTime from the backend response
 					setCurrentVideoStartTime(response.data.starting_time);
 					setEpisodeChangeMessage(null);
+					refetchShowData(); // Update reached_times for indicators
 				}
 			} catch (error) {
 				setEpisodeChangeMessage(error.response?.data || 'Error changing episode.');
 				console.error('Error in action_Episode:', error);
 			}
 		},
-		[show?.id]
+		[show?.id, refetchShowData]
+	);
+
+	const jumpToEpisode = useCallback(
+		async (targetSeason, targetEpisode) => {
+			try {
+				const response = await axiosInstance.post(`shows/${show.id}/jump_to_episode/`, {
+					season: targetSeason,
+					episode: targetEpisode,
+				});
+				setSeason(response.data.new_season);
+				setEpisode(response.data.new_episode);
+				setCurrentVideoStartTime(response.data.starting_time);
+				setEpisodeChangeMessage(null);
+				refetchShowData(); // Update reached_times
+			} catch (error) {
+				setEpisodeChangeMessage(error.response?.data || 'Error jumping to episode.');
+				console.error('Error in jumpToEpisode:', error);
+			}
+		},
+		[show?.id, refetchShowData]
 	);
 
 	const handlePlayerReady = useCallback(
@@ -307,6 +329,7 @@ const useMediaPlayer = (show, refetchShowData) => {
 		season,
 		episode,
 		actionEpisode,
+		jumpToEpisode,
 		episodeChangeMessage,
 		playerRef,
 	};
@@ -359,6 +382,7 @@ const ShowDetails = () => {
 		season,
 		episode,
 		actionEpisode,
+		jumpToEpisode,
 		episodeChangeMessage,
 		playerRef,
 	} = useMediaPlayer(show, refetchShowData);
@@ -714,14 +738,105 @@ const ShowDetails = () => {
 						/>
 					)}
 					{show?.kind !== 'film' && (
-						<div className='d-block text-center text-light border border-dark-subtle border-top-0 p-3 mx-auto'>
-							<FirstPageIcon sx={{ cursor: 'pointer' }} onClick={() => actionEpisode('first')} />{' '}
-							<ArrowBackIosNewIcon sx={{ cursor: 'pointer' }} onClick={() => actionEpisode('previous')} />
-							&nbsp;Season {season} Episode {episode}&nbsp;
-							<ArrowForwardIosIcon sx={{ cursor: 'pointer' }} onClick={() => actionEpisode('next')} />
-							<LastPageIcon sx={{ cursor: 'pointer' }} onClick={() => actionEpisode('last')} />
-							{episodeChangeMessage && <Typography color='error'>{episodeChangeMessage}</Typography>}
-						</div>
+						<Box
+							sx={{
+								p: 1.5,
+								bgcolor: 'rgba(0, 0, 0, 0.5)',
+								borderBottomLeftRadius: '8px',
+								borderBottomRightRadius: '8px',
+								display: 'flex',
+								flexDirection: 'column',
+								alignItems: 'center',
+								gap: 1,
+							}}
+						>
+							<Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', gap: 1 }}>
+								<Tooltip title='First Episode'>
+									<IconButton onClick={() => actionEpisode('first')} sx={{ color: 'white' }}>
+										<FirstPageIcon />
+									</IconButton>
+								</Tooltip>
+								<Tooltip title='Previous Episode'>
+									<IconButton onClick={() => actionEpisode('previous')} sx={{ color: 'white' }}>
+										<ArrowBackIosNewIcon />
+									</IconButton>
+								</Tooltip>
+
+								{/* Episode List Scrollable Container */}
+								<Box
+									sx={{
+										maxWidth: '80%',
+										overflowX: 'auto',
+										whiteSpace: 'nowrap',
+										display: 'flex',
+										alignItems: 'center',
+										gap: 2,
+										px: 2,
+										py: 1,
+										'&::-webkit-scrollbar': { height: '6px' },
+										'&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.2)', borderRadius: '3px' },
+									}}
+								>
+									{Object.entries(show.episodes).map(([sNum, eCount]) => (
+										<Box key={sNum} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+											<Typography variant='body2' sx={{ fontWeight: 'bold', color: 'white', minWidth: 'max-content' }}>
+												S{sNum}:
+											</Typography>
+											{Array.from({ length: eCount }, (_, i) => i + 1).map((eNum) => {
+												const isCurrent = Number(season) === Number(sNum) && Number(episode) === Number(eNum);
+												const isWatched = show.reached_times?.[sNum]?.[String(eNum)] > 0;
+												return (
+													<Button
+														key={eNum}
+														size='small'
+														variant={isCurrent ? 'contained' : 'text'}
+														onClick={() => jumpToEpisode(Number(sNum), eNum)}
+														sx={{
+															minWidth: '32px',
+															height: '32px',
+															p: 0,
+															color: isCurrent ? 'white' : 'rgba(255,255,255,0.7)',
+															bgcolor: isCurrent ? accentColor : 'transparent',
+															'&:hover': { bgcolor: isCurrent ? hoverColor : 'rgba(255,255,255,0.1)' },
+															position: 'relative',
+														}}
+													>
+														{eNum}
+														{isWatched && !isCurrent && (
+															<CheckCircleIcon
+																sx={{
+																	position: 'absolute',
+																	top: -4,
+																	right: -4,
+																	fontSize: '12px',
+																	color: '#5DD95D',
+																}}
+															/>
+														)}
+													</Button>
+												);
+											})}
+										</Box>
+									))}
+								</Box>
+
+								<Tooltip title='Next Episode'>
+									<IconButton onClick={() => actionEpisode('next')} sx={{ color: 'white' }}>
+										<ArrowForwardIosIcon />
+									</IconButton>
+								</Tooltip>
+								<Tooltip title='Last Episode'>
+									<IconButton onClick={() => actionEpisode('last')} sx={{ color: 'white' }}>
+										<LastPageIcon />
+									</IconButton>
+								</Tooltip>
+							</Box>
+							{episodeChangeMessage && (
+								<Typography variant='caption' color='error'>
+									{episodeChangeMessage}
+								</Typography>
+							)}
+						</Box>
 					)}
 				</Box>
 			</Modal>
