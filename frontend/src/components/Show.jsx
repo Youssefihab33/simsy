@@ -507,6 +507,33 @@ const ShowDetails = () => {
 	const genreChips = useMemo(() => renderChipGroup(show?.genres, 'genre'), [show?.genres, renderChipGroup]);
 	const labelChips = useMemo(() => renderChipGroup(show?.labels, 'label'), [show?.labels, renderChipGroup]);
 
+	// Optimization: Memoize Season Indicator styling
+	const SeasonCircle = useCallback(
+		({ num, active = false }) => (
+			<Box
+				sx={{
+					width: 32,
+					height: 32,
+					borderRadius: '50%',
+					bgcolor: accentColor,
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					color: 'white',
+					fontWeight: 'bold',
+					fontSize: '0.75rem',
+					flexShrink: 0,
+					userSelect: 'none',
+					border: active ? '2px solid white' : 'none',
+					boxShadow: active ? '0 0 8px rgba(255,255,255,0.5)' : 'none',
+				}}
+			>
+				S{num}
+			</Box>
+		),
+		[accentColor]
+	);
+
 	// Optimization: Memoize cast list
 	const castList = useMemo(
 		() => (
@@ -818,6 +845,14 @@ const ShowDetails = () => {
 										py: 1,
 									}}
 								>
+									{/* Fixed Season Indicator for multiple seasons */}
+									{Object.keys(show.episodes).length > 1 && (
+										<Box sx={{ mr: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+											<SeasonCircle num={season} active />
+											<Box sx={{ width: '2px', height: '24px', bgcolor: 'rgba(255,255,255,0.2)', mx: 0.5 }} />
+										</Box>
+									)}
+
 									{visibleEpisodes.map((item, idx) => {
 										if (item.type === 'ellipsis') {
 											return (
@@ -834,9 +869,9 @@ const ShowDetails = () => {
 										return (
 											<Box key={`${item.s}-${item.e}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
 												{isFirstInSeason && (
-													<Typography variant='body2' sx={{ fontWeight: 'bold', color: 'white', ml: idx === 0 ? 0 : 1, userSelect: 'none' }}>
-														S{item.s}:
-													</Typography>
+													<Box sx={{ ml: idx === 0 ? 0 : 1 }}>
+														<SeasonCircle num={item.s} />
+													</Box>
 												)}
 												<Button
 													size='small'
