@@ -59,6 +59,18 @@ class ShowsViewSet(ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         queryset = Show.objects.select_related('rating')
+
+        # Optimization: Prefetch related fields for detail view to avoid N+1 queries
+        # depth=2 in ShowSerializer means we need deeper prefetching
+        if self.action == 'retrieve':
+            queryset = queryset.prefetch_related(
+                'artists__nationality',
+                'countries__languages',
+                'languages',
+                'genres',
+                'labels'
+            )
+
         if user.is_authenticated:
             # Optimize in_favorites/in_watchlist checks with annotations to avoid N+1 queries during serialization
             queryset = queryset.annotate(
