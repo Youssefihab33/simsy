@@ -617,7 +617,7 @@ const ShowDetails = () => {
 				<Container>
 					<Row className='align-items-center mt-5 mt-md-0'>
 						<Col md={4} className='d-flex justify-content-center justify-content-md-start mb-4 mb-md-0 mt-5 mt-md-0'>
-							<img src={show.image} alt={`${show.name} poster`} className={styles.posterImage} loading='lazy' />
+							<img src={show.image} alt={`${show.name} poster`} className={styles.posterImage} />
 						</Col>
 						<Col md={8} className='mt-5 mt-md-0'>
 							<Typography variant='h2' component='h1' gutterBottom className='fw-bold' sx={{ color: accentColor }}>

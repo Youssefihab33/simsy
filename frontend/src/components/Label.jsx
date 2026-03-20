@@ -45,7 +45,7 @@ const LabelDetails = () => {
 				<Container>
 					<Grid container alignItems='center'>
 						<Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' }, mb: { xs: 4, md: 0 } }}>
-							<img src={label.image} alt={label.name} className={styles.posterImage} loading='lazy' />
+							<img src={label.image} alt={label.name} className={styles.posterImage} />
 						</Grid>
 						<Grid item xs={12} md={8}>
 							<Typography variant='h2' component='h1' gutterBottom sx={{ fontWeight: 'bold', color: accentColor }}>

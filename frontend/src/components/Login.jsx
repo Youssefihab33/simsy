@@ -161,7 +161,7 @@ export default function Login() {
 						}}
 						disabled={isSubmitting}
 					>
-						{isSubmitting ? 'Verifying...' : 'Log In'}
+						<LoginIcon />&nbsp;{isSubmitting ? 'Verifying...' : 'Log In'}
 					</Button>
 					<Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
 						<Link component={RouterLink} to='/forgot-password/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>

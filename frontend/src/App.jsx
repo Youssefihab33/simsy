@@ -11,19 +11,20 @@ import Header from './components/snippets/Header';
 import Footer from './components/snippets/Footer';
 import LoadingSpinner from './components/snippets/LoadingSpinner';
 
+import Homepage from './components/Homepage';
+import Login from './components/Login';
+import Show from './components/Show'
+
 // Lazy load route components for better initial load performance
-const Homepage = lazy(() => import('./components/Homepage'));
 const Artist = lazy(() => import('./components/Artist'));
 const Country = lazy(() => import('./components/Country'));
 const Language = lazy(() => import('./components/Language'));
 const Genre = lazy(() => import('./components/Genre'));
 const Rating = lazy(() => import('./components/Rating'));
 const Label = lazy(() => import('./components/Label'));
-const Show = lazy(() => import('./components/Show'));
 const ForgotPassword = lazy(() => import('./components/ForgotPassword'));
 const ResetPassword = lazy(() => import('./components/ResetPassword'));
 const Register = lazy(() => import('./components/Register'));
-const Login = lazy(() => import('./components/Login'));
 const Logout = lazy(() => import('./components/Logout'));
 const Profile = lazy(() => import('./components/Profile'));
 

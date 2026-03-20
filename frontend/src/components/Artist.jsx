@@ -52,7 +52,7 @@ const ArtistDetails = () => {
 				<Container>
 					<Grid container alignItems='center'>
 						<Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' }, mb: { xs: 4, md: 0 } }}>
-							<img src={artist.image} alt={artist.name} className={styles.posterImage} loading='lazy' />
+							<img src={artist.image} alt={artist.name} className={styles.posterImage} />
 						</Grid>
 						<Grid item xs={12} md={8}>
 							<Typography variant='h2' component='h1' gutterBottom sx={{ fontWeight: 'bold', color: accentColor }}>
