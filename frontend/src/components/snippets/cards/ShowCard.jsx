@@ -2,14 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback, memo } from 'react';
 import axiosInstance from '../../APIs/Axios';
 import { IconButton, Tooltip, Box, Typography } from '@mui/material';
-import {
-	Star as StarIcon,
-	StarBorder as StarBorderIcon,
-	Bookmark as BookmarkIcon,
-	BookmarkBorder as BookmarkBorderIcon,
-	Info as InfoIcon,
-	ClosedCaption as CCIcon,
-} from '@mui/icons-material';
+import { Star as StarIcon, StarBorder as StarBorderIcon, Bookmark as BookmarkIcon, BookmarkBorder as BookmarkBorderIcon, Info as InfoIcon, ClosedCaption as CCIcon } from '@mui/icons-material';
 import LoadingSpinner from '../LoadingSpinner';
 
 // Memoized to prevent unnecessary re-renders when switching tabs on the Homepage
@@ -40,7 +33,7 @@ const ShowCard = memo(function ShowCard({ show }) {
 				setIsFavoriteLoading(false);
 			}
 		},
-		[show.id]
+		[show.id],
 	);
 
 	const handleWatchlistToggle = useCallback(
@@ -58,7 +51,7 @@ const ShowCard = memo(function ShowCard({ show }) {
 				setIsWatchlistLoading(false);
 			}
 		},
-		[show.id]
+		[show.id],
 	);
 
 	const handleInfoClick = (e) => {
@@ -69,11 +62,11 @@ const ShowCard = memo(function ShowCard({ show }) {
 	return (
 		<Box
 			sx={{
-				display: 'inline-flex',
+				// display: 'inline-flex',
 				textAlign: 'center',
 				color: 'white',
 				backgroundColor: 'transparent',
-				m: 1,
+				m: 0.5,
 			}}
 		>
 			<Box className='showCard-container' onClick={() => navigate(`/show/${show.id}`)} sx={{ cursor: 'pointer' }}>
@@ -84,16 +77,11 @@ const ShowCard = memo(function ShowCard({ show }) {
 								<Typography component='span'>Sample</Typography>
 							</Box>
 						)}
-						<Box
-							component='img'
-							className='showCard-image'
-							src={show.image}
-							alt={show.name}
-							loading='lazy'
-							sx={{ display: 'block' }}
-						/>
+						<Box component='img' className='showCard-image' src={show.image} alt={show.name} loading='lazy' sx={{ display: 'block' }} />
 						<Box className='showCard-front-textbox'>
-							<Typography className='showCard-front-text'>{show.name}</Typography>
+							<Typography className='showCard-front-text'>
+								{show.name}
+							</Typography>
 						</Box>
 					</Box>
 					<Box
@@ -101,14 +89,14 @@ const ShowCard = memo(function ShowCard({ show }) {
 						onClick={(e) => e.stopPropagation()}
 						sx={{
 							display: 'flex',
-							alignItems: 'center',
-							gap: 0.5,
-							zIndex: 3,
 							position: 'absolute',
-							bottom: 0,
-							left: 0,
+							alignItems: 'center',
+							gap: 1,
+							top: 0,
 							right: 0,
+							m: 1,
 							p: 1,
+							zIndex: 3,
 						}}
 					>
 						{show.captions && (
@@ -125,7 +113,11 @@ const ShowCard = memo(function ShowCard({ show }) {
 								disabled={isFavoriteLoading}
 								sx={{ color: inFavorites ? '#D4AF37' : 'rgba(255,255,255,0.5)' }}
 							>
-								{isFavoriteLoading ? <LoadingSpinner small /> : inFavorites ? <StarIcon fontSize='small' /> : <StarBorderIcon fontSize='small' />}
+								{isFavoriteLoading ?
+									<LoadingSpinner small />
+								: inFavorites ?
+									<StarIcon fontSize='small' />
+								:	<StarBorderIcon fontSize='small' />}
 							</IconButton>
 						</Tooltip>
 
@@ -137,7 +129,11 @@ const ShowCard = memo(function ShowCard({ show }) {
 								disabled={isWatchlistLoading}
 								sx={{ color: inWatchlist ? '#0dcaf0' : 'rgba(255,255,255,0.5)' }}
 							>
-								{isWatchlistLoading ? <LoadingSpinner small /> : inWatchlist ? <BookmarkIcon fontSize='small' /> : <BookmarkBorderIcon fontSize='small' />}
+								{isWatchlistLoading ?
+									<LoadingSpinner small />
+								: inWatchlist ?
+									<BookmarkIcon fontSize='small' />
+								:	<BookmarkBorderIcon fontSize='small' />}
 							</IconButton>
 						</Tooltip>
 

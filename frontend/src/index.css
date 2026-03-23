@@ -81,11 +81,9 @@ body:before {
 	}
 }
 body {
-	height: 100%;
-	width: 100%;
-	background-color: #0a0a0a;
+	background-color: #040404;
 	font-family: 'Merriweather', sans-serif;
-	transition: background-color 0.3s ease;
+	transition: background-color 30s ease;
 }
 
 * {
