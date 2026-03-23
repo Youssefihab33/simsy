@@ -1,24 +1,63 @@
 import { useContext } from 'react';
-import { Container } from "@mui/material";
-import { UserContext } from "../APIs/Context.jsx";
+import { Container, Box, Typography, Link } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import { UserContext } from '../APIs/Context.jsx';
+import { PersonOutline, Home, Logout } from '@mui/icons-material';
 
 export default function AlreadyLoggedIn() {
-	const { username } = useContext(UserContext);
+	const { user } = useContext(UserContext);
+	const username = user?.username || 'user';
+
 	return (
-		<Container className='my-5' maxWidth='sm'>
-			<div className='d-flex flex-column glassy align-items-center text-center p-4 px-0 px-sm-5'>
-				<h3 className='fw-bold secondaryColor my-3'>
-					<i className='bi-person-check'></i>&nbsp;You are already logged in as {username}!
-				</h3>
-				<br />
-				<a className='text-decoration-none text-info' href='/' style={{ fontSize: '1.5rem' }}>
-					<i className='bi-house'></i> Go to homepage
-				</a>
-				<br />
-				<a className='btn btn-link text-decoration-none text-danger' href='/logout' style={{ fontSize: '1rem' }}>
-					<i className='bi-person-dash'></i> Logout
-				</a>
-			</div>
+		<Container maxWidth='sm' sx={{ my: 5 }}>
+			<Box
+				className='glassy'
+				sx={{
+					display: 'flex',
+					flexDirection: 'column',
+					alignItems: 'center',
+					textAlign: 'center',
+					p: { xs: 4, sm: 5 },
+					borderRadius: 2,
+				}}
+			>
+				<Typography variant='h5' sx={{ fontWeight: 'bold', color: '#5dd95d', my: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+					<PersonOutline /> You are already logged in as {username}!
+				</Typography>
+
+				<Link
+					component={RouterLink}
+					to='/'
+					sx={{
+						textDecoration: 'none',
+						color: '#54a9de',
+						fontSize: '1.5rem',
+						display: 'flex',
+						alignItems: 'center',
+						gap: 1,
+						mb: 2,
+						'&:hover': { textDecoration: 'underline' },
+					}}
+				>
+					<Home /> Go to homepage
+				</Link>
+
+				<Link
+					component={RouterLink}
+					to='/logout'
+					sx={{
+						textDecoration: 'none',
+						color: '#9a0606',
+						fontSize: '1rem',
+						display: 'flex',
+						alignItems: 'center',
+						gap: 1,
+						'&:hover': { textDecoration: 'underline' },
+					}}
+				>
+					<Logout /> Logout
+				</Link>
+			</Box>
 		</Container>
 	);
 }

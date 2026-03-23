@@ -1,13 +1,14 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback, memo } from 'react';
 import axiosInstance from '../../APIs/Axios';
-import { IconButton, Tooltip, Box } from '@mui/material';
+import { IconButton, Tooltip, Box, Typography } from '@mui/material';
 import {
 	Star as StarIcon,
 	StarBorder as StarBorderIcon,
 	Bookmark as BookmarkIcon,
 	BookmarkBorder as BookmarkBorderIcon,
 	Info as InfoIcon,
+	ClosedCaption as CCIcon,
 } from '@mui/icons-material';
 import LoadingSpinner from '../LoadingSpinner';
 
@@ -66,20 +67,35 @@ const ShowCard = memo(function ShowCard({ show }) {
 	};
 
 	return (
-		<div className='card d-inline-flex text-center text-light bg-transparent border-0 m-1'>
-			<div className='showCard-container' onClick={() => navigate(`/show/${show.id}`)}>
-				<div className='showCard'>
-					<div className='showCard-front bg-dark img-container'>
+		<Box
+			sx={{
+				display: 'inline-flex',
+				textAlign: 'center',
+				color: 'white',
+				backgroundColor: 'transparent',
+				m: 1,
+			}}
+		>
+			<Box className='showCard-container' onClick={() => navigate(`/show/${show.id}`)} sx={{ cursor: 'pointer' }}>
+				<Box className='showCard' sx={{ position: 'relative' }}>
+					<Box className='showCard-front bg-dark img-container'>
 						{show.sample && (
-							<div className='ribbon ribbon-top-left'>
-								<span>Sample</span>
-							</div>
+							<Box className='ribbon ribbon-top-left'>
+								<Typography component='span'>Sample</Typography>
+							</Box>
 						)}
-						<img className='showCard-image d-block' src={show.image} alt={show.name} loading='lazy' />
-						<div className='showCard-front-textbox'>
-							<div className='showCard-front-text'>{show.name}</div>
-						</div>
-					</div>
+						<Box
+							component='img'
+							className='showCard-image'
+							src={show.image}
+							alt={show.name}
+							loading='lazy'
+							sx={{ display: 'block' }}
+						/>
+						<Box className='showCard-front-textbox'>
+							<Typography className='showCard-front-text'>{show.name}</Typography>
+						</Box>
+					</Box>
 					<Box
 						className='showCard-transparent-overlay'
 						onClick={(e) => e.stopPropagation()}
@@ -88,11 +104,16 @@ const ShowCard = memo(function ShowCard({ show }) {
 							alignItems: 'center',
 							gap: 0.5,
 							zIndex: 3,
+							position: 'absolute',
+							bottom: 0,
+							left: 0,
+							right: 0,
+							p: 1,
 						}}
 					>
 						{show.captions && (
 							<Tooltip title='Captions Available'>
-								<i className='bi-badge-cc text-secondary mx-1' style={{ fontSize: '1.2rem' }}></i>
+								<CCIcon sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '1.2rem', mx: 0.5 }} />
 							</Tooltip>
 						)}
 
@@ -123,11 +144,11 @@ const ShowCard = memo(function ShowCard({ show }) {
 						<Tooltip
 							title={
 								<Box sx={{ p: 0.5, textAlign: 'center' }}>
-									<div style={{ fontWeight: 'bold' }}>{show.name}</div>
-									<div>
+									<Typography sx={{ fontWeight: 'bold' }}>{show.name}</Typography>
+									<Typography variant='body2'>
 										{show.year} | {show.kind?.charAt(0).toUpperCase() + show.kind?.slice(1)}
-									</div>
-									{show.rating && <div>Rating: {show.rating.name}</div>}
+									</Typography>
+									{show.rating && <Typography variant='body2'>Rating: {show.rating.name}</Typography>}
 								</Box>
 							}
 						>
@@ -136,9 +157,9 @@ const ShowCard = memo(function ShowCard({ show }) {
 							</IconButton>
 						</Tooltip>
 					</Box>
-				</div>
-			</div>
-		</div>
+				</Box>
+			</Box>
+		</Box>
 	);
 });
 
