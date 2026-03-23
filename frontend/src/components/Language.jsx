@@ -1,24 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { Typography, Box, Chip, Avatar, Tooltip, Container, Grid, Alert } from '@mui/material';
-import {
-	Language as LanguageIcon,
-	Flag as FlagIcon,
-	People as PeopleIcon,
-	Movie as MovieIcon,
-} from '@mui/icons-material';
+import { Language as LanguageIcon, Flag as FlagIcon, People as PeopleIcon, Movie as MovieIcon } from '@mui/icons-material';
 
 import axiosInstance from './APIs/Axios.jsx';
 import LoadingSpinner from './snippets/LoadingSpinner.jsx';
 import ShowCard from './snippets/cards/ShowCard.jsx';
 import CountryCard from './snippets/cards/CountryCard.jsx';
 import styles from './modules/ShowDetails.module.css';
+import { useTitle } from 'react-use';
 
 const LanguageDetails = () => {
 	const { language_id } = useParams();
 	const [language, setLanguage] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	useTitle(`${language?.name} - SIMSY`);
 
 	useEffect(() => {
 		const fetchLanguage = async () => {
@@ -36,8 +33,18 @@ const LanguageDetails = () => {
 	}, [language_id]);
 
 	if (loading) return <LoadingSpinner />;
-	if (error) return <Container sx={{ mt: 5 }}><Alert severity='error'>Error loading language details.</Alert></Container>;
-	if (!language) return <Container sx={{ mt: 5 }}><Alert severity='warning'>Language not found.</Alert></Container>;
+	if (error)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='error'>Error loading language details.</Alert>
+			</Container>
+		);
+	if (!language)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='warning'>Language not found.</Alert>
+			</Container>
+		);
 
 	const accentColor = '#5DD95D'; // Green
 

@@ -11,6 +11,7 @@ import axiosInstance from './APIs/Axios.jsx';
 import { UserContext } from './APIs/Context.jsx';
 import AlreadyLoggedIn from './snippets/AlreadyLoggedIn.jsx';
 import AnimatedFace from './snippets/AnimatedFace.jsx';
+import { useTitle } from 'react-use';
 
 const loginFormSchema = yup
 	.object({
@@ -25,10 +26,10 @@ export default function Login() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [faceState, setFaceState] = useState('default');
 	const [showPassword, setShowPassword] = useState(false);
-
 	const navigate = useNavigate();
 	const location = useLocation();
 	const from = location.state?.from?.pathname || '/';
+	useTitle('Login - SIMSY');
 
 	const { handleSubmit, control, setError, clearErrors } = useForm({
 		resolver: yupResolver(loginFormSchema),
@@ -135,7 +136,9 @@ export default function Login() {
 														edge='end'
 														sx={{ color: 'rgba(255,255,255,0.5)' }}
 													>
-														{showPassword ? <VisibilityOff /> : <Visibility />}
+														{showPassword ?
+															<VisibilityOff />
+														:	<Visibility />}
 													</IconButton>
 												</InputAdornment>
 											),
@@ -161,7 +164,7 @@ export default function Login() {
 							display: 'flex',
 							alignItems: 'center',
 							justifyContent: 'center',
-							gap: 1
+							gap: 1,
 						}}
 						disabled={isSubmitting}
 					>
@@ -172,7 +175,10 @@ export default function Login() {
 							Forgot password?
 						</Link>
 						<Link component={RouterLink} to='/register/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
-							Don't have an account? <Box component='span' sx={{ color: '#54a9de', fontWeight: 'bold' }}>Sign Up</Box>
+							Don't have an account?{' '}
+							<Box component='span' sx={{ color: '#54a9de', fontWeight: 'bold' }}>
+								Sign Up
+							</Box>
 						</Link>
 					</Box>
 				</form>

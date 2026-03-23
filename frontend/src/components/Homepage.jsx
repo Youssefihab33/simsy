@@ -14,6 +14,7 @@ import axiosInstance from './APIs/Axios';
 import { UserContext } from './APIs/Context';
 import ShowCard from './snippets/cards/ShowCard';
 import LoadingSpinner from './snippets/LoadingSpinner';
+import { useTitle } from 'react-use';
 
 // Configuration: Add or remove tabs here without touching the JSX logic
 const TABS_CONFIG = {
@@ -36,6 +37,7 @@ export default function Homepage() {
 	const [page, setPage] = useState(1);
 	const [isConfiguring, setIsConfiguring] = useState(true);
 	const [ShowsPerPage, setShowsPerPage] = useState(user?.shows_per_page || 10);
+	useTitle(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} - Home - SIMSY`)
 
 	const handleShowsPerPageChange = async (event) => {
 		const newVal = event.target.value;

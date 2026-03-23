@@ -11,6 +11,7 @@ const GenreDetails = () => {
 	const [genre, setGenre] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	useTitle(`${genre?.name} - SIMSY`);
 
 	useEffect(() => {
 		const fetchGenre = async () => {
@@ -28,8 +29,18 @@ const GenreDetails = () => {
 	}, [genre_id]);
 
 	if (loading) return <LoadingSpinner />;
-	if (error) return <Container sx={{ mt: 5 }}><Alert severity='error'>Error loading genre details.</Alert></Container>;
-	if (!genre) return <Container sx={{ mt: 5 }}><Alert severity='warning'>Genre not found.</Alert></Container>;
+	if (error)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='error'>Error loading genre details.</Alert>
+			</Container>
+		);
+	if (!genre)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='warning'>Genre not found.</Alert>
+			</Container>
+		);
 
 	const accentColor = '#9A0606'; // Red for genres
 

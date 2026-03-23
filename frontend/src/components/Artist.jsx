@@ -1,23 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
-import { Typography, Box, Chip, Avatar, Tooltip, Container, Grid, Alert, CircularProgress } from '@mui/material';
-import {
-	CalendarMonth as CalendarIcon,
-	Flag as FlagIcon,
-	Language as LanguageIcon,
-	Movie as MovieIcon,
-} from '@mui/icons-material';
+import { Typography, Box, Chip, Avatar, Container, Grid, Alert } from '@mui/material';
 
 import axiosInstance from './APIs/Axios';
 import LoadingSpinner from './snippets/LoadingSpinner';
 import ShowCard from './snippets/cards/ShowCard';
 import styles from './modules/ShowDetails.module.css';
+import { useTitle } from 'react-use';
 
 const ArtistDetails = () => {
 	const { artist_id } = useParams();
 	const [artist, setArtist] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	useTitle(`${artist?.name} - SIMSY`);
 
 	useEffect(() => {
 		const fetchArtist = async () => {
@@ -35,8 +31,18 @@ const ArtistDetails = () => {
 	}, [artist_id]);
 
 	if (loading) return <LoadingSpinner />;
-	if (error) return <Container sx={{ mt: 5 }}><Alert severity='error'>Error loading artist details.</Alert></Container>;
-	if (!artist) return <Container sx={{ mt: 5 }}><Alert severity='warning'>Artist not found.</Alert></Container>;
+	if (error)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='error'>Error loading artist details.</Alert>
+			</Container>
+		);
+	if (!artist)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='warning'>Artist not found.</Alert>
+			</Container>
+		);
 
 	const accentColor = '#54A9DE'; // Default blue for artists
 
@@ -101,19 +107,25 @@ const ArtistDetails = () => {
 									<Typography variant='subtitle1' sx={{ color: accentColor }}>
 										Born:
 									</Typography>
-									<Typography variant='body1' sx={{ color: 'white' }}>{artist.birthYear}</Typography>
+									<Typography variant='body1' sx={{ color: 'white' }}>
+										{artist.birthYear}
+									</Typography>
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Typography variant='subtitle1' sx={{ color: accentColor }}>
 										Age:
 									</Typography>
-									<Typography variant='body1' sx={{ color: 'white' }}>{artist.age} years old</Typography>
+									<Typography variant='body1' sx={{ color: 'white' }}>
+										{artist.age} years old
+									</Typography>
 								</Grid>
 								<Grid item xs={12} sm={6}>
 									<Typography variant='subtitle1' sx={{ color: accentColor }}>
 										Nationality:
 									</Typography>
-									<Typography variant='body1' sx={{ color: 'white' }}>{artist.nationality.name}</Typography>
+									<Typography variant='body1' sx={{ color: 'white' }}>
+										{artist.nationality.name}
+									</Typography>
 								</Grid>
 							</Grid>
 						</Box>

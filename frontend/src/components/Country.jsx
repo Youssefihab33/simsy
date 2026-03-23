@@ -1,23 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link as RouterLink } from 'react-router-dom';
 import { Typography, Box, Chip, Avatar, Container, Grid, Alert } from '@mui/material';
-import {
-	Language as LanguageIcon,
-	People as PeopleIcon,
-	Movie as MovieIcon,
-} from '@mui/icons-material';
 
 import axiosInstance from './APIs/Axios';
 import LoadingSpinner from './snippets/LoadingSpinner';
 import ArtistCard from './snippets/cards/ArtistCard';
 import ShowCard from './snippets/cards/ShowCard';
 import styles from './modules/ShowDetails.module.css';
+import { useTitle } from 'react-use';
 
 const CountryDetails = () => {
 	const { country_id } = useParams();
 	const [country, setCountry] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	useTitle(`${country?.name} - SIMSY`);
 
 	useEffect(() => {
 		const fetchCountry = async () => {
@@ -35,8 +32,18 @@ const CountryDetails = () => {
 	}, [country_id]);
 
 	if (loading) return <LoadingSpinner />;
-	if (error) return <Container sx={{ mt: 5 }}><Alert severity='error'>Error loading country details.</Alert></Container>;
-	if (!country) return <Container sx={{ mt: 5 }}><Alert severity='warning'>Country not found.</Alert></Container>;
+	if (error)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='error'>Error loading country details.</Alert>
+			</Container>
+		);
+	if (!country)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='warning'>Country not found.</Alert>
+			</Container>
+		);
 
 	const accentColor = '#5DD95D'; // Green for countries
 
@@ -52,7 +59,7 @@ const CountryDetails = () => {
 				<Container>
 					<Grid container alignItems='center'>
 						<Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' }, mb: { xs: 4, md: 0 } }}>
-							<img src={country.flag} alt={country.name} className={styles.posterImage} />
+							<img src={country.image} alt={country.name} className={styles.posterImage} />
 						</Grid>
 						<Grid item xs={12} md={8}>
 							<Typography variant='h2' component='h1' gutterBottom sx={{ fontWeight: 'bold', color: accentColor }}>

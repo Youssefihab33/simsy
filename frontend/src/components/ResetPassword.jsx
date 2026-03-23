@@ -5,6 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { useState } from 'react';
 import axiosInstance from './APIs/Axios.jsx';
 import AnimatedFace from './snippets/AnimatedFace.jsx';
+import { useTitle } from 'react-use';
 
 export default function ForgotPasswordConfirm() {
 	const navigate = useNavigate();
@@ -14,6 +15,8 @@ export default function ForgotPasswordConfirm() {
 	const [faceState, setFaceState] = useState('default');
 	const [showPassword, setShowPassword] = useState(false);
 	const { handleSubmit, control } = useForm();
+	useTitle('Reset Password - SIMSY');
+
 	const submission = (data) => {
 		setAlert(null);
 		if (data.password !== data.password2) {
@@ -81,7 +84,9 @@ export default function ForgotPasswordConfirm() {
 														edge='end'
 														sx={{ color: 'rgba(255,255,255,0.5)' }}
 													>
-														{showPassword ? <VisibilityOff /> : <Visibility />}
+														{showPassword ?
+															<VisibilityOff />
+														:	<Visibility />}
 													</IconButton>
 												</InputAdornment>
 											),
@@ -135,7 +140,10 @@ export default function ForgotPasswordConfirm() {
 
 					<Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
 						<Link component={RouterLink} to='/login/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
-							Back to <Box component='span' sx={{ color: '#54a9de', fontWeight: 'bold' }}>Log In</Box>
+							Back to{' '}
+							<Box component='span' sx={{ color: '#54a9de', fontWeight: 'bold' }}>
+								Log In
+							</Box>
 						</Link>
 					</Box>
 				</form>

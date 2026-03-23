@@ -29,6 +29,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 
 import axiosInstance from './APIs/Axios';
 import { UserContext } from './APIs/Context';
+import { useTitle } from 'react-use';
 
 const profileFormSchema = yup.object({
 	email: yup.string().email('Invalid email format').required('Email is required!'),
@@ -57,6 +58,7 @@ export default function Profile() {
 	const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 	const [profilePreview, setProfilePreview] = useState(user?.profile_picture || '');
 	const [countries, setCountries] = useState([]);
+	useTitle(`${user?.username} - SIMSY`);
 
 	useEffect(() => {
 		const fetchCountries = async () => {

@@ -5,12 +5,14 @@ import axiosInstance from './APIs/Axios.jsx';
 import LoadingSpinner from './snippets/LoadingSpinner.jsx';
 import ShowCard from './snippets/cards/ShowCard.jsx';
 import styles from './modules/ShowDetails.module.css';
+import { useTitle } from 'react-use';
 
 const RatingDetails = () => {
 	const { rating_id } = useParams();
 	const [rating, setRating] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	useTitle(`${rating?.name} - SIMSY`);
 
 	useEffect(() => {
 		const fetchRating = async () => {
@@ -28,8 +30,18 @@ const RatingDetails = () => {
 	}, [rating_id]);
 
 	if (loading) return <LoadingSpinner />;
-	if (error) return <Container sx={{ mt: 5 }}><Alert severity='error'>Error loading rating details.</Alert></Container>;
-	if (!rating) return <Container sx={{ mt: 5 }}><Alert severity='warning'>Rating not found.</Alert></Container>;
+	if (error)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='error'>Error loading rating details.</Alert>
+			</Container>
+		);
+	if (!rating)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='warning'>Rating not found.</Alert>
+			</Container>
+		);
 
 	const accentColor = '#5DD95D'; // Green for ratings
 

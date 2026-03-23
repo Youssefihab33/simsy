@@ -5,12 +5,14 @@ import axiosInstance from './APIs/Axios';
 import LoadingSpinner from './snippets/LoadingSpinner';
 import ShowCard from './snippets/cards/ShowCard';
 import styles from './modules/ShowDetails.module.css';
+import { useTitle } from 'react-use';
 
 const LabelDetails = () => {
 	const { label_id } = useParams();
 	const [label, setLabel] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	useTitle(`${label?.name} - SIMSY`);
 
 	useEffect(() => {
 		const fetchLabel = async () => {
@@ -28,8 +30,18 @@ const LabelDetails = () => {
 	}, [label_id]);
 
 	if (loading) return <LoadingSpinner />;
-	if (error) return <Container sx={{ mt: 5 }}><Alert severity='error'>Error loading label details.</Alert></Container>;
-	if (!label) return <Container sx={{ mt: 5 }}><Alert severity='warning'>Label not found.</Alert></Container>;
+	if (error)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='error'>Error loading label details.</Alert>
+			</Container>
+		);
+	if (!label)
+		return (
+			<Container sx={{ mt: 5 }}>
+				<Alert severity='warning'>Label not found.</Alert>
+			</Container>
+		);
 
 	const accentColor = '#54A9DE'; // Blue for labels
 

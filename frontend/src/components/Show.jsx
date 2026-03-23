@@ -23,6 +23,7 @@ import LoadingSpinner from './snippets/LoadingSpinner.jsx';
 import ArtistCard from './snippets/cards/ArtistCard.jsx';
 import styles from './modules/ShowDetails.module.css';
 import { VideoJS, videoJsOptions } from './snippets/VideoJS.jsx';
+import { useTitle } from 'react-use';
 
 // --- Helper Functions ---
 
@@ -372,6 +373,7 @@ const ShowDetails = () => {
 
 	const { show, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, refetchShowData } = useShowData(show_id);
 
+	useTitle(`${show?.name} - SIMSY`)
 	const handleFavoritesToggle = useToggleApi(show?.id, setInFavorites, 'toggleFavorite', 'favorites');
 	const handleWatchlistToggle = useToggleApi(show?.id, setInWatchlist, 'toggleWatchlist', 'watchlist');
 

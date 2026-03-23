@@ -4,6 +4,7 @@ import { useState } from 'react';
 import axiosInstance from './APIs/Axios.jsx';
 import { Container, Grow, Alert, TextField, Button, Link, Box, Grid, Typography } from '@mui/material';
 import AnimatedFace from './snippets/AnimatedFace.jsx';
+import { useTitle } from 'react-use';
 
 export default function ForgotPassword() {
 	const [alert, setAlert] = useState(null);
@@ -11,6 +12,8 @@ export default function ForgotPassword() {
 	const [faceState, setFaceState] = useState('default');
 	const { handleSubmit, control } = useForm();
 	const navigate = useNavigate();
+	useTitle('Forgot Password - SIMSY');
+
 	const onSubmit = (data) => {
 		setAlert(null);
 		setIsSubmitting(true);
@@ -96,7 +99,10 @@ export default function ForgotPassword() {
 					</Button>
 					<Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
 						<Link component={RouterLink} to='/login/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
-							Remember your password? <Box component='span' sx={{ color: '#54a9de', fontWeight: 'bold' }}>Log In</Box>
+							Remember your password?{' '}
+							<Box component='span' sx={{ color: '#54a9de', fontWeight: 'bold' }}>
+								Log In
+							</Box>
 						</Link>
 					</Box>
 				</form>

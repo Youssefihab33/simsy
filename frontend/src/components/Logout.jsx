@@ -1,6 +1,6 @@
 import { useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLocalStorage } from 'react-use';
+import { useLocalStorage, useTitle } from 'react-use';
 import { UserContext } from './APIs/Context';
 import axiosInstance from './APIs/Axios';
 import LoadingSpinner from './snippets/LoadingSpinner';
@@ -8,8 +8,8 @@ import LoadingSpinner from './snippets/LoadingSpinner';
 export default function Logout() {
 	const { setUser } = useContext(UserContext);
 	const navigate = useNavigate();
-
 	const [, , removeToken] = useLocalStorage('auth_token', null, { raw: true });
+	useTitle('Logout - SIMSY');
 
 	useEffect(() => {
 		const performLogout = async () => {
