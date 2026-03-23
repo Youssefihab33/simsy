@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback, useContext, useMemo } from 'react';
-import { Box, Tabs, Tab, Pagination, Stack, InputLabel, MenuItem, FormControl, Select } from '@mui/material';
+import { Box, Tabs, Tab, Pagination, Stack, InputLabel, MenuItem, FormControl, Select, Container, Typography, Button, Link } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
+import {
+	Star as StarIcon,
+	List as ListIcon,
+	Whatshot as FireIcon,
+	History as HistoryIcon,
+	AutoAwesome as MagicIcon,
+	Refresh as RefreshIcon,
+	Favorite as FavoriteIcon,
+} from '@mui/icons-material';
 import axiosInstance from './APIs/Axios';
 import { UserContext } from './APIs/Context';
 import ShowCard from './snippets/cards/ShowCard';
@@ -7,17 +17,17 @@ import LoadingSpinner from './snippets/LoadingSpinner';
 
 // Configuration: Add or remove tabs here without touching the JSX logic
 const TABS_CONFIG = {
-	favorites: { label: 'Favorites', icon: 'bi-star-fill', color: 'text-warning', endpoint: '/shows/favorites/', empty: 'No favorites yet!' },
-	watchlist: { label: 'Watchlist', icon: 'bi-list-columns', color: 'text-info', endpoint: '/shows/watchlist/', empty: 'No watchlist items yet!' },
-	new: { label: 'New', icon: 'bi-fire', color: 'primaryColor', endpoint: '/shows/new/', empty: 'No new shows available.' },
-	history: { label: 'History', icon: 'bi-clock-history', color: 'tertiaryColor', endpoint: '/shows/history/', empty: 'No history items yet!' },
-	random: { label: 'For You', icon: 'bi-magic', color: 'secondaryColor', endpoint: '/shows/random/', empty: 'No random shows available.', refreshable: true },
+	favorites: { label: 'Favorites', icon: <StarIcon />, color: '#ffc107', endpoint: '/shows/favorites/', empty: 'No favorites yet!' },
+	watchlist: { label: 'Watchlist', icon: <ListIcon />, color: '#0dcaf0', endpoint: '/shows/watchlist/', empty: 'No watchlist items yet!' },
+	new: { label: 'New', icon: <FireIcon />, color: '#9a0606', endpoint: '/shows/new/', empty: 'No new shows available.' },
+	history: { label: 'History', icon: <HistoryIcon />, color: '#54a9de', endpoint: '/shows/history/', empty: 'No history items yet!' },
+	random: { label: 'For You', icon: <MagicIcon />, color: '#5dd95d', endpoint: '/shows/random/', empty: 'No random shows available.', refreshable: true },
 };
 
 const TabPanel = ({ children, value, index }) => (
-	<div role='tabpanel' hidden={value !== index}>
-		{value === index && <Box sx={{ py: 2 }}>{children}</Box>}
-	</div>
+	<Box role='tabpanel' hidden={value !== index} sx={{ py: 3 }}>
+		{value === index && children}
+	</Box>
 );
 
 export default function Homepage() {
@@ -25,14 +35,16 @@ export default function Homepage() {
 	const [activeTab, setActiveTab] = useState('new');
 	const [page, setPage] = useState(1);
 	const [isConfiguring, setIsConfiguring] = useState(true);
-	const [ShowsPerPage, setShowsPerPage] = useState(user.shows_per_page);
+	const [ShowsPerPage, setShowsPerPage] = useState(user?.shows_per_page || 10);
+
 	const handleShowsPerPageChange = async (event) => {
-		setShowsPerPage(event.target.value);
+		const newVal = event.target.value;
+		setShowsPerPage(newVal);
 		try {
 			const response = await axiosInstance.put(`/users/current/`, {
-				shows_per_page: event.target.value,
+				shows_per_page: newVal,
 			});
-			setUser(response);
+			setUser(response.data);
 		} catch (error) {
 			alert('An error occurred while attempting to save your Shows_Per_Page. Please try again.');
 			console.error('An error occurred while attempting to save Shows_Per_Page.', error);
@@ -48,17 +60,12 @@ export default function Homepage() {
 
 	// Initialize Active Tab from User Context
 	useEffect(() => {
-		if (TABS_CONFIG[user.home_tab]) {
+		if (user?.home_tab && TABS_CONFIG[user.home_tab]) {
 			setActiveTab(user.home_tab);
 		}
 		setIsConfiguring(false);
-	}, [user.home_tab]);
+	}, [user?.home_tab]);
 
-	/**
-	 * Fetch Data Logic
-	 * Functional updates are used inside setState to keep the function stable (empty dependency array).
-	 * This prevents the infinite "random" refresh loop.
-	 */
 	const fetchData = useCallback(async (tabKey) => {
 		setState((prev) => ({
 			...prev,
@@ -103,10 +110,6 @@ export default function Homepage() {
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 	};
 
-	/**
-	 * Pagination Logic
-	 * Wrapped in useMemo so it only recalculates when data, page, or tab changes.
-	 */
 	const { paginatedData, totalPages } = useMemo(() => {
 		const currentData = state.data[activeTab] || [];
 		const total = Math.ceil(currentData.length / ShowsPerPage);
@@ -117,79 +120,58 @@ export default function Homepage() {
 	// UI Conditionals
 	if (isConfiguring)
 		return (
-			<div className='text-center text-light mt-5'>
-				<LoadingSpinner /> <h3>Loading...</h3>
-			</div>
+			<Box sx={{ textAlign: 'center', color: 'white', mt: 10 }}>
+				<LoadingSpinner />
+				<Typography variant='h5' sx={{ mt: 2 }}>Loading...</Typography>
+			</Box>
 		);
 
 	if (state.error)
 		return (
-			<div className='text-center text-light mt-5'>
-				<h3 className='text-danger'>Error loading shows!</h3>
-				<p>{state.error}</p>
-			</div>
+			<Box sx={{ textAlign: 'center', color: 'white', mt: 10 }}>
+				<Typography variant='h4' color='error'>Error loading shows!</Typography>
+				<Typography>{String(state.error)}</Typography>
+			</Box>
 		);
 
 	const config = TABS_CONFIG[activeTab];
 	const isLoading = state.loading[activeTab];
 
 	return (
-		<section className='container my-5'>
-			<Box sx={{ display: 'flex', justifyContent: 'flex-end', color: 'tertiary' }}>
-				<FormControl sx={{ width: 120, color: 'tertiary' }}>
-					<InputLabel
-						sx={{
-							color: 'tertiary.main',
-							'&.Mui-focused': { color: 'tertiary.main' },
-						}}
-						id='shows-per-page-select-label'
-					>
-						Shows per page
-					</InputLabel>
+		<Container maxWidth='xl' sx={{ my: 5 }}>
+			<Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3 }}>
+				<FormControl sx={{ minWidth: 150 }}>
+					<InputLabel id='shows-per-page-label' sx={{ color: 'rgba(255,255,255,0.7)' }}>Shows per page</InputLabel>
 					<Select
-						labelId='shows-per-page-select-label'
-						id='shows-per-page-select'
+						labelId='shows-per-page-label'
 						value={ShowsPerPage}
 						label='Shows per page'
 						onChange={handleShowsPerPageChange}
 						sx={{
-							color: 'tertiary.main',
-							'.MuiOutlinedInput-notchedOutline': { borderColor: 'tertiary.main' },
-							'&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'tertiary.main' },
-							'&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'tertiary.main' },
-							'.MuiSvgIcon-root': { color: 'tertiary.main' },
-						}}
-						MenuProps={{
-							PaperProps: {
-								sx: {
-									bgcolor: '#333',
-									color: '#ddd',
-									'& .MuiMenuItem-root': {
-										'&:hover': { bgcolor: 'rgba(255,255,255,0.1)' },
-										'&.Mui-selected': { bgcolor: 'tertiary.main', color: '#000' },
-										'&.Mui-selected:hover': { bgcolor: 'tertiary.main' },
-									},
-								},
-							},
+							color: 'white',
+							'.MuiOutlinedInput-notchedOutline': { borderColor: 'rgba(255,255,255,0.3)' },
+							'&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'white' },
+							'&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#54a9de' },
+							'.MuiSvgIcon-root': { color: 'white' },
 						}}
 					>
-						<MenuItem value={5}>5</MenuItem>
-						<MenuItem value={10}>10</MenuItem>
-						<MenuItem value={15}>15</MenuItem>
-						<MenuItem value={20}>20</MenuItem>
+						{[5, 10, 15, 20].map((val) => (
+							<MenuItem key={val} value={val}>{val}</MenuItem>
+						))}
 					</Select>
 				</FormControl>
 			</Box>
-			<Box sx={{ width: '100%', borderBottom: 1, borderColor: 'divider' }}>
+
+			<Box sx={{ width: '100%', borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}>
 				<Tabs
 					value={activeTab}
 					onChange={handleTabChange}
 					variant='fullWidth'
 					textColor='inherit'
-					indicatorColor='primary'
 					sx={{
-						'& .MuiTab-root': { color: '#aaa', minHeight: '64px' },
-						'& .Mui-selected': { color: '#fff' },
+						'& .MuiTab-root': { color: 'rgba(255,255,255,0.5)', minHeight: '64px', fontSize: '1rem' },
+						'& .Mui-selected': { color: 'white' },
+						'& .MuiTabs-indicator': { backgroundColor: config.color },
 					}}
 				>
 					{Object.entries(TABS_CONFIG).map(([key, item]) => (
@@ -197,11 +179,12 @@ export default function Homepage() {
 							key={key}
 							value={key}
 							label={
-								<span>
-									<i className={`${item.icon} ${item.color.startsWith('text-') ? item.color : ''}`} style={!item.color.startsWith('text-') ? { color: item.color } : {}}></i>{' '}
-									{item.label}
-								</span>
+								<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+									{item.icon}
+									<Typography variant='body1' sx={{ fontWeight: 'bold' }}>{item.label}</Typography>
+								</Box>
 							}
+							sx={{ '& .MuiSvgIcon-root': { color: item.color } }}
 						/>
 					))}
 				</Tabs>
@@ -209,42 +192,63 @@ export default function Homepage() {
 
 			<TabPanel value={activeTab} index={activeTab}>
 				{config.refreshable && (
-					<button type='button' className='btn btn-success d-flex mx-auto mb-3' onClick={() => fetchData(activeTab, true)}>
-						<span className='bi-arrow-repeat'>&nbsp;Refresh Shows</span>
-					</button>
+					<Button
+						variant='contained'
+						color='success'
+						startIcon={<RefreshIcon />}
+						onClick={() => fetchData(activeTab)}
+						sx={{ display: 'flex', mx: 'auto', mb: 3 }}
+					>
+						Refresh Shows
+					</Button>
 				)}
 
 				{isLoading ?
-					<div className='text-center mt-5'>
-						<h3>
-							<LoadingSpinner /> Loading...
-						</h3>
-					</div>
+					<Box sx={{ textAlign: 'center', mt: 5, color: 'white' }}>
+						<LoadingSpinner />
+						<Typography variant='h5' sx={{ mt: 2 }}>Loading...</Typography>
+					</Box>
 				: paginatedData.length > 0 ?
 					<>
-						<div className='d-flex flex-wrap justify-content-center'>
+						<Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 2 }}>
 							{paginatedData.map((show) => (
 								<ShowCard key={show.id} show={show} />
 							))}
-						</div>
+						</Box>
 						{totalPages > 1 && (
-							<Stack spacing={2} className='mt-4' alignItems='center'>
-								<Pagination count={totalPages} page={page} onChange={handlePageChange} color='primary' sx={{ '& .MuiPaginationItem-root': { color: '#fff' } }} />
+							<Stack spacing={2} sx={{ mt: 4 }} alignItems='center'>
+								<Pagination
+									count={totalPages}
+									page={page}
+									onChange={handlePageChange}
+									color='primary'
+									sx={{ '& .MuiPaginationItem-root': { color: 'white' } }}
+								/>
 							</Stack>
 						)}
 					</>
-				:	<h3 className={`text-center mt-5 ${config.color.startsWith('text-') ? config.color : ''}`}>{config.empty}</h3>}
+				:	<Typography variant='h4' sx={{ textAlign: 'center', mt: 5, color: config.color }}>{config.empty}</Typography>}
 			</TabPanel>
 
-			<div className='text-end mt-3 me-5'>
-				<a className='text-info text-decoration-none' href='/explore'>
-					Discover <strong>NEW</strong> Content? <br />
-					Go to &nbsp;
-					<strong>
-						<i className='bi-search-heart'></i> Explore
-					</strong>
-				</a>
-			</div>
-		</section>
+			<Box sx={{ textAlign: 'right', mt: 3, mr: { md: 5 } }}>
+				<Link
+					component={RouterLink}
+					to='/explore'
+					sx={{
+						color: '#54a9de',
+						textDecoration: 'none',
+						'&:hover': { textDecoration: 'underline' },
+						display: 'inline-block',
+					}}
+				>
+					<Typography variant='body1'>
+						Discover <strong>NEW</strong> Content?
+					</Typography>
+					<Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5, fontWeight: 'bold' }}>
+						<FavoriteIcon fontSize='small' /> Explore
+					</Box>
+				</Link>
+			</Box>
+		</Container>
 	);
 }

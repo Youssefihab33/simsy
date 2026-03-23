@@ -3,8 +3,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
 // Styles & Icons
-import { Container, Row, Col, Card } from 'react-bootstrap';
-import { Typography, Button, Chip, Avatar, Tooltip, Modal, Box, IconButton } from '@mui/material';
+import { Container, Typography, Button, Chip, Avatar, Tooltip, Modal, Box, IconButton, Grid, Paper } from '@mui/material';
 import {
 	PlayArrow as PlayArrowIcon,
 	BookmarkAdd as BookmarkAddIcon,
@@ -500,7 +499,7 @@ const ShowDetails = () => {
 							variant='outlined'
 							component='a'
 							href={`/${kind}/${item.id}`}
-							avatar={<Avatar alt={item.name} src={item.image || item.flag} className='ms-2 text-light' clickable='true' />}
+							avatar={<Avatar alt={item.name} src={item.image || item.flag} sx={{ ml: 1, color: 'white' }} />}
 							{...commonChipProps}
 							clickable
 						/>
@@ -547,11 +546,11 @@ const ShowDetails = () => {
 	// Optimization: Memoize cast list
 	const castList = useMemo(
 		() => (
-			<Row xs={2} className='g-2'>
+			<Grid container spacing={2}>
 				{show?.artists?.map((artist, index) => (
 					<ArtistCard key={index} artist={artist} />
 				))}
-			</Row>
+			</Grid>
 		),
 		[show?.artists]
 	);
@@ -603,34 +602,59 @@ const ShowDetails = () => {
 	}
 
 	if (error) {
-		return <div className='text-light text-center mt-5'>Error loading show details. Please try again later.</div>;
+		return <Box sx={{ color: 'white', textAlign: 'center', mt: 5 }}>Error loading show details. Please try again later.</Box>;
 	}
 
 	if (!show) {
-		return <div className='text-light text-center mt-5'>No show details found.</div>;
+		return <Box sx={{ color: 'white', textAlign: 'center', mt: 5 }}>No show details found.</Box>;
 	}
 
 	return (
-		<div className={styles.showDetailsContainer}>
+		<Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', mt: -9 }}>
 			{/* --- Hero Section --- */}
-			<div className={styles.heroSection} style={{ backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(${show.image})` }}>
+			<Box
+				sx={{
+					position: 'relative',
+					backgroundSize: 'cover',
+					backgroundPosition: 'center',
+					backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(${show.image})`,
+					color: 'white',
+					minHeight: '100vh',
+					display: 'flex',
+					alignItems: 'center',
+					pt: { xs: 15, md: 0 },
+					pb: { xs: 5, md: 0 },
+				}}
+			>
 				<Container>
-					<Row className='align-items-center mt-5 mt-md-0'>
-						<Col md={4} className='d-flex justify-content-center justify-content-md-start mb-4 mb-md-0 mt-5 mt-md-0'>
-							<img src={show.image} alt={`${show.name} poster`} className={styles.posterImage} />
-						</Col>
-						<Col md={8} className='mt-5 mt-md-0'>
-							<Typography variant='h2' component='h1' gutterBottom className='fw-bold' sx={{ color: accentColor }}>
+					<Grid container spacing={4} alignItems='center'>
+						<Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
+							<Box
+								component='img'
+								src={show.image}
+								alt={`${show.name} poster`}
+								className={styles.posterImage}
+								sx={{
+									width: '100%',
+									maxWidth: 300,
+									borderRadius: 2,
+									boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
+									transition: 'transform 0.3s ease-in-out',
+									'&:hover': { transform: 'scale(1.05)' },
+								}}
+							/>
+						</Grid>
+						<Grid item xs={12} md={8}>
+							<Typography variant='h2' component='h1' gutterBottom sx={{ fontWeight: 'bold', color: accentColor }}>
 								{show.name}
 							</Typography>
-							<Typography variant='h5' component='p' className='text-light mb-5'>
+							<Typography variant='h5' component='p' sx={{ color: 'white', mb: 5 }}>
 								{show.year} | {show.kind.charAt(0).toUpperCase() + show.kind.slice(1)} {show.kind !== 'film' && `| S${season}E${episode}`}
 							</Typography>
-							<div className='d-flex align-items-center mb-4'>
+							<Box sx={{ display: 'flex', alignItems: 'center', mb: 4, flexWrap: 'wrap', gap: 2 }}>
 								<Button
 									variant='contained'
 									size='large'
-									className='me-3'
 									startIcon={<PlayArrowIcon />}
 									sx={{ backgroundColor: accentColor, '&:hover': { backgroundColor: hoverColor } }}
 									onClick={handleModalOpen}
@@ -641,9 +665,13 @@ const ShowDetails = () => {
 									variant={inFavorites ? 'contained' : 'outlined'}
 									startIcon={inFavorites ? <FavoriteIcon /> : <FavoriteBorderIcon />}
 									size='small'
-									color='favorite'
-									className='me-2'
 									onClick={handleFavoritesToggle}
+									sx={{
+										color: inFavorites ? 'white' : '#D4AF37',
+										borderColor: '#D4AF37',
+										backgroundColor: inFavorites ? '#D4AF37' : 'transparent',
+										'&:hover': { borderColor: '#D4AF37', backgroundColor: inFavorites ? '#B8962E' : 'rgba(212, 175, 55, 0.1)' },
+									}}
 								>
 									{inFavorites ? 'In your Favorites' : 'Add to Favorites'}
 								</Button>
@@ -651,8 +679,13 @@ const ShowDetails = () => {
 									variant={inWatchlist ? 'contained' : 'outlined'}
 									startIcon={inWatchlist ? <BookmarkAddedIcon /> : <BookmarkAddIcon />}
 									size='small'
-									color='watchlist'
 									onClick={handleWatchlistToggle}
+									sx={{
+										color: inWatchlist ? 'white' : '#0dcaf0',
+										borderColor: '#0dcaf0',
+										backgroundColor: inWatchlist ? '#0dcaf0' : 'transparent',
+										'&:hover': { borderColor: '#0dcaf0', backgroundColor: inWatchlist ? '#0baccc' : 'rgba(13, 202, 240, 0.1)' },
+									}}
 								>
 									{inWatchlist ? 'In your Watchlist' : 'Add to Watchlist'}
 								</Button>
@@ -660,147 +693,149 @@ const ShowDetails = () => {
 									variant='outlined'
 									size='small'
 									color='error'
-									sx={{ ml: 1, textTransform: 'none' }}
+									sx={{ textTransform: 'none' }}
 									onClick={handleMarkAsUnwatched}
 								>
 									Mark as unwatched
 								</Button>
-							</div>
-							{show.imdb && <div dangerouslySetInnerHTML={{ __html: show.imdb }} />}
-						</Col>
-					</Row>
+							</Box>
+							{show.imdb && <Box dangerouslySetInnerHTML={{ __html: show.imdb }} sx={{ color: 'white' }} />}
+						</Grid>
+					</Grid>
 				</Container>
-			</div>
+			</Box>
 
 			{/* --- Main Details Section --- */}
-			<Container className='my-5'>
-				<Row>
-					<Col md={8}>
+			<Container sx={{ my: 5 }}>
+				<Grid container spacing={5}>
+					<Grid item xs={12} md={8}>
 						{/* Overview */}
-						<div className='mb-5'>
-							<Typography variant='h4' component='h2' gutterBottom className='fw-bold text-light'>
+						<Box sx={{ mb: 5 }}>
+							<Typography variant='h4' component='h2' gutterBottom sx={{ fontWeight: 'bold', color: 'white' }}>
 								Overview
 							</Typography>
-							<Typography variant='body1' paragraph className='text-light'>
+							<Typography variant='body1' paragraph sx={{ color: 'white' }}>
 								{show.description}
 							</Typography>
-						</div>
+						</Box>
 
 						{/* Details */}
-						<div className='mb-5'>
-							<Typography variant='h5' component='h3' gutterBottom className='fw-bold text-light'>
+						<Box sx={{ mb: 5 }}>
+							<Typography variant='h5' component='h3' gutterBottom sx={{ fontWeight: 'bold', color: 'white' }}>
 								Details
 							</Typography>
-							<Row className='text-light'>
-								<Col md={6} className='mb-3'>
-									<Typography variant='subtitle1' className='text-muted' sx={{ color: `${accentColor} !important` }}>
+							<Grid container spacing={2}>
+								<Grid item xs={12} sm={6}>
+									<Typography variant='subtitle1' sx={{ color: accentColor }}>
 										Type:
 									</Typography>
-									<Typography variant='body1' className='text-light'>
+									<Typography variant='body1' sx={{ color: 'white' }}>
 										{show.kind.charAt(0).toUpperCase() + show.kind.slice(1)}
 									</Typography>
-								</Col>
-								<Col md={6} className='mb-3'>
-									<Typography variant='subtitle1' className='text-muted' sx={{ color: `${accentColor} !important` }}>
+								</Grid>
+								<Grid item xs={12} sm={6}>
+									<Typography variant='subtitle1' sx={{ color: accentColor }}>
 										Year:
 									</Typography>
-									<Typography variant='body1' className='text-light'>
+									<Typography variant='body1' sx={{ color: 'white' }}>
 										{show.year}
 									</Typography>
-								</Col>
-								<Col md={6} className='mb-3'>
-									<Typography variant='subtitle1' className='text-muted' sx={{ color: `${accentColor} !important` }}>
+								</Grid>
+								<Grid item xs={12} sm={6}>
+									<Typography variant='subtitle1' sx={{ color: accentColor }}>
 										Rating:
 									</Typography>
-									<div className='d-flex align-items-center'>
-										<img src={show.rating.image} alt={show.rating.name} style={{ height: '30px', marginRight: '8px' }} />
-										<Typography variant='body1' className='text-light'>
+									<Box sx={{ display: 'flex', alignItems: 'center' }}>
+										<Box component='img' src={show.rating.image} alt={show.rating.name} sx={{ height: '30px', mr: 1 }} />
+										<Typography variant='body1' sx={{ color: 'white' }}>
 											{show.rating.name}
 										</Typography>
-									</div>
-								</Col>
-								<Col md={6} className='mb-3'>
-									<Typography variant='subtitle1' className='text-muted' sx={{ color: `${accentColor} !important` }}>
+									</Box>
+								</Grid>
+								<Grid item xs={12} sm={6}>
+									<Typography variant='subtitle1' sx={{ color: accentColor }}>
 										Captions:
 									</Typography>
-									<Typography variant='body1' className='text-light'>
+									<Typography variant='body1' sx={{ color: 'white' }}>
 										{show.captions ? 'Available (English)' : 'Not Available'}
 									</Typography>
-								</Col>
+								</Grid>
 								{show.kind !== 'film' && (
 									<>
-										<Col md={6} className='mb-3'>
-											<Typography variant='subtitle1' className='text-muted' sx={{ color: `${accentColor} !important` }}>
+										<Grid item xs={12} sm={6}>
+											<Typography variant='subtitle1' sx={{ color: accentColor }}>
 												Status:
 											</Typography>
-											<Typography variant='body1' className='text-light'>
+											<Typography variant='body1' sx={{ color: 'white' }}>
 												{show.sample ? 'A Sample' : `Full ${show.kind.charAt(0).toUpperCase() + show.kind.slice(1)}`}
 											</Typography>
-										</Col>
-										<Col md={6} className='mb-3'>
-											<Typography variant='subtitle1' className='text-muted' sx={{ color: `${accentColor} !important` }}>
+										</Grid>
+										<Grid item xs={12} sm={6}>
+											<Typography variant='subtitle1' sx={{ color: accentColor }}>
 												Episodes:
 											</Typography>
-											<Typography variant='body1' className='text-light'>
+											<Typography variant='body1' sx={{ color: 'white' }}>
 												{show.number_of_episodes || '# of Episodes'}
 											</Typography>
-										</Col>
+										</Grid>
 									</>
 								)}
-							</Row>
-						</div>
+							</Grid>
+						</Box>
 
 						{/* Countries & Languages */}
-						<div className='mb-5'>
-							<Typography variant='h5' component='h3' gutterBottom className='fw-bold' sx={{ color: `${accentColor} !important` }}>
+						<Box sx={{ mb: 5 }}>
+							<Typography variant='h5' component='h3' gutterBottom sx={{ fontWeight: 'bold', color: accentColor }}>
 								Countries & Languages
 							</Typography>
-							<div className='d-flex flex-wrap'>
+							<Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
 								{countryChips}
-								{show.countries.length > 0 && show.languages.length > 0 && <h3 style={{ margin: '4px 8px', color: 'white' }}>|</h3>}
+								{show.countries.length > 0 && show.languages.length > 0 && <Typography variant='h4' sx={{ mx: 1, color: 'white' }}>|</Typography>}
 								{languageChips}
-							</div>
-						</div>
+							</Box>
+						</Box>
 
 						{/* Genres & Labels */}
-						<div className='mb-5'>
-							<Typography variant='h5' component='h3' gutterBottom className='fw-bold' sx={{ color: `${accentColor} !important` }}>
+						<Box sx={{ mb: 5 }}>
+							<Typography variant='h5' component='h3' gutterBottom sx={{ fontWeight: 'bold', color: accentColor }}>
 								Genres & Labels
 							</Typography>
-							<div className='d-flex flex-wrap'>
+							<Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
 								{genreChips}
-								{show.genres.length > 0 && show.labels.length > 0 && <h3 style={{ margin: '4px 8px', color: 'white' }}>|</h3>}
+								{show.genres.length > 0 && show.labels.length > 0 && <Typography variant='h4' sx={{ mx: 1, color: 'white' }}>|</Typography>}
 								{labelChips}
-							</div>
-						</div>
+							</Box>
+						</Box>
+
 						{/* Additional Info */}
-						<Row>
-							<Typography variant='h6' component='h4' gutterBottom className='text-light'>
+						<Box sx={{ mb: 5 }}>
+							<Typography variant='h6' component='h4' gutterBottom sx={{ color: 'white' }}>
 								Additional Info
 							</Typography>
-							<Typography variant='body2' className='text-light'>
+							<Typography variant='body2' sx={{ color: 'white' }}>
 								<b>Finalized:</b> {show.finalized ? 'Yes' : 'No'}
 							</Typography>
-							<Typography variant='body2' className='text-light'>
+							<Typography variant='body2' sx={{ color: 'white' }}>
 								<b>Created:</b> {new Date(show.created).toLocaleString()}
 							</Typography>
-							<Typography variant='body2' className='text-light'>
+							<Typography variant='body2' sx={{ color: 'white' }}>
 								<b>Updated:</b> {new Date(show.updated).toLocaleString()}
 							</Typography>
-						</Row>
-					</Col>
+						</Box>
+					</Grid>
 
 					{/* Cast Section */}
-					<Col md={4}>
-						<div className='overflow-visible mb-5'>
-							<Typography variant='h4' component='h2' gutterBottom className='fw-bold text-light'>
+					<Grid item xs={12} md={4}>
+						<Box sx={{ mb: 5 }}>
+							<Typography variant='h4' component='h2' gutterBottom sx={{ fontWeight: 'bold', color: 'white' }}>
 								Cast
 							</Typography>
-							<div className={styles.castContainer}>{castList}</div>
-						</div>
-					</Col>
-				</Row>
-
+							<Box className={styles.castContainer} sx={{ maxHeight: '100vh', overflowY: 'auto' }}>
+								{castList}
+							</Box>
+						</Box>
+					</Grid>
+				</Grid>
 			</Container>
 
 			{/* --- Video Player Modal --- */}
@@ -815,11 +850,10 @@ const ShowDetails = () => {
 						bgcolor: darkerColor,
 						boxShadow: 24,
 						p: { xs: 1, md: 0.7 },
-						borderRadius: '8px',
+						borderRadius: 2,
 						outline: 'none',
 					}}
 				>
-					{/* The VideoJS component is rendered once and its options are updated via prop */}
 					{modalOpen && (
 						<VideoJS
 							options={playerOptions}
@@ -833,8 +867,8 @@ const ShowDetails = () => {
 							sx={{
 								p: 1.5,
 								bgcolor: 'rgba(0, 0, 0, 0.5)',
-								borderBottomLeftRadius: '8px',
-								borderBottomRightRadius: '8px',
+								borderBottomLeftRadius: 8,
+								borderBottomRightRadius: 8,
 								display: 'flex',
 								flexDirection: 'column',
 								alignItems: 'center',
@@ -864,6 +898,7 @@ const ShowDetails = () => {
 										gap: 0.5,
 										px: 1,
 										py: 1,
+										overflowX: 'auto',
 									}}
 								>
 									{/* Fixed Season Indicator for multiple seasons */}
@@ -956,7 +991,7 @@ const ShowDetails = () => {
 					)}
 				</Box>
 			</Modal>
-		</div>
+		</Box>
 	);
 };
 

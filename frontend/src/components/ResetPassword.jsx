@@ -1,5 +1,5 @@
-import { Container, Grow, Alert, TextField, Button, Link, Box, Grid, InputAdornment, IconButton } from '@mui/material';
-import { Visibility, VisibilityOff, Key as KeyIcon } from '@mui/icons-material';
+import { Container, Grow, Alert, TextField, Button, Link, Box, Grid, InputAdornment, IconButton, Typography } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { useState } from 'react';
@@ -35,7 +35,7 @@ export default function ForgotPasswordConfirm() {
 	};
 
 	return (
-		<Container className='my-5' maxWidth='sm'>
+		<Container sx={{ my: 5 }} maxWidth='sm'>
 			{alert && (
 				<Grow in={!!alert}>
 					<Alert severity={alert.type} sx={{ mb: 2, borderRadius: '12px' }} onClose={() => setAlert(null)}>
@@ -44,11 +44,11 @@ export default function ForgotPasswordConfirm() {
 				</Grow>
 			)}
 
-			<Box className='glassy p-5 text-center' sx={{ maxWidth: 600, mx: 'auto' }}>
+			<Box className='glassy' sx={{ p: 5, textAlign: 'center', maxWidth: 600, mx: 'auto' }}>
 				<AnimatedFace state={faceState} />
-				<h1 className='fw-bold mb-4' style={{ color: 'white', letterSpacing: '1px' }}>
+				<Typography variant='h4' component='h1' sx={{ fontWeight: 'bold', mb: 4, color: 'white', letterSpacing: '1px' }}>
 					Reset Password
-				</h1>
+				</Typography>
 				<form onSubmit={handleSubmit(submission)}>
 					<Grid container spacing={3}>
 						<Grid item xs={12}>
@@ -135,7 +135,7 @@ export default function ForgotPasswordConfirm() {
 
 					<Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
 						<Link component={RouterLink} to='/login/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
-							Back to <span style={{ color: 'var(--color3)', fontWeight: 'bold' }}>Log In</span>
+							Back to <Box component='span' sx={{ color: '#54a9de', fontWeight: 'bold' }}>Log In</Box>
 						</Link>
 					</Box>
 				</form>

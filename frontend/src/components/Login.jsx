@@ -4,7 +4,7 @@ import { useState, useContext } from 'react';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import { Container, Grow, TextField, Button, Link, Alert, Box, Grid, InputAdornment, IconButton } from '@mui/material';
+import { Container, Grow, TextField, Button, Link, Alert, Box, Grid, InputAdornment, IconButton, Typography } from '@mui/material';
 import { Visibility, VisibilityOff, Login as LoginIcon } from '@mui/icons-material';
 
 import axiosInstance from './APIs/Axios.jsx';
@@ -67,7 +67,7 @@ export default function Login() {
 	};
 
 	return (
-		<Container className='my-5' maxWidth='sm'>
+		<Container sx={{ my: 5 }} maxWidth='sm'>
 			{alert && (
 				<Grow in={!!alert}>
 					<Alert severity={alert.type} sx={{ mb: 2, borderRadius: '12px' }} onClose={() => setAlert(null)}>
@@ -76,11 +76,11 @@ export default function Login() {
 				</Grow>
 			)}
 
-			<Box className='glassy p-5 text-center'>
+			<Box className='glassy' sx={{ p: 5, textAlign: 'center' }}>
 				<AnimatedFace state={faceState} />
-				<h1 className='fw-bold mb-4' style={{ color: 'white', letterSpacing: '1px' }}>
+				<Typography variant='h4' component='h1' sx={{ fontWeight: 'bold', mb: 4, color: 'white', letterSpacing: '1px' }}>
 					Welcome Back
-				</h1>
+				</Typography>
 				<form onSubmit={handleSubmit(onSubmit)}>
 					<Grid container spacing={3}>
 						<Grid item xs={12}>
@@ -158,17 +158,21 @@ export default function Login() {
 							fontWeight: 'bold',
 							textTransform: 'none',
 							boxShadow: '0 4px 12px rgba(154, 6, 6, 0.3)',
+							display: 'flex',
+							alignItems: 'center',
+							justifyContent: 'center',
+							gap: 1
 						}}
 						disabled={isSubmitting}
 					>
-						<LoginIcon />&nbsp;{isSubmitting ? 'Verifying...' : 'Log In'}
+						<LoginIcon /> {isSubmitting ? 'Verifying...' : 'Log In'}
 					</Button>
 					<Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
 						<Link component={RouterLink} to='/forgot-password/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
 							Forgot password?
 						</Link>
 						<Link component={RouterLink} to='/register/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
-							Don't have an account? <span style={{ color: 'var(--color3)', fontWeight: 'bold' }}>Sign Up</span>
+							Don't have an account? <Box component='span' sx={{ color: '#54a9de', fontWeight: 'bold' }}>Sign Up</Box>
 						</Link>
 					</Box>
 				</form>

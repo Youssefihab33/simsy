@@ -4,8 +4,8 @@ import { useState, useContext } from 'react';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import { Container, Grow, TextField, Button, Link, Alert, Box, Grid, InputAdornment, IconButton } from '@mui/material';
-import { Visibility, VisibilityOff, Check as CheckIcon, PersonAdd as PersonAddIcon } from '@mui/icons-material';
+import { Container, Grow, TextField, Button, Link, Alert, Box, Grid, InputAdornment, IconButton, Typography } from '@mui/material';
+import { Visibility, VisibilityOff, Check as CheckIcon } from '@mui/icons-material';
 
 import axiosInstance from './APIs/Axios.jsx';
 import { UserContext } from './APIs/Context.jsx';
@@ -103,7 +103,7 @@ export default function Register() {
 	};
 
 	return (
-		<Container className='my-5' maxWidth='md'>
+		<Container sx={{ my: 5 }} maxWidth='md'>
 			{alert && (
 				<Grow in={!!alert}>
 					<Alert
@@ -117,11 +117,11 @@ export default function Register() {
 				</Grow>
 			)}
 
-			<Box className='glassy p-5 text-center' sx={{ maxWidth: 650, mx: 'auto' }}>
+			<Box className='glassy' sx={{ p: 5, textAlign: 'center', maxWidth: 650, mx: 'auto' }}>
 				<AnimatedFace state={faceState} />
-				<h1 className='fw-bold mb-4' style={{ color: 'white', letterSpacing: '1px' }}>
+				<Typography variant='h4' component='h1' sx={{ fontWeight: 'bold', mb: 4, color: 'white', letterSpacing: '1px' }}>
 					Create Account
-				</h1>
+				</Typography>
 
 				<form onSubmit={handleSubmit(onSubmit)}>
 					<Grid container spacing={3}>
@@ -342,7 +342,7 @@ export default function Register() {
 
 					<Box sx={{ mt: 3 }}>
 						<Link component={RouterLink} to='/login/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
-							Already have an account? <span style={{ color: 'var(--color3)', fontWeight: 'bold' }}>Log In</span>
+							Already have an account? <Box component='span' sx={{ color: '#54a9de', fontWeight: 'bold' }}>Log In</Box>
 						</Link>
 					</Box>
 				</form>

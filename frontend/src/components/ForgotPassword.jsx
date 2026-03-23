@@ -2,8 +2,7 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { Controller, useForm } from 'react-hook-form';
 import { useState } from 'react';
 import axiosInstance from './APIs/Axios.jsx';
-import { Container, Grow, Alert, TextField, Button, Link, Box, Grid } from '@mui/material';
-import KeyIcon from '@mui/icons-material/Key';
+import { Container, Grow, Alert, TextField, Button, Link, Box, Grid, Typography } from '@mui/material';
 import AnimatedFace from './snippets/AnimatedFace.jsx';
 
 export default function ForgotPassword() {
@@ -35,7 +34,7 @@ export default function ForgotPassword() {
 	};
 
 	return (
-		<Container className='my-5' maxWidth='sm'>
+		<Container sx={{ my: 5 }} maxWidth='sm'>
 			{alert && (
 				<Grow in={!!alert}>
 					<Alert severity={alert.type} sx={{ mb: 2, borderRadius: '12px' }} onClose={() => setAlert(null)}>
@@ -44,11 +43,11 @@ export default function ForgotPassword() {
 				</Grow>
 			)}
 
-			<Box className='glassy p-5 text-center' sx={{ maxWidth: 600, mx: 'auto' }}>
+			<Box className='glassy' sx={{ p: 5, textAlign: 'center', maxWidth: 600, mx: 'auto' }}>
 				<AnimatedFace state={faceState} />
-				<h1 className='fw-bold mb-4' style={{ color: 'white', letterSpacing: '1px' }}>
+				<Typography variant='h4' component='h1' sx={{ fontWeight: 'bold', mb: 4, color: 'white', letterSpacing: '1px' }}>
 					Forgot Password
-				</h1>
+				</Typography>
 				<form onSubmit={handleSubmit(onSubmit)} style={{ width: '100%' }}>
 					<Grid container spacing={3}>
 						<Grid item xs={12}>
@@ -97,7 +96,7 @@ export default function ForgotPassword() {
 					</Button>
 					<Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1 }}>
 						<Link component={RouterLink} to='/login/' sx={{ color: 'rgba(255,255,255,0.6)', textDecoration: 'none', '&:hover': { color: 'white' } }}>
-							Remember your password? <span style={{ color: 'var(--color3)', fontWeight: 'bold' }}>Log In</span>
+							Remember your password? <Box component='span' sx={{ color: '#54a9de', fontWeight: 'bold' }}>Log In</Box>
 						</Link>
 					</Box>
 				</form>
