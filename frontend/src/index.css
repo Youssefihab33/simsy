@@ -1,41 +1,31 @@
-@import url(https://fonts.googleapis.com/css?family=Lato:700);
 :root {
 	--color1: #9a0606;
 	--color2: #5dd95d;
 	--color3: #54a9de;
 	--color4: #9ad4d2aa;
 
-	font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-	line-height: 1.5;
-	font-weight: 400;
-
 	color-scheme: light dark;
 	color: rgba(255, 255, 255, 0.87);
-
-	font-synthesis: none;
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
 }
 
 /* SCROLLBAR */
 ::-webkit-scrollbar {
-    width: 5px;
+	width: 5px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #2c2c2c;
-    border-radius: 5px;
+	background: #2c2c2c;
+	border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #888;
-    border: 1px solid transparent;
-    border-radius: 10px;
+	background: #888;
+	border: 1px solid transparent;
+	border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #aaa;
+	background: #aaa;
 }
 
 /* DEFINE VARIABLES */
@@ -82,7 +72,14 @@ body:before {
 }
 body {
 	background-color: #040404;
-	font-family: 'Merriweather', sans-serif;
+	font-family: 'Cairo', Helvetica, Arial, sans-serif !important;
+	line-height: 1.5;
+	font-weight: 400;
+	font-optical-sizing: auto;
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 	transition: background-color 30s ease;
 }
 

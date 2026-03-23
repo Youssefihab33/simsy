@@ -13,7 +13,7 @@ import LoadingSpinner from './components/snippets/LoadingSpinner';
 
 import Homepage from './components/Homepage';
 import Login from './components/Login';
-import Show from './components/Show'
+import Show from './components/Show';
 
 // Lazy load route components for better initial load performance
 const Artist = lazy(() => import('./components/Artist'));
@@ -35,6 +35,9 @@ const PageLoader = () => (
 );
 
 const theme = createTheme({
+	typography: {
+		fontFamily: 'Cairo, Helvetica, Arial, sans-serif',
+	},
 	palette: {
 		primary: { main: '#9a0606' },
 		secondary: { main: '#5dd95d' },

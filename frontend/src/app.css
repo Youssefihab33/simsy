@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap');
+
 #logo {
 	height: 100%;
 }
@@ -100,7 +102,9 @@
 	background: linear-gradient(45deg, var(--color1), #ff4d4d);
 	box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 	color: #fff;
-	font: 700 12px/1 'Lato', sans-serif;
+	font:
+		700 12px/1 'Lato',
+		sans-serif;
 	text-transform: uppercase;
 	text-align: center;
 	letter-spacing: 1px;
@@ -229,9 +233,7 @@
 }
 
 .showCard-container {
-	width: 245px;
-	height: 450px;
-	box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+	box-shadow: 10px 10px 30px rgba(0, 0, 0, 0.75);
 	cursor: pointer;
 	border-radius: 24px;
 	transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -259,14 +261,16 @@
 	left: 0;
 	right: 0;
 	padding: 100% 20px 20px;
-	background: linear-gradient(to top, rgba(0,0,0,1) 0%, transparent 60%);
+	background: linear-gradient(to top, rgba(0, 0, 0, 1) 0%, transparent 60%);
 	z-index: 1;
 }
 
 .showCard-front-text {
-	font-size: 2rem !important;
+	font-family: 'Bebas Neue', 'Cairo', sans-serif !important;
+	font-size: 2.5rem !important;
+	font-weight: 600 !important;
+	font-style: normal;
 	color: #dddddd;
-	font-weight: 1000 !important;
 	text-shadow: 0px 0px 10px black !important;
 	line-height: 1 !important;
 }

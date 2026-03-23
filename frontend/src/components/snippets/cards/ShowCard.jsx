@@ -6,7 +6,7 @@ import { Star as StarIcon, StarBorder as StarBorderIcon, Bookmark as BookmarkIco
 import LoadingSpinner from '../LoadingSpinner';
 
 // Memoized to prevent unnecessary re-renders when switching tabs on the Homepage
-const ShowCard = memo(function ShowCard({ show }) {
+const ShowCard = memo(function ShowCard({ show, width=250, height=400 }) {
 	const navigate = useNavigate();
 	const [inFavorites, setInFavorites] = useState(show.in_favorites);
 	const [inWatchlist, setInWatchlist] = useState(show.in_watchlist);
@@ -62,16 +62,15 @@ const ShowCard = memo(function ShowCard({ show }) {
 	return (
 		<Box
 			sx={{
-				// display: 'inline-flex',
+				display: 'inline-flex',
 				textAlign: 'center',
-				color: 'white',
 				backgroundColor: 'transparent',
-				m: 0.5,
+				m: 1,
 			}}
 		>
-			<Box className='showCard-container' onClick={() => navigate(`/show/${show.id}`)} sx={{ cursor: 'pointer' }}>
+			<Box width={width} height={height} className='showCard-container' onClick={() => navigate(`/show/${show.id}`)} sx={{ cursor: 'pointer' }}>
 				<Box className='showCard' sx={{ position: 'relative' }}>
-					<Box className='showCard-front bg-dark img-container'>
+					<Box className='showCard-front'>
 						{show.sample && (
 							<Box className='ribbon ribbon-top-left'>
 								<Typography component='span'>Sample</Typography>
