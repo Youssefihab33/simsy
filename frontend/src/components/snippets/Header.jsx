@@ -1,7 +1,30 @@
 import { useState, useContext, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
-import { AppBar, Box, Toolbar, IconButton, Typography, Menu, Container, Avatar, Button, Tooltip, MenuItem, TextField, InputAdornment, Popper, Paper, List, ListItem, ListItemText, CircularProgress, ClickAwayListener, useMediaQuery, useTheme } from '@mui/material';
+import {
+	AppBar,
+	Box,
+	Toolbar,
+	IconButton,
+	Typography,
+	Menu,
+	Container,
+	Avatar,
+	Button,
+	Tooltip,
+	MenuItem,
+	TextField,
+	InputAdornment,
+	Popper,
+	Paper,
+	List,
+	ListItem,
+	ListItemText,
+	CircularProgress,
+	ClickAwayListener,
+	useMediaQuery,
+	useTheme,
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import SearchIcon from '@mui/icons-material/Search';
 import VideoStableIcon from '@mui/icons-material/VideoStable';
@@ -22,23 +45,8 @@ const settings = [
 const LogoComponent = ({ screen = 'large' }) => {
 	let displayProp = { xs: screen === 'small' ? 'flex' : 'none', md: screen === 'large' ? 'flex' : 'none' };
 	return (
-		<Box component={Link} to='/' sx={{ display: displayProp, alignItems: 'center', textDecoration: 'none', color: 'inherit', flexGrow: screen === 'small' ? 1 : 0 }}>
-			<VideoStableIcon sx={{ display: displayProp, mr: 1 }} />
-			<Typography
-				variant={screen === 'large' ? 'h6' : 'h5'}
-				noWrap
-				sx={{
-					mr: 2,
-					display: displayProp,
-					fontFamily: 'monospace',
-					fontWeight: 700,
-					letterSpacing: '.3rem',
-					color: 'inherit',
-					textDecoration: 'none',
-				}}
-			>
-				SIMSY
-			</Typography>
+		<Box component={Link} to='/' sx={{ display: displayProp, alignItems: 'center', textDecoration: 'none', color: 'inherit', flexGrow: screen === 'small' ? 1 : 0, mx: 5 }}>
+			<img src='/logo.png' height={35} />
 		</Box>
 	);
 };
@@ -215,21 +223,16 @@ export default function Header() {
 										}}
 									>
 										<List sx={{ p: 0 }}>
-											{searchResults.length > 0 ? (
+											{searchResults.length > 0 ?
 												searchResults.map((result, index) => (
-													<SearchHorizontalCard
-														key={`${result.result_type}-${result.id}-${index}`}
-														result={result}
-														onClick={handleResultClick}
-													/>
+													<SearchHorizontalCard key={`${result.result_type}-${result.id}-${index}`} result={result} onClick={handleResultClick} />
 												))
-											) : (
-												!loadingSearch && (
+											:	!loadingSearch && (
 													<ListItem>
 														<ListItemText primary='No results found' sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center' }} />
 													</ListItem>
 												)
-											)}
+											}
 										</List>
 									</Paper>
 								</ClickAwayListener>
@@ -325,21 +328,16 @@ export default function Header() {
 									}}
 								>
 									<List sx={{ p: 0 }}>
-										{searchResults.length > 0 ? (
+										{searchResults.length > 0 ?
 											searchResults.map((result, index) => (
-												<SearchHorizontalCard
-													key={`${result.result_type}-${result.id}-${index}`}
-													result={result}
-													onClick={handleResultClick}
-												/>
+												<SearchHorizontalCard key={`${result.result_type}-${result.id}-${index}`} result={result} onClick={handleResultClick} />
 											))
-										) : (
-											!loadingSearch && (
+										:	!loadingSearch && (
 												<ListItem>
 													<ListItemText primary='No results found' sx={{ color: 'rgba(255,255,255,0.5)', textAlign: 'center' }} />
 												</ListItem>
 											)
-										)}
+										}
 									</List>
 								</Paper>
 							</ClickAwayListener>

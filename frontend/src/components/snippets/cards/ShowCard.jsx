@@ -6,7 +6,7 @@ import { Star as StarIcon, StarBorder as StarBorderIcon, Bookmark as BookmarkIco
 import LoadingSpinner from '../LoadingSpinner';
 
 // Memoized to prevent unnecessary re-renders when switching tabs on the Homepage
-const ShowCard = memo(function ShowCard({ show, width=250, height=400 }) {
+const ShowCard = memo(function ShowCard({ show, width = 250, height = 400 }) {
 	const navigate = useNavigate();
 	const [inFavorites, setInFavorites] = useState(show.in_favorites);
 	const [inWatchlist, setInWatchlist] = useState(show.in_watchlist);
@@ -68,19 +68,17 @@ const ShowCard = memo(function ShowCard({ show, width=250, height=400 }) {
 				m: 1,
 			}}
 		>
-			<Box width={width} height={height} className='showCard-container' onClick={() => navigate(`/show/${show.id}`)} sx={{ cursor: 'pointer' }}>
-				<Box className='showCard' sx={{ position: 'relative' }}>
+			<Box width={width} height={height} className='showCard-container' onClick={() => navigate(`/show/${show.id}`)}>
+				{show.sample && (
+					<Box className='ribbon ribbon-top-left'>
+						<Typography component='span'>Sample</Typography>
+					</Box>
+				)}
+				<Box className='showCard'>
 					<Box className='showCard-front'>
-						{show.sample && (
-							<Box className='ribbon ribbon-top-left'>
-								<Typography component='span'>Sample</Typography>
-							</Box>
-						)}
 						<Box component='img' className='showCard-image' src={show.image} alt={show.name} loading='lazy' sx={{ display: 'block' }} />
 						<Box className='showCard-front-textbox'>
-							<Typography className='showCard-front-text'>
-								{show.name}
-							</Typography>
+							<Typography className='showCard-front-text'>{show.name}</Typography>
 						</Box>
 					</Box>
 					<Box
