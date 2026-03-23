@@ -9,10 +9,10 @@ const ArtistCard = memo(function ArtistCard({ artist }) {
 	const navigate = useNavigate();
 
 	return (
-		<Grid item xs={6} sm={4} md={3} lg={2} key={artist.id}>
+		<Grid item xs={12} md={6} key={artist.id}>
 			<Paper
 				className={styles.artistCard}
-				elevation={0}
+				elevation={2}
 				onClick={() => {
 					navigate(`/artist/${artist.id}`);
 				}}

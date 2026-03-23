@@ -218,7 +218,7 @@ const useMediaPlayer = (show, refetchShowData) => {
 				console.error('Error in action_Episode:', error);
 			}
 		},
-		[show?.id, refetchShowData]
+		[show?.id, refetchShowData],
 	);
 
 	const jumpToEpisode = useCallback(
@@ -238,7 +238,7 @@ const useMediaPlayer = (show, refetchShowData) => {
 				console.error('Error in jumpToEpisode:', error);
 			}
 		},
-		[show?.id, refetchShowData]
+		[show?.id, refetchShowData],
 	);
 
 	const handlePlayerReady = useCallback(
@@ -262,7 +262,7 @@ const useMediaPlayer = (show, refetchShowData) => {
 				}
 			});
 		},
-		[sendTimeReached, show, actionEpisode]
+		[sendTimeReached, show, actionEpisode],
 	);
 
 	const videoDetails = useMemo(() => {
@@ -307,17 +307,17 @@ const useMediaPlayer = (show, refetchShowData) => {
 				{ src: seriesSrc, type: 'video/mp4' },
 			],
 			tracks:
-				show.captions && captionsSrc
-					? [
-							{
-								kind: 'captions',
-								srclang: 'en',
-								label: 'English',
-								src: captionsSrc,
-								mode: show.view_captions !== false ? 'showing' : 'disabled',
-							},
+				show.captions && captionsSrc ?
+					[
+						{
+							kind: 'captions',
+							srclang: 'en',
+							label: 'English',
+							src: captionsSrc,
+							mode: show.view_captions !== false ? 'showing' : 'disabled',
+						},
 					]
-					: [],
+				:	[],
 			currentVideoStartTime, // Added to trigger updates in VideoJS
 		};
 	}, [show, filmsSrc, seriesSrc, captionsSrc, currentVideoStartTime]);
@@ -385,19 +385,10 @@ const ShowDetails = () => {
 		}
 	}, [show?.id, refetchShowData]);
 
-	const {
-		modalOpen,
-		handleModalOpen,
-		handleModalClose,
-		handlePlayerReady,
-		playerOptions,
-		season,
-		episode,
-		actionEpisode,
-		jumpToEpisode,
-		episodeChangeMessage,
-		playerRef,
-	} = useMediaPlayer(show, refetchShowData);
+	const { modalOpen, handleModalOpen, handleModalClose, handlePlayerReady, playerOptions, season, episode, actionEpisode, jumpToEpisode, episodeChangeMessage, playerRef } = useMediaPlayer(
+		show,
+		refetchShowData,
+	);
 
 	// Optimization: Memoize colors to prevent unnecessary re-calculations and re-renders
 	const accentColor = useMemo(() => getAccentColor(show?.kind), [show?.kind]);
@@ -451,7 +442,8 @@ const ShowDetails = () => {
 					case 'KeyF': // F -> Fullscreen (Video.js handles this natively, just focus)
 						playerRef.current.focus();
 						break;
-					case 'KeyX': { // X -> Adjust Playback Rate
+					case 'KeyX': {
+						// X -> Adjust Playback Rate
 						playerRef.current.focus();
 						const currentRate = playerRef.current.playbackRate();
 						playerRef.current.playbackRate(event.shiftKey ? currentRate - 0.25 : currentRate + 0.25);
@@ -467,7 +459,7 @@ const ShowDetails = () => {
 				}
 			}
 		},
-		[show?.kind, playerRef, modalOpen, handleModalOpen, actionEpisode]
+		[show?.kind, playerRef, modalOpen, handleModalOpen, actionEpisode],
 	);
 
 	useEffect(() => {
@@ -485,7 +477,7 @@ const ShowDetails = () => {
 			variant: 'outlined',
 			sx: { margin: '4px', color: 'white', borderColor: 'rgba(255, 255, 255, 0.5)' },
 		}),
-		[]
+		[],
 	);
 
 	// Modified render function for chips
@@ -507,7 +499,7 @@ const ShowDetails = () => {
 				))}
 			</>
 		),
-		[commonChipProps]
+		[commonChipProps],
 	);
 
 	// Optimization: Memoize chip groups
@@ -540,20 +532,11 @@ const ShowDetails = () => {
 				S{num}
 			</Box>
 		),
-		[accentColor]
+		[accentColor],
 	);
 
 	// Optimization: Memoize cast list
-	const castList = useMemo(
-		() => (
-			<Grid container spacing={2}>
-				{show?.artists?.map((artist, index) => (
-					<ArtistCard key={index} artist={artist} />
-				))}
-			</Grid>
-		),
-		[show?.artists]
-	);
+	const castList = useMemo(() => show?.artists?.map((artist, index) => <ArtistCard key={index} artist={artist} />), [show?.artists]);
 
 	// Optimization: Memoize visible episode list for pagination
 	const visibleEpisodes = useMemo(() => {
@@ -610,7 +593,7 @@ const ShowDetails = () => {
 	}
 
 	return (
-		<Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', mt: -9 }}>
+		<Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', mt: -8 }}>
 			{/* --- Hero Section --- */}
 			<Box
 				sx={{
@@ -627,7 +610,7 @@ const ShowDetails = () => {
 				}}
 			>
 				<Container>
-					<Grid container spacing={4} alignItems='center'>
+					<Grid container spacing={1}>
 						<Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
 							<Box
 								component='img'
@@ -689,13 +672,7 @@ const ShowDetails = () => {
 								>
 									{inWatchlist ? 'In your Watchlist' : 'Add to Watchlist'}
 								</Button>
-								<Button
-									variant='outlined'
-									size='small'
-									color='error'
-									sx={{ textTransform: 'none' }}
-									onClick={handleMarkAsUnwatched}
-								>
+								<Button variant='outlined' size='small' color='error' sx={{ textTransform: 'none' }} onClick={handleMarkAsUnwatched}>
 									Mark as unwatched
 								</Button>
 							</Box>
@@ -790,7 +767,11 @@ const ShowDetails = () => {
 							</Typography>
 							<Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
 								{countryChips}
-								{show.countries.length > 0 && show.languages.length > 0 && <Typography variant='h4' sx={{ mx: 1, color: 'white' }}>|</Typography>}
+								{show.countries.length > 0 && show.languages.length > 0 && (
+									<Typography variant='h4' sx={{ mx: 1, color: 'white' }}>
+										|
+									</Typography>
+								)}
 								{languageChips}
 							</Box>
 						</Box>
@@ -802,7 +783,11 @@ const ShowDetails = () => {
 							</Typography>
 							<Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
 								{genreChips}
-								{show.genres.length > 0 && show.labels.length > 0 && <Typography variant='h4' sx={{ mx: 1, color: 'white' }}>|</Typography>}
+								{show.genres.length > 0 && show.labels.length > 0 && (
+									<Typography variant='h4' sx={{ mx: 1, color: 'white' }}>
+										|
+									</Typography>
+								)}
 								{labelChips}
 							</Box>
 						</Box>
@@ -826,13 +811,13 @@ const ShowDetails = () => {
 
 					{/* Cast Section */}
 					<Grid item xs={12} md={4}>
-						<Box sx={{ mb: 5 }}>
-							<Typography variant='h4' component='h2' gutterBottom sx={{ fontWeight: 'bold', color: 'white' }}>
-								Cast
-							</Typography>
-							<Box className={styles.castContainer} sx={{ maxHeight: '100vh', overflowY: 'auto' }}>
+						<Typography variant='h4' component='h2' gutterBottom sx={{ fontWeight: 'bold', color: 'white' }}>
+							Cast
+						</Typography>
+						<Box className={styles.castContainer} sx={{ maxHeight: '80vh', overflowY: 'auto' }}>
+							<Grid container spacing={1}>
 								{castList}
-							</Box>
+							</Grid>
 						</Box>
 					</Grid>
 				</Grid>
@@ -854,14 +839,7 @@ const ShowDetails = () => {
 						outline: 'none',
 					}}
 				>
-					{modalOpen && (
-						<VideoJS
-							options={playerOptions}
-							onReady={handlePlayerReady}
-							color={accentColor}
-							episodeControls={episodeControls}
-						/>
-					)}
+					{modalOpen && <VideoJS options={playerOptions} onReady={handlePlayerReady} color={accentColor} episodeControls={episodeControls} />}
 					{show?.kind !== 'film' && (
 						<Box
 							sx={{
@@ -914,10 +892,7 @@ const ShowDetails = () => {
 										return visibleEpisodes.map((item, idx) => {
 											if (item.type === 'ellipsis') {
 												return (
-													<Typography
-														key={`ell-${idx}`}
-														sx={{ color: 'rgba(255,255,255,0.5)', px: 0.5, userSelect: 'none' }}
-													>
+													<Typography key={`ell-${idx}`} sx={{ color: 'rgba(255,255,255,0.5)', px: 0.5, userSelect: 'none' }}>
 														...
 													</Typography>
 												);
@@ -931,42 +906,36 @@ const ShowDetails = () => {
 
 											return (
 												<Box key={`${item.s}-${item.e}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-													{isSeasonBoundary && (
-														<Typography
-															sx={{ color: 'rgba(255,255,255,0.3)', mx: 1, fontWeight: 'bold', userSelect: 'none' }}
-														>
-															|
-														</Typography>
-													)}
-												<Button
-													size='small'
-													variant={isCurrent ? 'contained' : 'text'}
-													onClick={() => jumpToEpisode(item.s, item.e)}
-													sx={{
-														minWidth: '32px',
-														height: '32px',
-														p: 0,
-														color: isCurrent ? 'white' : 'rgba(255,255,255,0.7)',
-														bgcolor: isCurrent ? accentColor : 'transparent',
-														'&:hover': { bgcolor: isCurrent ? hoverColor : 'rgba(255,255,255,0.1)' },
-														position: 'relative',
-													}}
-												>
-													{item.e}
-													{isWatched && !isCurrent && (
-														<CheckCircleIcon
-															sx={{
-																position: 'absolute',
-																top: -4,
-																right: -4,
-																fontSize: '12px',
-																color: '#5DD95D',
-															}}
-														/>
-													)}
-												</Button>
-											</Box>
-										);
+													{isSeasonBoundary && <Typography sx={{ color: 'rgba(255,255,255,0.3)', mx: 1, fontWeight: 'bold', userSelect: 'none' }}>|</Typography>}
+													<Button
+														size='small'
+														variant={isCurrent ? 'contained' : 'text'}
+														onClick={() => jumpToEpisode(item.s, item.e)}
+														sx={{
+															minWidth: '32px',
+															height: '32px',
+															p: 0,
+															color: isCurrent ? 'white' : 'rgba(255,255,255,0.7)',
+															bgcolor: isCurrent ? accentColor : 'transparent',
+															'&:hover': { bgcolor: isCurrent ? hoverColor : 'rgba(255,255,255,0.1)' },
+															position: 'relative',
+														}}
+													>
+														{item.e}
+														{isWatched && !isCurrent && (
+															<CheckCircleIcon
+																sx={{
+																	position: 'absolute',
+																	top: -4,
+																	right: -4,
+																	fontSize: '12px',
+																	color: '#5DD95D',
+																}}
+															/>
+														)}
+													</Button>
+												</Box>
+											);
 										});
 									})()}
 								</Box>

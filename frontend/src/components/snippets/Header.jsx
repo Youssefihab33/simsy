@@ -121,7 +121,7 @@ export default function Header() {
 				top: 0,
 				zIndex: 1100,
 			}}
-			elevation={0}
+			elevation={10}
 		>
 			<Container maxWidth='xl'>
 				<Toolbar disableGutters>

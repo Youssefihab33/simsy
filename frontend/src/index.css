@@ -68,7 +68,7 @@ body:before {
 	width: 100%;
 	opacity: 15%;
 	z-index: -1;
-	animation: gradient 120s ease-in-out infinite alternate;
+	animation: gradient 5s ease-in-out infinite alternate;
 	background-size: 200% 200%;
 	filter: blur(80px);
 }
@@ -90,15 +90,6 @@ body {
 	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-header {
-	background-color: transparent !important;
-}
-
 footer {
-	color: grey;
-	margin-bottom: 10px;
-}
-footer > div {
-	align-items: center;
-	justify-content: space-evenly;
+	color: grey !important;
 }
