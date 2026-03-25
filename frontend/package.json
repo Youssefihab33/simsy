@@ -27,15 +27,12 @@
 		"react-use": "^17.6.0",
 		"videojs-hotkeys": "^0.2.30",
 		"videojs-mobile-ui": "^1.1.1",
-		"videojs-playlist": "^5.2.0",
-		"videojs-playlist-ui": "^5.0.0",
 		"videojs-seek-buttons": "^4.0.0",
 		"yup": "^1.4.0"
 	},
 	"devDependencies": {
 		"@eslint/js": "^8.57.0",
 		"@types/react": "^19.0.5",
-		"@types/react-dom": "^19.0.5",
 		"@vitejs/plugin-react": "^4.3.2",
 		"eslint": "^8.57.0",
 		"eslint-plugin-react-hooks": "^4.6.2",
