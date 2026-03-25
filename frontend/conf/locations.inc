@@ -23,7 +23,7 @@ location /admin/ {
 }
 
 location /static/ {
-    alias /usr/src/app/simsy/staticfiles/;
+    alias /usr/src/data/static/;
     expires 30d;
     add_header Cache-Control "public";
 }

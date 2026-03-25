@@ -20,6 +20,6 @@ urlpatterns = [
     path('api/', include('shows.urls')),
     path('auth/', include('knox.urls')),
     path('password_reset/', include('django_rest_passwordreset.urls', namespace='password_reset')),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 urlpatterns += router.urls

@@ -5,7 +5,7 @@ WORKDIR /usr/src/app/simsy
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-COPY ./simsy/ ./
+COPY ./ ./
 
 # Install dependencies in a single layer to reduce image size
 RUN apk update && \
