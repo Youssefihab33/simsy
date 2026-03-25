@@ -1,8 +1,7 @@
-.venv
-db.sqlite3
-/data/*
-package-lock.json
-supervisord.pid
+/data/*/*
+.venv/
+*.sqlite3
+*.pid
 
 # Python cache
 __pycache__/
@@ -17,12 +16,6 @@ __pycache__/
 
 # Local env files
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env.development
-.env.test
 .env.production
 
 # Logs
