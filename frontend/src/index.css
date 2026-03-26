@@ -53,13 +53,13 @@ body:before {
 	top: 0;
 	left: 0;
 	display: block;
-	background: radial-gradient(circle at 50% 50%, var(--color1), var(--color2), var(--color3));
+	background: radial-gradient(circle at 50% 75%, var(--color1), var(--color2), var(--color3));
 	height: 100%;
 	width: 100%;
 	opacity: 15%;
 	z-index: -1;
-	animation: gradient 5s ease-in-out infinite alternate;
-	background-size: 200% 200%;
+	/* animation: gradient 5s ease-in-out infinite alternate;
+	background-size: 200% 200%; */
 	filter: blur(80px);
 }
 @keyframes gradient {
@@ -81,10 +81,6 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	transition: background-color 30s ease;
-}
-
-* {
-	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 footer {

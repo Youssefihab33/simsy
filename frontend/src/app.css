@@ -99,7 +99,7 @@
 	display: block;
 	width: 160px;
 	padding: 8px 0;
-	background: linear-gradient(45deg, var(--color1), #ff4d4d);
+	background: linear-gradient(0deg, var(--color3), var(--color2));
 	box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
 	color: #fff;
 	font:
