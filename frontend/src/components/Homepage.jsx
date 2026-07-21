@@ -102,9 +102,18 @@ export default function Homepage() {
 	}, [activeTab, isConfiguring, fetchData, state.data]);
 
 	// Handle Page/Tab changes
-	const handleTabChange = (_, newValue) => {
+	const handleTabChange = async (_, newValue) => {
 		setActiveTab(newValue);
 		setPage(1);
+
+		try {
+			const response = await axiosInstance.put('/users/current/', {
+				home_tab: newValue,
+			});
+			setUser(response.data);
+		} catch (error) {
+			console.error('Failed to update home_tab preference:', error);
+		}
 	};
 
 	const handlePageChange = (_, value) => {

@@ -5,7 +5,7 @@ import { Typography, Box, Chip, Avatar, Container, Grid, Alert } from '@mui/mate
 import axiosInstance from './APIs/Axios';
 import LoadingSpinner from './snippets/LoadingSpinner';
 import ShowCard from './snippets/cards/ShowCard';
-import styles from './modules/ShowDetails.module.css';
+import styles from './modules/Show.module.css';
 import { useTitle } from 'react-use';
 
 const ArtistDetails = () => {

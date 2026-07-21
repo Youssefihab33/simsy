@@ -81,6 +81,7 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	transition: background-color 30s ease;
+	margin: 0px;
 }
 
 footer {

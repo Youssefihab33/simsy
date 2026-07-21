@@ -314,12 +314,12 @@ export function VideoJS({ options, onReady, color, episodeControls }) {
 
 // Video.js options
 export const videoJsOptions = {
-	autoplay: true,
+	autoplay: false,
 	controls: true,
 	loop: false,
 	responsive: true,
 	fluid: true,
-	aspectRatio: '19:9',
+	aspectRatio: '21:9',
 	playbackRates: [0.75, 1, 1.25, 1.5, 1.75, 2.0],
 	plugins: {
 		hotkeys: {

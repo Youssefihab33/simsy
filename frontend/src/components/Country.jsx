@@ -6,7 +6,7 @@ import axiosInstance from './APIs/Axios';
 import LoadingSpinner from './snippets/LoadingSpinner';
 import ArtistCard from './snippets/cards/ArtistCard';
 import ShowCard from './snippets/cards/ShowCard';
-import styles from './modules/ShowDetails.module.css';
+import styles from './modules/Show.module.css';
 import { useTitle } from 'react-use';
 
 const CountryDetails = () => {

@@ -4,7 +4,7 @@ import { Typography, Box, Container, Grid, Alert } from '@mui/material';
 import axiosInstance from './APIs/Axios';
 import LoadingSpinner from './snippets/LoadingSpinner';
 import ShowCard from './snippets/cards/ShowCard';
-import styles from './modules/ShowDetails.module.css';
+import styles from './modules/Show.module.css';
 
 const GenreDetails = () => {
 	const { genre_id } = useParams();

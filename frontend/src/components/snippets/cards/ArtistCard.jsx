@@ -2,7 +2,7 @@ import { useState, memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Typography, Avatar, Grid, Box, Paper } from '@mui/material';
 
-import styles from '../../modules/ShowDetails.module.css';
+import styles from '../../modules/Show.module.css';
 
 const ArtistCard = memo(function ArtistCard({ artist }) {
 	const [isHovered, setIsHovered] = useState(false);

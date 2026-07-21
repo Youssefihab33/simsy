@@ -1,4 +1,5 @@
 import random
+from datetime import date, datetime
 from .imports import updateReached, changeEpisode
 from .models import Artist, Language, Country, Genre, Rating, Label, Show
 from .serializers import ArtistSerializer, LanguageSerializer, CountrySerializer, GenreSerializer, RatingSerializer, LabelSerializer, ShowSerializer, ShowLiteSerializer, SearchResultSerializer
@@ -86,6 +87,19 @@ class ShowsViewSet(ModelViewSet):
             return ShowSerializer
         return ShowLiteSerializer
 
+    def retrieve(self, request, *args, **kwargs):
+        show = self.get_object()
+
+        # Log into history
+        today_str, time_str = str(date.today()), datetime.now().strftime("%H:%M:%S")
+        if today_str not in request.user.history:
+            request.user.history[today_str] = {}
+        request.user.history[today_str][time_str] = show.id
+        request.user.save()
+
+        serializer = ShowSerializer(show, context={'request': request})
+        return Response(serializer.data)
+
     @action(detail=False)
     def favorites(self, request):
         queryset = self.get_queryset().filter(favorites=request.user)
@@ -109,38 +123,36 @@ class ShowsViewSet(ModelViewSet):
 
     @action(detail=False)
     def history(self, request):
-        if not request.user.history:
+        history_dict = request.user.history
+        if not history_dict:
             return Response([])
-        all_show_timestamps = []
-        for date, times in request.user.history.items():
-            for time, show_id in times.items():
-                all_show_timestamps.append((f"{date} {time}", show_id))
 
-        # Sort the list of (timestamp, show_id) tuples in reverse chronological order
-        all_show_timestamps.sort(key=lambda x: x[0], reverse=True)
+        # Flatten into (datetime_string, show_id) and sort descending in a single pass
+        flattened = [
+            (f"{date_str} {time_str}", show_id)
+            for date_str, times in history_dict.items()
+            for time_str, show_id in times.items()
+        ]
+        flattened.sort(key=lambda item: item[0], reverse=True)
 
-        last_shows_ids = []
+        # Deduplicate while retaining order
         seen_show_ids = set()
-
-        for _, show_id in all_show_timestamps:
-            # Add the show_id to our list if it hasn't been seen before
+        last_shows_ids = []
+        for _, show_id in flattened:
             if show_id not in seen_show_ids:
-                last_shows_ids.append(show_id)
                 seen_show_ids.add(show_id)
-            # Stop once we have 25 unique shows
-            if len(last_shows_ids) >= 25:
-                break
-        # If no shows were found, return an empty queryset
+                last_shows_ids.append(show_id)
+                if len(last_shows_ids) == 40:
+                    break
+
         if not last_shows_ids:
             return Response([])
-        # Fetch the Show objects from the database using the collected IDs.
-        # We also use `F('id')` and `last_shows_ids` to preserve the original order.
-        preserved = Case(*[When(id=pk, then=pos)
-                         for pos, pk in enumerate(last_shows_ids)])
-        queryset = self.get_queryset().filter(
-            id__in=last_shows_ids).order_by(preserved)
-        serializer = ShowLiteSerializer(
-            queryset, context={'request': request}, many=True)
+
+        # Python list mapping to preserve order instead of dynamic DB Case/When
+        show_map = {show.id: show for show in self.get_queryset().filter(id__in=last_shows_ids)}
+        ordered_shows = [show_map[pk] for pk in last_shows_ids if pk in show_map]
+
+        serializer = ShowLiteSerializer(ordered_shows, context={'request': request}, many=True)
         return Response(serializer.data)
 
     @action(detail=False)

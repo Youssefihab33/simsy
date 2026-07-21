@@ -126,8 +126,7 @@ export default function Header() {
 				background: 'rgba(10, 10, 10, 0.4)',
 				backdropFilter: 'blur(12px)',
 				borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-				top: 0,
-				zIndex: 1100,
+				zIndex: 100,
 			}}
 			elevation={10}
 		>

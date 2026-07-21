@@ -2,8 +2,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
-// Styles & Icons
-import { Container, Typography, Button, Chip, Avatar, Tooltip, Modal, Box, IconButton, Grid, Paper } from '@mui/material';
+import { Container, Typography, Button, Chip, Avatar, Tooltip, Box, IconButton, Grid, Paper } from '@mui/material';
 import {
 	PlayArrow as PlayArrowIcon,
 	BookmarkAdd as BookmarkAddIcon,
@@ -17,89 +16,43 @@ import {
 	CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
 
-// My modules
 import axiosInstance from './APIs/Axios.jsx';
 import LoadingSpinner from './snippets/LoadingSpinner.jsx';
 import ArtistCard from './snippets/cards/ArtistCard.jsx';
-import styles from './modules/ShowDetails.module.css';
+import styles from './modules/Show.module.css';
 import { VideoJS, videoJsOptions } from './snippets/VideoJS.jsx';
 import { useTitle } from 'react-use';
 
 // --- Helper Functions ---
 
-/**
- * Determines the accent color based on the show kind.
- * @param {string} kind - The kind of show (e.g., 'film', 'series', 'program').
- * @returns {string} The corresponding hex color code.
- */
-const getAccentColor = (kind) => {
-	switch (kind) {
-		case 'film':
-			return '#9A0606'; // Red
-		case 'series':
-			return '#5DD95D'; // Green
-		case 'program':
-			return '#54A9DE'; // Blue
-		default:
-			return '#9A0606'; // Default to Red
-	}
-};
+const getColors = (kind) => {
+	/**
+	 * Determines the accent color based on the show kind.
+	 * @param {string} kind - The kind of show (e.g., 'film', 'series', 'program').
+	 * @returns {object} Contains the corresponding hex color code for accent, hover and darker colors.
+	 */
+	const colorMap = {
+		film: { accentColor: '#9A0606', hoverColor: '#B00707', darkerColor: '#4D0303' },
+		series: { accentColor: '#5DD95D', hoverColor: '#79E679', darkerColor: '#409740' },
+		program: { accentColor: '#54A9DE', hoverColor: '#6CB5E3', darkerColor: '#2C5772' },
+	};
 
-/**
- * Calculates the hover color based on the base accent color.
- * @param {string} accentColor - The base accent color.
- * @returns {string} The brighter hover color.
- */
-const getHoverColor = (accentColor) => {
-	switch (accentColor) {
-		case '#9A0606':
-			return '#B00707';
-		case '#5DD95D':
-			return '#79E679';
-		case '#54A9DE':
-			return '#6CB5E3';
-		default:
-			return '#6CB5E3'; // Default hover color
-	}
-};
-
-/**
- * Calculates the darker color based on the base accent color.
- * @param {string} accentColor - The base accent color.
- * @returns {string} The darker color.
- */
-const getDarkerColor = (accentColor) => {
-	switch (accentColor) {
-		case '#9A0606':
-			return '#4D0303';
-		case '#5DD95D':
-			return '#409740';
-		case '#54A9DE':
-			return '#2C5772';
-		default:
-			return '#4D0303'; // Default hover color
-	}
+	// Return the specific colors or a default object if 'kind' doesn't match
+	return colorMap[kind] || { accentColor: '#333', hoverColor: '#444', darkerColor: '#111' };
 };
 
 // --- Custom Hooks ---
-/**
- * Custom hook for fetching show details and user-specific interaction data.
- * @param {string} showId - The ID of the show to fetch.
- * @returns {object} Contains show details, user interaction status, loading state, error, and refetch functions.
- */
 const useShowData = (showId) => {
+	/**
+	 * Custom hook for fetching show details and user-specific interaction data.
+	 * @param {string} showId - The ID of the show to fetch.
+	 * @returns {object} Contains show details, user interaction status, loading state, error, and refetch functions.
+	 */
 	const [data, setData] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
 
 	const fetchData = useCallback(async () => {
-		if (!showId) {
-			setLoading(false);
-			setError('No Show ID was provided!');
-			return;
-		}
-		setError(null);
-
 		try {
 			const response = await axiosInstance.get(`shows/${showId}/`);
 			setData(response.data);
@@ -135,22 +88,47 @@ const useShowData = (showId) => {
 	};
 };
 
-/**
- * Custom hook for handling media player logic, including episode navigation and time tracking.
- * @param {object} show - The show details object.
- * @param {object} userShowData - User-specific data for the show.
- * @param {function} refetchShowData - Function to refetch show and user data.
- * @returns {object} Contains modal state, player options, episode navigation functions, and more.
- */
+const useToggleApi = (showId, setInState, endpoint, name) => {
+	/**
+	 * Custom hook for toggling show status (favorites/watchlist) via API.
+	 * @param {string} showId - The ID of the show.
+	 * @param {function} setInState - Setter function for the local state (e.g., setInFavorites).
+	 * @param {string} endpoint - The API endpoint suffix (e.g., 'toggleFavorite').
+	 * @param {string} name - The property name in the API response (e.g., 'favorites').
+	 * @returns {function} The toggle handler function.
+	 */
+	const handleToggle = useCallback(async () => {
+		if (!showId) return;
+		try {
+			const response = await axiosInstance.post(`shows/${showId}/${endpoint}/`);
+			if (response.status === 200) {
+				setInState(response.data[`in_${name}`]); // Update local state based on API response
+			} else {
+				throw new Error(`Error toggling ${endpoint}: ${response.statusText}`);
+			}
+		} catch (error) {
+			console.error(`Error toggling ${endpoint}:`, error);
+			// revert the local state if the API call fails
+			setInState((prev) => !prev);
+		}
+	}, [showId, setInState, endpoint, name]);
+	return handleToggle;
+};
+
 const useMediaPlayer = (show, refetchShowData) => {
-	const [modalOpen, setModalOpen] = useState(false);
+	/**
+	 * Custom hook for handling media player logic, including episode navigation and time tracking.
+	 * @param {object} show - The show details object.
+	 * @param {function} refetchShowData - Function to refetch show and user data.
+	 * @returns {object} Contains player options, episode navigation functions, and more.
+	 */
 	const [season, setSeason] = useState(0);
 	const [episode, setEpisode] = useState(0);
 	const [episodeChangeMessage, setEpisodeChangeMessage] = useState(null);
 	const [currentVideoStartTime, setCurrentVideoStartTime] = useState(0);
-	const playerRef = useRef(null);
 
 	// Refs to hold current season/episode for use in async callbacks
+	const playerRef = useRef(null);
 	const seasonRef = useRef(season);
 	const episodeRef = useRef(episode);
 	useEffect(() => {
@@ -168,21 +146,6 @@ const useMediaPlayer = (show, refetchShowData) => {
 			setCurrentVideoStartTime(show.time_reached || 0);
 		}
 	}, [show]);
-
-	const handleModalOpen = useCallback(() => {
-		setModalOpen(true);
-		refetchShowData();
-	}, [refetchShowData]);
-
-	const handleModalClose = useCallback(() => {
-		setModalOpen(false);
-		refetchShowData(); // Fetch latest user data when closing the modal
-		// Dispose of the player instance when modal closes to prevent memory leaks
-		if (playerRef.current) {
-			playerRef.current.dispose();
-			playerRef.current = null;
-		}
-	}, [refetchShowData]);
 
 	const sendTimeReached = useCallback(async (currentShowId, currentSeason, currentEpisode, timeReached) => {
 		try {
@@ -324,9 +287,6 @@ const useMediaPlayer = (show, refetchShowData) => {
 	}, [show, filmsSrc, seriesSrc, captionsSrc, currentVideoStartTime]);
 
 	return {
-		modalOpen,
-		handleModalOpen,
-		handleModalClose,
 		handlePlayerReady,
 		playerOptions,
 		season,
@@ -338,45 +298,16 @@ const useMediaPlayer = (show, refetchShowData) => {
 	};
 };
 
-/**
- * Custom hook for toggling show status (favorites/watchlist) via API.
- * @param {string} showId - The ID of the show.
- * @param {function} setInState - Setter function for the local state (e.g., setInFavorites).
- * @param {string} endpoint - The API endpoint suffix (e.g., 'toggleFavorite').
- * @param {string} name - The property name in the API response (e.g., 'favorites').
- * @returns {function} The toggle handler function.
- */
-const useToggleApi = (showId, setInState, endpoint, name) => {
-	const handleToggle = useCallback(async () => {
-		if (!showId) return;
-		try {
-			const response = await axiosInstance.post(`shows/${showId}/${endpoint}/`);
-			if (response.status === 200) {
-				setInState(response.data[`in_${name}`]); // Update local state based on API response
-			} else {
-				throw new Error(`Error toggling ${endpoint}: ${response.statusText}`);
-			}
-		} catch (error) {
-			console.error(`Error toggling ${endpoint}:`, error);
-			// Optionally, revert the local state if the API call fails
-			// setInState(prev => !prev);
-		}
-	}, [showId, setInState, endpoint, name]);
-	return handleToggle;
-};
+// --- Show Component ---
 
-// --- Show Details Component ---
-
-const ShowDetails = () => {
+const Show = () => {
 	const { show_id } = useParams();
-	const searchbarRef = useRef(null); // Assuming a searchbar exists elsewhere that might steal focus // DEBUG : FIX THIS
 
 	const { show, inFavorites, inWatchlist, setInFavorites, setInWatchlist, loading, error, refetchShowData } = useShowData(show_id);
+	useTitle(`${show?.name} - SIMSY`);
 
-	useTitle(`${show?.name} - SIMSY`)
 	const handleFavoritesToggle = useToggleApi(show?.id, setInFavorites, 'toggleFavorite', 'favorites');
 	const handleWatchlistToggle = useToggleApi(show?.id, setInWatchlist, 'toggleWatchlist', 'watchlist');
-
 	const handleMarkAsUnwatched = useCallback(async () => {
 		if (!show?.id) return;
 		try {
@@ -387,15 +318,8 @@ const ShowDetails = () => {
 		}
 	}, [show?.id, refetchShowData]);
 
-	const { modalOpen, handleModalOpen, handleModalClose, handlePlayerReady, playerOptions, season, episode, actionEpisode, jumpToEpisode, episodeChangeMessage, playerRef } = useMediaPlayer(
-		show,
-		refetchShowData,
-	);
-
-	// Optimization: Memoize colors to prevent unnecessary re-calculations and re-renders
-	const accentColor = useMemo(() => getAccentColor(show?.kind), [show?.kind]);
-	const hoverColor = useMemo(() => getHoverColor(accentColor), [accentColor]);
-	const darkerColor = useMemo(() => getDarkerColor(accentColor), [accentColor]);
+	const { accentColor, hoverColor, darkerColor } = useMemo(() => getColors(show?.kind), [show?.kind]);
+	const { handlePlayerReady, playerOptions, season, episode, actionEpisode, jumpToEpisode, episodeChangeMessage, playerRef } = useMediaPlayer(show, refetchShowData);
 
 	// Optimization: Memoize episode controls for VideoJS
 	const episodeControls = useMemo(() => {
@@ -410,14 +334,6 @@ const ShowDetails = () => {
 			if (isSearchbarActive) {
 				return; // Do nothing if searchbar is active
 			}
-
-			if (!modalOpen) {
-				if (event.code === 'KeyK') {
-					handleModalOpen();
-				}
-				return; // Only 'K' works outside modal, then exit
-			}
-
 			// Handle player controls inside the modal
 			if (playerRef.current) {
 				switch (event.code) {
@@ -461,7 +377,7 @@ const ShowDetails = () => {
 				}
 			}
 		},
-		[show?.kind, playerRef, modalOpen, handleModalOpen, actionEpisode],
+		[show?.kind, playerRef, actionEpisode],
 	);
 
 	useEffect(() => {
@@ -555,7 +471,7 @@ const ShowDetails = () => {
 		if (all.length <= 10) return all;
 
 		const currentIdx = all.findIndex((item) => item.s === Number(season) && item.e === Number(episode));
-		const range = 2;
+		const range = 10;
 		const result = [];
 
 		// Always include first
@@ -595,24 +511,21 @@ const ShowDetails = () => {
 	}
 
 	return (
-		<Box sx={{ backgroundColor: 'transparent', minHeight: '100vh', mt: -8 }}>
+		<Box sx={{ backgroundColor: 'transparent', mt: -7 }}>
 			{/* --- Hero Section --- */}
 			<Box
 				sx={{
+					display: 'flex',
 					position: 'relative',
+					alignItems: 'center',
+					minHeight: '100vh',
 					backgroundSize: 'cover',
 					backgroundPosition: 'center',
 					backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url(${show.image})`,
-					color: 'white',
-					minHeight: '100vh',
-					display: 'flex',
-					alignItems: 'center',
-					pt: { xs: 15, md: 0 },
-					pb: { xs: 5, md: 0 },
 				}}
 			>
 				<Container>
-					<Grid container spacing={1}>
+					<Grid container spacing={10}>
 						<Grid item xs={12} md={4} sx={{ display: 'flex', justifyContent: { xs: 'center', md: 'flex-start' } }}>
 							<Box
 								component='img'
@@ -621,11 +534,12 @@ const ShowDetails = () => {
 								className={styles.posterImage}
 								sx={{
 									width: '100%',
-									maxWidth: 300,
+									maxWidth: 400,
+									height: 'fit-content',
 									borderRadius: 2,
 									boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5)',
 									transition: 'transform 0.3s ease-in-out',
-									'&:hover': { transform: 'scale(1.05)' },
+									'&:hover': { transform: 'scale(1.5)' },
 								}}
 							/>
 						</Grid>
@@ -642,7 +556,7 @@ const ShowDetails = () => {
 									size='large'
 									startIcon={<PlayArrowIcon />}
 									sx={{ backgroundColor: accentColor, '&:hover': { backgroundColor: hoverColor } }}
-									onClick={handleModalOpen}
+									onClick={handlePlayerReady}
 								>
 									Watch Now
 								</Button>
@@ -685,6 +599,142 @@ const ShowDetails = () => {
 			</Box>
 
 			{/* --- Main Details Section --- */}
+			{/* --- Video Player Modal --- */}
+			<Box
+				sx={{
+					display: 'block',
+					mx: 'auto',
+					// marginRight: 'auto',
+					// maxHeight: '80vh',
+					width:'80vw',
+					bgcolor: darkerColor,
+					boxShadow: 24,
+					my: 7,
+					p: { xs: 1, md: 0.7 },
+					borderRadius: 2,
+					outline: 'none',
+				}}
+			>
+				<VideoJS options={playerOptions} onReady={handlePlayerReady} color={accentColor} episodeControls={episodeControls} />
+				{show?.kind !== 'film' && (
+					<Box
+						sx={{
+							p: 1.5,
+							bgcolor: 'rgba(0, 0, 0, 0.5)',
+							borderBottomLeftRadius: 8,
+							borderBottomRightRadius: 8,
+							display: 'flex',
+							flexDirection: 'column',
+							alignItems: 'center',
+							gap: 1,
+						}}
+					>
+						<Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', gap: 1 }}>
+							<Tooltip title='First Episode'>
+								<IconButton onClick={() => actionEpisode('first')} sx={{ color: 'white' }}>
+									<FirstPageIcon />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title='Previous Episode'>
+								<IconButton onClick={() => actionEpisode('previous')} sx={{ color: 'white' }}>
+									<ArrowBackIosNewIcon />
+								</IconButton>
+							</Tooltip>
+
+							{/* Episode Pagination Container */}
+							<Box
+								sx={{
+									maxWidth: '100%',
+									display: 'flex',
+									alignItems: 'center',
+									justifyContent: 'center',
+									flexWrap: 'nowrap',
+									gap: 0.5,
+									px: 1,
+									py: 1,
+									overflowX: 'auto',
+								}}
+							>
+								{/* Fixed Season Indicator for multiple seasons */}
+								{Object.keys(show.episodes).length > 1 && (
+									<Box sx={{ mr: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+										<SeasonCircle num={season} active />
+										<Box sx={{ width: '2px', height: '24px', bgcolor: 'rgba(255,255,255,0.2)', mx: 0.5 }} />
+									</Box>
+								)}
+
+								{(() => {
+									let lastS = null;
+									return visibleEpisodes.map((item, idx) => {
+										if (item.type === 'ellipsis') {
+											return (
+												<Typography key={`ell-${idx}`} sx={{ color: 'rgba(255,255,255,0.5)', px: 0.5, userSelect: 'none' }}>
+													...
+												</Typography>
+											);
+										}
+
+										const isCurrent = Number(season) === item.s && Number(episode) === item.e;
+										const isWatched = show.reached_times?.[String(item.s)]?.[String(item.e)] > 0;
+
+										const isSeasonBoundary = lastS !== null && lastS !== item.s;
+										lastS = item.s;
+
+										return (
+											<Box key={`${item.s}-${item.e}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+												{isSeasonBoundary && <Typography sx={{ color: 'rgba(255,255,255,0.3)', mx: 1, fontWeight: 'bold', userSelect: 'none' }}>|</Typography>}
+												<Button
+													size='small'
+													variant={isCurrent ? 'contained' : 'text'}
+													onClick={() => jumpToEpisode(item.s, item.e)}
+													sx={{
+														minWidth: '32px',
+														height: '32px',
+														p: 0,
+														color: isCurrent ? 'white' : 'rgba(255,255,255,0.7)',
+														bgcolor: isCurrent ? accentColor : 'transparent',
+														'&:hover': { bgcolor: isCurrent ? hoverColor : 'rgba(255,255,255,0.1)' },
+														position: 'relative',
+													}}
+												>
+													{item.e}
+													{isWatched && !isCurrent && (
+														<CheckCircleIcon
+															sx={{
+																position: 'absolute',
+																top: -4,
+																right: -4,
+																fontSize: '12px',
+																color: '#5DD95D',
+															}}
+														/>
+													)}
+												</Button>
+											</Box>
+										);
+									});
+								})()}
+							</Box>
+
+							<Tooltip title='Next Episode'>
+								<IconButton onClick={() => actionEpisode('next')} sx={{ color: 'white' }}>
+									<ArrowForwardIosIcon />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title='Last Episode'>
+								<IconButton onClick={() => actionEpisode('last')} sx={{ color: 'white' }}>
+									<LastPageIcon />
+								</IconButton>
+							</Tooltip>
+						</Box>
+						{episodeChangeMessage && (
+							<Typography variant='caption' color='error'>
+								{episodeChangeMessage}
+							</Typography>
+						)}
+					</Box>
+				)}
+			</Box>
 			<Container sx={{ my: 5 }}>
 				<Grid container spacing={5}>
 					<Grid item xs={12} md={8}>
@@ -824,146 +874,8 @@ const ShowDetails = () => {
 					</Grid>
 				</Grid>
 			</Container>
-
-			{/* --- Video Player Modal --- */}
-			<Modal open={modalOpen} onClose={handleModalClose} aria-labelledby='video-player-modal' aria-describedby='video-player-for-show'>
-				<Box
-					sx={{
-						position: 'absolute',
-						top: '50%',
-						left: '50%',
-						transform: 'translate(-50%, -50%)',
-						width: '90vw',
-						bgcolor: darkerColor,
-						boxShadow: 24,
-						p: { xs: 1, md: 0.7 },
-						borderRadius: 2,
-						outline: 'none',
-					}}
-				>
-					{modalOpen && <VideoJS options={playerOptions} onReady={handlePlayerReady} color={accentColor} episodeControls={episodeControls} />}
-					{show?.kind !== 'film' && (
-						<Box
-							sx={{
-								p: 1.5,
-								bgcolor: 'rgba(0, 0, 0, 0.5)',
-								borderBottomLeftRadius: 8,
-								borderBottomRightRadius: 8,
-								display: 'flex',
-								flexDirection: 'column',
-								alignItems: 'center',
-								gap: 1,
-							}}
-						>
-							<Box sx={{ display: 'flex', alignItems: 'center', width: '100%', justifyContent: 'center', gap: 1 }}>
-								<Tooltip title='First Episode'>
-									<IconButton onClick={() => actionEpisode('first')} sx={{ color: 'white' }}>
-										<FirstPageIcon />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title='Previous Episode'>
-									<IconButton onClick={() => actionEpisode('previous')} sx={{ color: 'white' }}>
-										<ArrowBackIosNewIcon />
-									</IconButton>
-								</Tooltip>
-
-								{/* Episode Pagination Container */}
-								<Box
-									sx={{
-										maxWidth: '85%',
-										display: 'flex',
-										alignItems: 'center',
-										justifyContent: 'center',
-										flexWrap: 'nowrap',
-										gap: 0.5,
-										px: 1,
-										py: 1,
-										overflowX: 'auto',
-									}}
-								>
-									{/* Fixed Season Indicator for multiple seasons */}
-									{Object.keys(show.episodes).length > 1 && (
-										<Box sx={{ mr: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-											<SeasonCircle num={season} active />
-											<Box sx={{ width: '2px', height: '24px', bgcolor: 'rgba(255,255,255,0.2)', mx: 0.5 }} />
-										</Box>
-									)}
-
-									{(() => {
-										let lastS = null;
-										return visibleEpisodes.map((item, idx) => {
-											if (item.type === 'ellipsis') {
-												return (
-													<Typography key={`ell-${idx}`} sx={{ color: 'rgba(255,255,255,0.5)', px: 0.5, userSelect: 'none' }}>
-														...
-													</Typography>
-												);
-											}
-
-											const isCurrent = Number(season) === item.s && Number(episode) === item.e;
-											const isWatched = show.reached_times?.[String(item.s)]?.[String(item.e)] > 0;
-
-											const isSeasonBoundary = lastS !== null && lastS !== item.s;
-											lastS = item.s;
-
-											return (
-												<Box key={`${item.s}-${item.e}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-													{isSeasonBoundary && <Typography sx={{ color: 'rgba(255,255,255,0.3)', mx: 1, fontWeight: 'bold', userSelect: 'none' }}>|</Typography>}
-													<Button
-														size='small'
-														variant={isCurrent ? 'contained' : 'text'}
-														onClick={() => jumpToEpisode(item.s, item.e)}
-														sx={{
-															minWidth: '32px',
-															height: '32px',
-															p: 0,
-															color: isCurrent ? 'white' : 'rgba(255,255,255,0.7)',
-															bgcolor: isCurrent ? accentColor : 'transparent',
-															'&:hover': { bgcolor: isCurrent ? hoverColor : 'rgba(255,255,255,0.1)' },
-															position: 'relative',
-														}}
-													>
-														{item.e}
-														{isWatched && !isCurrent && (
-															<CheckCircleIcon
-																sx={{
-																	position: 'absolute',
-																	top: -4,
-																	right: -4,
-																	fontSize: '12px',
-																	color: '#5DD95D',
-																}}
-															/>
-														)}
-													</Button>
-												</Box>
-											);
-										});
-									})()}
-								</Box>
-
-								<Tooltip title='Next Episode'>
-									<IconButton onClick={() => actionEpisode('next')} sx={{ color: 'white' }}>
-										<ArrowForwardIosIcon />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title='Last Episode'>
-									<IconButton onClick={() => actionEpisode('last')} sx={{ color: 'white' }}>
-										<LastPageIcon />
-									</IconButton>
-								</Tooltip>
-							</Box>
-							{episodeChangeMessage && (
-								<Typography variant='caption' color='error'>
-									{episodeChangeMessage}
-								</Typography>
-							)}
-						</Box>
-					)}
-				</Box>
-			</Modal>
 		</Box>
 	);
 };
 
-export default ShowDetails;
+export default Show;

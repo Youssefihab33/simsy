@@ -1,8 +1,6 @@
 import { Box, CircularProgress } from '@mui/material';
-import { useTitle } from 'react-use';
 
 export default function LoadingSpinner({ small = false }) {
-	useTitle('Loading - SIMSY')
 	if (small) {
 		return <CircularProgress size={20} sx={{ color: '#9a0606' }} />;
 	}
