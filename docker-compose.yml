@@ -7,6 +7,7 @@ services:
       - ./backend:/usr/src/app/simsy
       - ./backend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./data/db.sqlite3:/usr/src/app/data/db.sqlite3
+      - ./data/media:/usr/src/app/data/media
       - django_static:/usr/src/app/data/static
     env_file: 'backend/.env'
     restart: always
