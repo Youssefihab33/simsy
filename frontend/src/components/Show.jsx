@@ -282,7 +282,7 @@ const useMediaPlayer = (show, refetchShowData) => {
 						},
 					]
 				:	[],
-			currentVideoStartTime, // Added to trigger updates in VideoJS
+			currentVideoStartTime: currentVideoStartTime || show.time_reached || 0,
 		};
 	}, [show, filmsSrc, seriesSrc, captionsSrc, currentVideoStartTime]);
 
@@ -556,7 +556,12 @@ const Show = () => {
 									size='large'
 									startIcon={<PlayArrowIcon />}
 									sx={{ backgroundColor: accentColor, '&:hover': { backgroundColor: hoverColor } }}
-									onClick={handlePlayerReady}
+									onClick={() => {
+										if (playerRef.current) {
+											playerRef.current.el().scrollIntoView({ behavior: 'smooth' });
+											playerRef.current.play();
+										}
+									}}
 								>
 									Watch Now
 								</Button>
@@ -606,7 +611,7 @@ const Show = () => {
 					mx: 'auto',
 					// marginRight: 'auto',
 					// maxHeight: '80vh',
-					width:'80vw',
+					width: '80vw',
 					bgcolor: darkerColor,
 					boxShadow: 24,
 					my: 7,
